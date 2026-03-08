@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, View, StyleSheet } from 'react-native';
 import { TextInput, Headline, Card } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
 
