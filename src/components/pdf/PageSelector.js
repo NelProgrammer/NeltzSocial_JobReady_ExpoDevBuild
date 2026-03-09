@@ -1,14 +1,19 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import { Headline, Text, Button, Card } from 'react-native-paper';
+import { Headline, Text, Button, Card, Surface } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const PageSelector = ({ files, selectedFileId, buildList, onAddPage, onAddAllPages }) => {
 
     if (!selectedFileId || !files[selectedFileId]) {
         return (
-            <View style={styles.emptyContainer}>
-                <Text>Please select a PDF from the Files tab first.</Text>
-            </View>
+            <Surface style={styles.emptyContainer} elevation={0}>
+                <MaterialCommunityIcons name="file-search-outline" size={64} color="#bdbdbd" style={{ marginBottom: 16 }} />
+                <Text variant="titleMedium" style={{ color: '#757575', textAlign: 'center' }}>No PDF Selected</Text>
+                <Text variant="bodyMedium" style={{ color: '#9e9e9e', textAlign: 'center', marginTop: 8 }}>
+                    Go to the "Files" tab and select a document to view its pages here.
+                </Text>
+            </Surface>
         );
     }
 
@@ -27,12 +32,19 @@ const PageSelector = ({ files, selectedFileId, buildList, onAddPage, onAddAllPag
             pages.push(
                 <Card
                     key={i}
-                    style={[styles.pageCard, used && styles.usedCard]}
+                    style={[styles.pageCard, used ? styles.usedCard : styles.activeCard]}
                     onPress={used ? null : () => onAddPage(selectedFileId, i)}
+                    elevation={used ? 0 : 2}
                 >
                     <Card.Content style={styles.cardContent}>
-                        <Text variant="headlineMedium">{i + 1}</Text>
-                        <Text variant="labelSmall">{used ? "Added" : "Tap to Add"}</Text>
+                        {used ? (
+                            <MaterialCommunityIcons name="check-circle" size={32} color="#4caf50" style={{ marginBottom: 4 }} />
+                        ) : (
+                            <Text variant="headlineMedium" style={{ color: '#6200ee', fontWeight: 'bold' }}>{i + 1}</Text>
+                        )}
+                        <Text variant="labelSmall" style={{ color: used ? '#4caf50' : '#757575' }}>
+                            {used ? "Added" : "Tap to Add"}
+                        </Text>
                     </Card.Content>
                 </Card>
             );
@@ -49,8 +61,13 @@ const PageSelector = ({ files, selectedFileId, buildList, onAddPage, onAddAllPag
                 {renderPages()}
             </ScrollView>
 
-            <Button mode="contained" onPress={() => onAddAllPages(selectedFileId)} style={styles.addAllBtn}>
-                Add ALL Pages
+            <Button
+                mode="contained-tonal"
+                icon="playlist-plus"
+                onPress={() => onAddAllPages(selectedFileId)}
+                style={styles.addAllBtn}
+            >
+                Add ALL {pageCount} Pages
             </Button>
         </View>
     );
@@ -66,15 +83,17 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f5f5f5',
-        padding: 20
+        backgroundColor: 'transparent',
+        paddingHorizontal: 32
     },
     header: {
-        marginBottom: 4
+        marginBottom: 4,
+        fontWeight: 'bold'
     },
     subText: {
         marginBottom: 16,
-        color: '#666'
+        color: '#6200ee',
+        fontWeight: '500'
     },
     gridContainer: {
         flexDirection: 'row',
@@ -83,16 +102,20 @@ const styles = StyleSheet.create({
         paddingBottom: 20
     },
     pageCard: {
-        width: '48%',
+        width: '47%',
         aspectRatio: 1,
-        marginBottom: 15,
+        marginBottom: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#fff'
+        borderRadius: 12,
+    },
+    activeCard: {
+        backgroundColor: '#fff',
     },
     usedCard: {
-        opacity: 0.5,
-        backgroundColor: '#e0e0e0'
+        backgroundColor: '#e8f5e9',
+        borderWidth: 1,
+        borderColor: '#c8e6c9'
     },
     cardContent: {
         alignItems: 'center',
@@ -100,7 +123,9 @@ const styles = StyleSheet.create({
     },
     addAllBtn: {
         marginTop: 10,
-        marginBottom: 20
+        marginBottom: 32,
+        paddingVertical: 6,
+        borderRadius: 8
     }
 });
 

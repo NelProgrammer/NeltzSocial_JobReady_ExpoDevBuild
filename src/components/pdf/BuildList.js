@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
-import { Headline, Button, Card, Text, IconButton } from 'react-native-paper';
+import { Headline, Button, Card, Text, IconButton, Surface } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const BuildList = ({ files, buildList, onRemovePage, onMoveUp, onMoveDown, onGeneratePDF }) => {
 
@@ -9,13 +10,17 @@ const BuildList = ({ files, buildList, onRemovePage, onMoveUp, onMoveDown, onGen
         const fileName = file ? file.name : 'Unknown File';
 
         return (
-            <Card style={styles.card}>
+            <Card style={styles.card} elevation={2}>
                 <Card.Title
                     title={`Page ${item.pageIndex + 1}`}
                     subtitle={fileName}
-                    left={(props) => <IconButton {...props} icon="file-document" />}
+                    left={(props) => (
+                        <View style={styles.rankingCircle}>
+                            <Text style={styles.rankingText}>{index + 1}</Text>
+                        </View>
+                    )}
                     right={(props) => (
-                        <View style={{ flexDirection: 'row' }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
                             <IconButton icon="arrow-up" disabled={index === 0} onPress={() => onMoveUp(index)} />
                             <IconButton icon="arrow-down" disabled={index === buildList.length - 1} onPress={() => onMoveDown(index)} />
                             <IconButton icon="close" iconColor="red" onPress={() => onRemovePage(index)} />
@@ -31,9 +36,13 @@ const BuildList = ({ files, buildList, onRemovePage, onMoveUp, onMoveDown, onGen
             <Headline style={styles.header}>Assemble Final PDF</Headline>
 
             {buildList.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <Text variant="bodyMedium">No pages added to build yet.</Text>
-                </View>
+                <Surface style={styles.emptyContainer} elevation={0}>
+                    <MaterialCommunityIcons name="text-box-plus-outline" size={64} color="#bdbdbd" style={{ marginBottom: 16 }} />
+                    <Text variant="titleMedium" style={{ color: '#757575', textAlign: 'center' }}>Build List is Empty</Text>
+                    <Text variant="bodyMedium" style={{ color: '#9e9e9e', textAlign: 'center', marginTop: 8 }}>
+                        Switch to the "Pages" tab to select pages and add them to your final document.
+                    </Text>
+                </Surface>
             ) : (
                 <FlatList
                     data={buildList}
@@ -63,20 +72,40 @@ const styles = StyleSheet.create({
         backgroundColor: '#f5f5f5'
     },
     header: {
-        marginBottom: 16
+        marginBottom: 16,
+        fontWeight: 'bold'
     },
     card: {
-        marginBottom: 10,
-        backgroundColor: '#fff'
+        marginBottom: 12,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+    },
+    rankingCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#f3e5f5',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 8
+    },
+    rankingText: {
+        color: '#6200ee',
+        fontWeight: 'bold',
+        fontSize: 16
     },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        backgroundColor: 'transparent',
+        paddingHorizontal: 32
     },
     generateBtn: {
         marginTop: 10,
-        marginBottom: 30
+        marginBottom: 32,
+        paddingVertical: 6,
+        borderRadius: 8
     }
 });
 
