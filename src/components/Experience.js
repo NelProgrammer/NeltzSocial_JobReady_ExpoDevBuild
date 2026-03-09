@@ -1,5 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { ScrollView, View, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { TextInput, Headline, Button, Card, Paragraph, IconButton, Divider } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
 
@@ -49,90 +50,90 @@ const Experience = () => {
     };
 
     return (
-        <KeyboardAvoidingView
+        <KeyboardAwareScrollView
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+            enableOnAndroid={true}
+            extraScrollHeight={20}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 100 }}
         >
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <Headline style={{ marginBottom: 10 }}>Work Experience</Headline>
+            <Headline style={{ marginBottom: 10 }}>Work Experience</Headline>
 
-                {experiences.map((exp, index) => (
-                    <Card key={index} style={styles.card}>
-                        <Card.Title
-                            title={exp.Organization || "New Job"}
-                            subtitle={exp.Role || "Role"}
-                            left={(props) => <IconButton {...props} icon="briefcase" />}
-                            right={(props) => (
-                                <View style={{ flexDirection: 'row' }}>
-                                    <IconButton {...props} icon={expandedIndex === index ? "chevron-up" : "chevron-down"} onPress={() => setExpandedIndex(expandedIndex === index ? null : index)} />
-                                    <IconButton {...props} icon="delete" onPress={() => removeExperience(index)} />
-                                </View>
-                            )}
-                        />
-
-                        {expandedIndex === index && (
-                            <Card.Content>
-                                <Divider style={{ marginBottom: 10 }} />
-                                <TextInput
-                                    label="Organization"
-                                    value={exp.Organization}
-                                    onChangeText={(text) => updateExpField(index, 'Organization', text)}
-                                    style={styles.input}
-                                />
-                                <TextInput
-                                    label="Role"
-                                    value={exp.Role}
-                                    onChangeText={(text) => updateExpField(index, 'Role', text)}
-                                    style={styles.input}
-                                />
-                                <TextInput
-                                    label="Department"
-                                    value={exp.Department}
-                                    onChangeText={(text) => updateExpField(index, 'Department', text)}
-                                    style={styles.input}
-                                />
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                    <TextInput
-                                        label="Start Date"
-                                        value={exp["Start Date"]}
-                                        onChangeText={(text) => updateExpField(index, 'Start Date', text)}
-                                        style={[styles.input, { flex: 1, marginRight: 5 }]}
-                                        placeholder="YYYY-MM-DD"
-                                    />
-                                    <TextInput
-                                        label="End Date"
-                                        value={exp["End Date"]}
-                                        onChangeText={(text) => updateExpField(index, 'End Date', text)}
-                                        style={[styles.input, { flex: 1, marginLeft: 5 }]}
-                                        placeholder="YYYY-MM-DD"
-                                    />
-                                </View>
-                                <TextInput
-                                    label="Responsibilities"
-                                    value={exp["Key Responsibilities"]}
-                                    onChangeText={(text) => updateExpField(index, 'Key Responsibilities', text)}
-                                    style={styles.input}
-                                    multiline
-                                    numberOfLines={4}
-                                />
-                                <TextInput
-                                    label="Reason for Leaving"
-                                    value={exp["Reason for Leaving"]}
-                                    onChangeText={(text) => updateExpField(index, 'Reason for Leaving', text)}
-                                    style={styles.input}
-                                />
-                            </Card.Content>
+            {experiences.map((exp, index) => (
+                <Card key={index} style={styles.card}>
+                    <Card.Title
+                        title={exp.Organization || "New Job"}
+                        subtitle={exp.Role || "Role"}
+                        left={(props) => <IconButton {...props} icon="briefcase" />}
+                        right={(props) => (
+                            <View style={{ flexDirection: 'row' }}>
+                                <IconButton {...props} icon={expandedIndex === index ? "chevron-up" : "chevron-down"} onPress={() => setExpandedIndex(expandedIndex === index ? null : index)} />
+                                <IconButton {...props} icon="delete" onPress={() => removeExperience(index)} />
+                            </View>
                         )}
-                    </Card>
-                ))}
+                    />
 
-                <Button mode="contained" icon="plus" onPress={addExperience} style={styles.addButton}>
-                    Add Job
-                </Button>
-                <View style={{ height: 50 }} />
-            </ScrollView>
-        </KeyboardAvoidingView>
+                    {expandedIndex === index && (
+                        <Card.Content>
+                            <Divider style={{ marginBottom: 10 }} />
+                            <TextInput
+                                label="Organization"
+                                value={exp.Organization}
+                                onChangeText={(text) => updateExpField(index, 'Organization', text)}
+                                style={styles.input}
+                            />
+                            <TextInput
+                                label="Role"
+                                value={exp.Role}
+                                onChangeText={(text) => updateExpField(index, 'Role', text)}
+                                style={styles.input}
+                            />
+                            <TextInput
+                                label="Department"
+                                value={exp.Department}
+                                onChangeText={(text) => updateExpField(index, 'Department', text)}
+                                style={styles.input}
+                            />
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                <TextInput
+                                    label="Start Date"
+                                    value={exp["Start Date"]}
+                                    onChangeText={(text) => updateExpField(index, 'Start Date', text)}
+                                    style={[styles.input, { flex: 1, marginRight: 5 }]}
+                                    placeholder="YYYY-MM-DD"
+                                />
+                                <TextInput
+                                    label="End Date"
+                                    value={exp["End Date"]}
+                                    onChangeText={(text) => updateExpField(index, 'End Date', text)}
+                                    style={[styles.input, { flex: 1, marginLeft: 5 }]}
+                                    placeholder="YYYY-MM-DD"
+                                />
+                            </View>
+                            <TextInput
+                                label="Responsibilities"
+                                value={exp["Key Responsibilities"]}
+                                onChangeText={(text) => updateExpField(index, 'Key Responsibilities', text)}
+                                style={styles.input}
+                                multiline
+                                numberOfLines={4}
+                            />
+                            <TextInput
+                                label="Reason for Leaving"
+                                value={exp["Reason for Leaving"]}
+                                onChangeText={(text) => updateExpField(index, 'Reason for Leaving', text)}
+                                style={styles.input}
+                            />
+                        </Card.Content>
+                    )}
+                </Card>
+            ))}
+
+            <Button mode="contained" icon="plus" onPress={addExperience} style={styles.addButton}>
+                Add Job
+            </Button>
+            <View style={{ height: 50 }} />
+        </KeyboardAwareScrollView>
     );
 };
 

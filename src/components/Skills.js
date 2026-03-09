@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { ScrollView, View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { TextInput, Headline, Card } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
 
@@ -16,61 +17,61 @@ const Skills = () => {
     };
 
     return (
-        <KeyboardAvoidingView
+        <KeyboardAwareScrollView
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+            enableOnAndroid={true}
+            extraScrollHeight={20}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 100 }}
         >
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <Headline style={{ marginBottom: 10 }}>Skills & Certifications</Headline>
+            <Headline style={{ marginBottom: 10 }}>Skills & Certifications</Headline>
 
-                <Card style={styles.card}>
-                    <Card.Content>
-                        <TextInput
-                            label="Technical Skills"
-                            value={skills.Tech}
-                            onChangeText={(text) => updateSkill('Tech', text)}
-                            style={styles.input}
-                            multiline
-                            numberOfLines={4}
-                            placeholder="e.g. JavaScript, React, Sales, Project Management..."
-                        />
-                        <TextInput
-                            label="Soft Skills"
-                            value={skills.Soft}
-                            onChangeText={(text) => updateSkill('Soft', text)}
-                            style={styles.input}
-                            multiline
-                            numberOfLines={4}
-                            placeholder="e.g. Leadership, Communication, Teamwork..."
-                        />
-                    </Card.Content>
-                </Card>
+            <Card style={styles.card}>
+                <Card.Content>
+                    <TextInput
+                        label="Technical Skills"
+                        value={skills.Tech}
+                        onChangeText={(text) => updateSkill('Tech', text)}
+                        style={styles.input}
+                        multiline
+                        numberOfLines={4}
+                        placeholder="e.g. JavaScript, React, Sales, Project Management..."
+                    />
+                    <TextInput
+                        label="Soft Skills"
+                        value={skills.Soft}
+                        onChangeText={(text) => updateSkill('Soft', text)}
+                        style={styles.input}
+                        multiline
+                        numberOfLines={4}
+                        placeholder="e.g. Leadership, Communication, Teamwork..."
+                    />
+                </Card.Content>
+            </Card>
 
-                <Card style={styles.card}>
-                    <Card.Content>
-                        <TextInput
-                            label="Professional Certifications"
-                            value={skills["Professional Certs"]}
-                            onChangeText={(text) => updateSkill('Professional Certs', text)}
-                            style={styles.input}
-                            multiline
-                            numberOfLines={3}
-                        />
-                        <TextInput
-                            label="Non-Academic Certifications"
-                            value={skills["Non-Academic Certs"]}
-                            onChangeText={(text) => updateSkill('Non-Academic Certs', text)}
-                            style={styles.input}
-                            multiline
-                            numberOfLines={3}
-                        />
-                    </Card.Content>
-                </Card>
+            <Card style={styles.card}>
+                <Card.Content>
+                    <TextInput
+                        label="Professional Certifications"
+                        value={skills["Professional Certs"]}
+                        onChangeText={(text) => updateSkill('Professional Certs', text)}
+                        style={styles.input}
+                        multiline
+                        numberOfLines={3}
+                    />
+                    <TextInput
+                        label="Non-Academic Certifications"
+                        value={skills["Non-Academic Certs"]}
+                        onChangeText={(text) => updateSkill('Non-Academic Certs', text)}
+                        style={styles.input}
+                        multiline
+                        numberOfLines={3}
+                    />
+                </Card.Content>
+            </Card>
 
-                <View style={{ height: 50 }} />
-            </ScrollView>
-        </KeyboardAvoidingView>
+            <View style={{ height: 50 }} />
+        </KeyboardAwareScrollView>
     );
 };
 
