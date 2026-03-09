@@ -1,66 +1,54 @@
 import React from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
-import { Headline, Button, Card, Text, IconButton, Surface } from 'react-native-paper';
+import { Text, IconButton, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const BuildList = ({ files, buildList, onRemovePage, onMoveUp, onMoveDown, onGeneratePDF }) => {
+const BuildList = ({ files, buildList, onRemovePage, onMoveUp, onMoveDown }) => {
 
     const renderItem = ({ item, index }) => {
         const file = files[item.fileId];
-        const fileName = file ? file.name : 'Unknown File';
+        const fileName = file ? file.name : 'Unknown';
 
         return (
-            <Card style={styles.card} elevation={2}>
-                <Card.Title
-                    title={`Page ${item.pageIndex + 1}`}
-                    subtitle={fileName}
-                    left={(props) => (
-                        <View style={styles.rankingCircle}>
-                            <Text style={styles.rankingText}>{index + 1}</Text>
-                        </View>
-                    )}
-                    right={(props) => (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
-                            <IconButton icon="arrow-up" disabled={index === 0} onPress={() => onMoveUp(index)} />
-                            <IconButton icon="arrow-down" disabled={index === buildList.length - 1} onPress={() => onMoveDown(index)} />
-                            <IconButton icon="close" iconColor="red" onPress={() => onRemovePage(index)} />
-                        </View>
-                    )}
-                />
-            </Card>
+            <Surface style={styles.card} elevation={1}>
+                <View style={styles.rankingCircle}>
+                    <Text style={styles.rankingText}>{index + 1}</Text>
+                </View>
+
+                <View style={styles.textContainer}>
+                    <Text variant="labelSmall" numberOfLines={1}>Pg {item.pageIndex + 1}</Text>
+                    <Text variant="bodySmall" style={styles.fileName} numberOfLines={1}>{fileName}</Text>
+                </View>
+
+                <View style={styles.actions}>
+                    <IconButton icon="arrow-up" size={14} disabled={index === 0} onPress={() => onMoveUp(index)} style={styles.iconBtn} />
+                    <IconButton icon="arrow-down" size={14} disabled={index === buildList.length - 1} onPress={() => onMoveDown(index)} style={styles.iconBtn} />
+                    <IconButton icon="close" iconColor="red" size={14} onPress={() => onRemovePage(index)} style={styles.iconBtn} />
+                </View>
+            </Surface>
         );
     };
 
     return (
         <View style={styles.container}>
-            <Headline style={styles.header}>Assemble Final PDF</Headline>
+            <Text variant="titleSmall" style={styles.header}>Build List</Text>
 
             {buildList.length === 0 ? (
-                <Surface style={styles.emptyContainer} elevation={0}>
-                    <MaterialCommunityIcons name="text-box-plus-outline" size={64} color="#bdbdbd" style={{ marginBottom: 16 }} />
-                    <Text variant="titleMedium" style={{ color: '#757575', textAlign: 'center' }}>Build List is Empty</Text>
-                    <Text variant="bodyMedium" style={{ color: '#9e9e9e', textAlign: 'center', marginTop: 8 }}>
-                        Switch to the "Pages" tab to select pages and add them to your final document.
+                <View style={styles.emptyContainer}>
+                    <MaterialCommunityIcons name="text-box-plus-outline" size={24} color="#bdbdbd" />
+                    <Text variant="bodySmall" style={{ color: '#9e9e9e', textAlign: 'center', marginTop: 4 }}>
+                        Empty
                     </Text>
-                </Surface>
+                </View>
             ) : (
                 <FlatList
                     data={buildList}
                     keyExtractor={(item, index) => `${item.fileId}-${item.pageIndex}-${index}`}
                     renderItem={renderItem}
-                    contentContainerStyle={{ paddingBottom: 20 }}
+                    contentContainerStyle={{ paddingBottom: 8 }}
+                    showsVerticalScrollIndicator={false}
                 />
             )}
-
-            <Button
-                mode="contained"
-                icon="printer"
-                onPress={onGeneratePDF}
-                style={styles.generateBtn}
-                disabled={buildList.length === 0}
-            >
-                Preview & Export PDF
-            </Button>
         </View>
     );
 };
@@ -68,44 +56,58 @@ const BuildList = ({ files, buildList, onRemovePage, onMoveUp, onMoveDown, onGen
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
-        backgroundColor: '#f5f5f5'
+        padding: 6,
+        backgroundColor: '#fff'
     },
     header: {
-        marginBottom: 16,
-        fontWeight: 'bold'
+        marginBottom: 6,
+        fontWeight: 'bold',
+        color: '#333'
     },
     card: {
-        marginBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
         backgroundColor: '#fff',
-        borderRadius: 12,
+        borderRadius: 6,
+        padding: 4,
     },
     rankingCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 20,
+        height: 20,
+        borderRadius: 10,
         backgroundColor: '#f3e5f5',
         justifyContent: 'center',
         alignItems: 'center',
-        marginLeft: 8
     },
     rankingText: {
         color: '#6200ee',
         fontWeight: 'bold',
-        fontSize: 16
+        fontSize: 10
+    },
+    textContainer: {
+        flex: 1,
+        marginLeft: 6,
+        justifyContent: 'center'
+    },
+    fileName: {
+        color: '#757575',
+        fontSize: 9
+    },
+    actions: {
+        flexDirection: 'column',
+        alignItems: 'center'
+    },
+    iconBtn: {
+        margin: -6,
+        padding: 0,
+        width: 24,
+        height: 24
     },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'transparent',
-        paddingHorizontal: 32
-    },
-    generateBtn: {
-        marginTop: 10,
-        marginBottom: 32,
-        paddingVertical: 6,
-        borderRadius: 8
     }
 });
 

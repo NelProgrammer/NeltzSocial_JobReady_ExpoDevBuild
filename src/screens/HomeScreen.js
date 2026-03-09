@@ -65,9 +65,6 @@ const HomeScreen = () => {
 
     return (
         <View style={styles.container}>
-            <Appbar.Header>
-                <Appbar.Content title="My Resumes" />
-            </Appbar.Header>
             {meta.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Text variant="headlineSmall" style={{ marginBottom: 10 }}>No Resumes Yet</Text>

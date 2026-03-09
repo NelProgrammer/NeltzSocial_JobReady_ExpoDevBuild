@@ -26,22 +26,22 @@ export default function App() {
             <Stack.Screen
               name="ResumeHome"
               component={HomeScreen}
-              options={{ title: 'My Resumes' }}
+              options={{ title: 'NeltzSocial - Resume Builder' }}
             />
             <Stack.Screen
               name="Editor"
               component={EditorScreen}
-              options={{ title: 'Edit Resume' }}
+              options={{ title: 'NeltzSocial - Resume Editor' }}
             />
             <Stack.Screen
               name="Preview"
               component={PreviewScreen}
-              options={{ title: 'Preview PDF' }}
+              options={{ title: 'NeltzSocial - PDF Preview' }}
             />
             <Stack.Screen
               name="PDFWorkbench"
               component={PDFWorkbenchScreen}
-              options={{ title: 'PDF Workbench' }}
+              options={{ title: 'NeltzSocial - PDF Workbench' }}
             />
           </Stack.Navigator>
           <StatusBar style="auto" />

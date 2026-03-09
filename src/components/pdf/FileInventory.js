@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
-import { Headline, Button, Card, Text, IconButton, Divider, Surface } from 'react-native-paper';
+import { Button, Text, IconButton, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const FileInventory = ({ files, selectedFileId, onSelectFile, onUploadFile }) => {
@@ -8,51 +8,62 @@ const FileInventory = ({ files, selectedFileId, onSelectFile, onUploadFile }) =>
     const renderItem = ({ item }) => {
         const isSelected = selectedFileId === item.id;
         return (
-            <Card
+            <Surface
                 style={[styles.card, isSelected && styles.selectedCard]}
-                onPress={() => onSelectFile(item.id)}
-                elevation={isSelected ? 4 : 1}
+                onTouchEnd={() => onSelectFile(item.id)}
+                elevation={isSelected ? 2 : 1}
             >
-                <Card.Title
-                    title={item.name}
-                    titleStyle={isSelected ? styles.selectedText : null}
-                    subtitle={`${item.pageCount} Pages`}
-                    left={(props) => <IconButton {...props} icon="file-pdf-box" iconColor={isSelected ? '#6200ee' : '#757575'} />}
-                    right={(props) => isSelected ? <MaterialCommunityIcons {...props} name="check-circle" size={24} color="#6200ee" style={{ marginRight: 16 }} /> : null}
-                />
-            </Card>
+                <View style={styles.cardContent}>
+                    <MaterialCommunityIcons
+                        name="file-pdf-box"
+                        size={24}
+                        color={isSelected ? '#6200ee' : '#757575'}
+                    />
+                    <View style={styles.textContainer}>
+                        <Text variant="labelMedium" numberOfLines={1} style={isSelected ? styles.selectedText : null}>
+                            {item.name}
+                        </Text>
+                        <Text variant="bodySmall" style={{ color: '#757575' }}>
+                            {item.pageCount} pgs
+                        </Text>
+                    </View>
+                    {isSelected && (
+                        <MaterialCommunityIcons name="check-circle" size={18} color="#6200ee" />
+                    )}
+                </View>
+            </Surface>
         );
     };
 
     return (
         <View style={styles.container}>
-            <Headline style={styles.header}>Imported PDFs</Headline>
+            <View style={styles.headerRow}>
+                <Text variant="titleSmall" style={styles.header}>Inventory</Text>
+                <IconButton
+                    icon="plus-circle"
+                    size={20}
+                    iconColor="#6200ee"
+                    onPress={onUploadFile}
+                    style={{ margin: 0 }}
+                />
+            </View>
 
             {Object.keys(files).length === 0 ? (
-                <Surface style={styles.emptyContainer} elevation={0}>
-                    <MaterialCommunityIcons name="file-document-multiple-outline" size={64} color="#bdbdbd" style={{ marginBottom: 16 }} />
-                    <Text variant="titleMedium" style={{ color: '#757575' }}>No PDFs imported yet</Text>
-                    <Text variant="bodyMedium" style={{ color: '#9e9e9e', textAlign: 'center', marginTop: 8 }}>
-                        Tap the button below to select a PDF from your device.
+                <View style={styles.emptyContainer}>
+                    <MaterialCommunityIcons name="folder-open-outline" size={32} color="#bdbdbd" style={{ marginBottom: 8 }} />
+                    <Text variant="bodySmall" style={{ color: '#9e9e9e', textAlign: 'center' }}>
+                        No PDFs.
                     </Text>
-                </Surface>
+                </View>
             ) : (
                 <FlatList
                     data={Object.values(files)}
                     keyExtractor={(item) => item.id}
                     renderItem={renderItem}
-                    ItemSeparatorComponent={Divider}
+                    contentContainerStyle={{ paddingBottom: 8 }}
+                    showsVerticalScrollIndicator={false}
                 />
             )}
-
-            <Button
-                mode="contained"
-                icon="upload"
-                onPress={onUploadFile}
-                style={styles.uploadBtn}
-            >
-                Import PDF
-            </Button>
         </View>
     );
 };
@@ -60,20 +71,37 @@ const FileInventory = ({ files, selectedFileId, onSelectFile, onUploadFile }) =>
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
-        backgroundColor: '#f5f5f5'
+        padding: 6,
+        backgroundColor: '#fff'
+    },
+    headerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4
     },
     header: {
-        marginBottom: 16
+        fontWeight: 'bold',
+        color: '#333'
     },
     card: {
-        marginBottom: 12,
+        marginBottom: 6,
         backgroundColor: '#fff',
-        borderRadius: 12,
+        borderRadius: 6,
+        padding: 6,
+    },
+    cardContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    textContainer: {
+        flex: 1,
+        marginLeft: 6,
+        marginRight: 4
     },
     selectedCard: {
         borderColor: '#6200ee',
-        borderWidth: 2,
+        borderWidth: 1,
         backgroundColor: '#f3e5f5'
     },
     selectedText: {
@@ -84,14 +112,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'transparent',
-        paddingHorizontal: 32
-    },
-    uploadBtn: {
-        marginTop: 16,
-        marginBottom: 32,
-        paddingVertical: 6,
-        borderRadius: 8
     }
 });
 

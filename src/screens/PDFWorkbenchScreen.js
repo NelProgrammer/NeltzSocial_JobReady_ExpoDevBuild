@@ -1,22 +1,80 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
-import { Appbar } from 'react-native-paper';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { Appbar, Text, Button, Surface, ActivityIndicator } from 'react-native-paper';
 import * as DocumentPicker from 'expo-document-picker';
 import { PDFDocument } from 'pdf-lib';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { shareAsync } from 'expo-sharing';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import FileInventory from '../components/pdf/FileInventory';
 import PageSelector from '../components/pdf/PageSelector';
 import BuildList from '../components/pdf/BuildList';
 
-const Tab = createMaterialTopTabNavigator();
-
 const PDFWorkbenchScreen = ({ navigation }) => {
+    const insets = useSafeAreaInsets();
     const [files, setFiles] = useState({});
     const [selectedFileId, setSelectedFileId] = useState(null);
     const [buildList, setBuildList] = useState([]);
+    const [previewBase64, setPreviewBase64] = useState(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [activeSide, setActiveSide] = useState('source'); // 'source' or 'target'
+
+    // Live Preview Generator
+    React.useEffect(() => {
+        let isMounted = true;
+
+        const generateLivePreview = async () => {
+            if (activeSide === 'source') {
+                if (!selectedFileId || !files[selectedFileId]) {
+                    if (isMounted) setPreviewBase64(null);
+                    return;
+                }
+                // Show raw source file
+                if (isMounted) setPreviewBase64(files[selectedFileId].base64);
+                return;
+            }
+
+            // activeSide === 'target'
+            if (buildList.length === 0) {
+                if (isMounted) setPreviewBase64(null);
+                return;
+            }
+            if (isMounted) setIsGenerating(true);
+            try {
+                const newPdfDoc = await PDFDocument.create();
+                const loadedDocs = {};
+
+                for (const item of buildList) {
+                    const file = files[item.fileId];
+                    if (!file) continue;
+
+                    if (!loadedDocs[file.id]) {
+                        loadedDocs[file.id] = await PDFDocument.load(file.base64);
+                    }
+
+                    const sourceDoc = loadedDocs[file.id];
+                    const [copiedPage] = await newPdfDoc.copyPages(sourceDoc, [item.pageIndex]);
+                    newPdfDoc.addPage(copiedPage);
+                }
+
+                const base64Data = await newPdfDoc.saveAsBase64();
+                if (isMounted) setPreviewBase64(base64Data);
+            } catch (error) {
+                console.error("Live Preview Error:", error);
+            } finally {
+                if (isMounted) setIsGenerating(false);
+            }
+        };
+
+        generateLivePreview();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [buildList, files, activeSide, selectedFileId]);
 
     // 1. Upload Logic
     const handleUploadFile = async () => {
@@ -30,7 +88,6 @@ const PDFWorkbenchScreen = ({ navigation }) => {
 
             const asset = result.assets[0];
 
-            // Read file to get page count using pdf-lib
             const fileUri = asset.uri;
             const fileBase64 = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
             const pdfDoc = await PDFDocument.load(fileBase64);
@@ -41,13 +98,12 @@ const PDFWorkbenchScreen = ({ navigation }) => {
                 name: asset.name,
                 uri: fileUri,
                 pageCount: pageCount,
-                base64: fileBase64 // Storing base64 purely for ease of assembly later
+                base64: fileBase64
             };
 
             setFiles(prev => ({ ...prev, [newFile.id]: newFile }));
-            setSelectedFileId(newFile.id); // Auto-select the newly added file
-
-            Alert.alert("Success", `Loaded ${asset.name} (${pageCount} pages)`);
+            setSelectedFileId(newFile.id);
+            setActiveSide('source');
 
         } catch (error) {
             console.error("Error loading PDF:", error);
@@ -55,15 +111,16 @@ const PDFWorkbenchScreen = ({ navigation }) => {
         }
     };
 
-    // 2. Select File Logic (Navigate to Pages Tab)
+    // 2. Select File Logic 
     const handleSelectFile = (fileId) => {
         setSelectedFileId(fileId);
-        // We'll rely on the user swiping or tapping the top tab to move to 'Pages'
+        setActiveSide('source');
     };
 
     // 3. Page Selection Logic
     const handleAddPage = (fileId, pageIndex) => {
         setBuildList(prev => [...prev, { fileId, pageIndex }]);
+        setActiveSide('target');
     };
 
     const handleAddAllPages = (fileId) => {
@@ -72,7 +129,6 @@ const PDFWorkbenchScreen = ({ navigation }) => {
 
         const newPages = [];
         for (let i = 0; i < file.pageCount; i++) {
-            // Only add if not already present
             const isUsed = buildList.some(item => item.fileId === fileId && item.pageIndex === i);
             if (!isUsed) {
                 newPages.push({ fileId, pageIndex: i });
@@ -80,12 +136,16 @@ const PDFWorkbenchScreen = ({ navigation }) => {
         }
 
         setBuildList(prev => [...prev, ...newPages]);
-        Alert.alert("Success", `Added ${newPages.length} pages to the build list.`);
+        setActiveSide('target');
     };
 
     // 4. Build List Management
     const handleRemovePage = (indexToRemove) => {
-        setBuildList(prev => prev.filter((_, idx) => idx !== indexToRemove));
+        setBuildList(prev => {
+            const newList = prev.filter((_, idx) => idx !== indexToRemove);
+            if (newList.length === 0) setActiveSide('source');
+            return newList;
+        });
     };
 
     const handleMoveUp = (index) => {
@@ -95,6 +155,7 @@ const PDFWorkbenchScreen = ({ navigation }) => {
             [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
             return arr;
         });
+        setActiveSide('target');
     };
 
     const handleMoveDown = (index) => {
@@ -104,6 +165,7 @@ const PDFWorkbenchScreen = ({ navigation }) => {
             [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
             return arr;
         });
+        setActiveSide('target');
     };
 
     // 5. Generation Logic
@@ -111,13 +173,9 @@ const PDFWorkbenchScreen = ({ navigation }) => {
         try {
             Alert.alert("Processing", "Generating your combined PDF...");
 
-            // 5a. Create a new empty PDF
             const newPdfDoc = await PDFDocument.create();
-
-            // Cache of loaded source documents to avoid parsing the same base64 multiple times
             const loadedDocs = {};
 
-            // 5b. Iterate through the build list and append pages
             for (const item of buildList) {
                 const file = files[item.fileId];
                 if (!file) continue;
@@ -127,15 +185,12 @@ const PDFWorkbenchScreen = ({ navigation }) => {
                 }
 
                 const sourceDoc = loadedDocs[file.id];
-                // Copy the specific page from the source doc
                 const [copiedPage] = await newPdfDoc.copyPages(sourceDoc, [item.pageIndex]);
                 newPdfDoc.addPage(copiedPage);
             }
 
-            // 5c. Serialize to base64
             const pdfBase64Data = await newPdfDoc.saveAsBase64();
 
-            // 5d. Write to local file system
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const fileUri = `${FileSystem.documentDirectory}Combined_PDF_${timestamp}.pdf`;
 
@@ -143,7 +198,6 @@ const PDFWorkbenchScreen = ({ navigation }) => {
                 encoding: FileSystem.EncodingType.Base64,
             });
 
-            // 5e. Share/Preview the file using Native Share Sheet
             await shareAsync(fileUri, { UTI: '.pdf', mimeType: 'application/pdf' });
 
         } catch (error) {
@@ -152,58 +206,82 @@ const PDFWorkbenchScreen = ({ navigation }) => {
         }
     };
 
-
     return (
-        <View style={styles.container}>
-            <Appbar.Header>
-                <Appbar.BackAction onPress={() => navigation.navigate('Hub')} />
-                <Appbar.Content title="PDF Workbench" />
-            </Appbar.Header>
-
-            <Tab.Navigator
-                screenOptions={{
-                    tabBarActiveTintColor: '#6200ee',
-                    tabBarIndicatorStyle: { backgroundColor: '#6200ee' },
-                    lazy: true,
-                }}
-            >
-                <Tab.Screen name="Files">
-                    {(props) => (
+        <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+            <View style={styles.gridContainer}>
+                {/* Top Half: Inventory (60%) & Pages (40%) */}
+                <View style={styles.topHalf}>
+                    <Surface style={[styles.inventoryPane, activeSide === 'source' && styles.glowSource]} elevation={2}>
                         <FileInventory
-                            {...props}
                             files={files}
                             selectedFileId={selectedFileId}
                             onSelectFile={handleSelectFile}
                             onUploadFile={handleUploadFile}
                         />
-                    )}
-                </Tab.Screen>
-                <Tab.Screen name="Pages">
-                    {(props) => (
+                    </Surface>
+                    <Surface style={[styles.pagesPane, activeSide === 'source' && styles.glowSource]} elevation={2}>
                         <PageSelector
-                            {...props}
                             files={files}
                             selectedFileId={selectedFileId}
                             buildList={buildList}
                             onAddPage={handleAddPage}
                             onAddAllPages={handleAddAllPages}
                         />
-                    )}
-                </Tab.Screen>
-                <Tab.Screen name="Assemble">
-                    {(props) => (
+                    </Surface>
+                </View>
+
+                {/* Bottom Half: Build List (40%) & Live Preview (60%) */}
+                <View style={styles.bottomHalf}>
+                    <Surface style={[styles.buildListPane, activeSide === 'target' && styles.glowTarget]} elevation={2} onTouchEnd={() => { if (buildList.length > 0) setActiveSide('target') }}>
                         <BuildList
-                            {...props}
                             files={files}
                             buildList={buildList}
                             onRemovePage={handleRemovePage}
                             onMoveUp={handleMoveUp}
                             onMoveDown={handleMoveDown}
-                            onGeneratePDF={handleGeneratePDF}
                         />
-                    )}
-                </Tab.Screen>
-            </Tab.Navigator>
+                    </Surface>
+
+                    <Surface style={[styles.previewPane, activeSide === 'source' && styles.glowSource, activeSide === 'target' && styles.glowTarget]} elevation={2}>
+                        <Text variant="titleSmall" style={[styles.paneHeader, activeSide === 'source' ? { color: '#0288d1' } : { color: '#388e3c' }]}>
+                            {activeSide === 'source' ? 'Source Preview' : 'Draft Preview'}
+                        </Text>
+
+                        <View style={styles.previewBox}>
+                            {previewBase64 === null ? (
+                                <>
+                                    <MaterialCommunityIcons name="file-pdf-box" size={64} color="#bdbdbd" />
+                                    <Text variant="bodyMedium" style={{ marginTop: 8, color: '#757575' }}>
+                                        {activeSide === 'source' ? 'No PDF Selected' : 'No Pages Added'}
+                                    </Text>
+                                </>
+                            ) : isGenerating ? (
+                                <ActivityIndicator animating={true} color="#6200ee" size="large" />
+                            ) : previewBase64 ? (
+                                <WebView
+                                    originWhitelist={['*']}
+                                    source={{ html: `<html><body style="margin:0;padding:0;background-color:#525659;"><iframe src="data:application/pdf;base64,${previewBase64}" width="100%" height="100%" frameborder="0"></iframe></body></html>` }}
+                                    style={{ flex: 1, width: '100%', height: '100%', borderRadius: 8, overflow: 'hidden' }}
+                                    scrollEnabled={false}
+                                    nestedScrollEnabled={true}
+                                />
+                            ) : (
+                                <MaterialCommunityIcons name="alert-circle-outline" size={64} color="#ff5252" />
+                            )}
+                        </View>
+
+                        <Button
+                            mode="contained"
+                            icon="export"
+                            onPress={handleGeneratePDF}
+                            disabled={buildList.length === 0}
+                            style={styles.exportBtn}
+                        >
+                            Export PDF
+                        </Button>
+                    </Surface>
+                </View>
+            </View>
         </View>
     );
 };
@@ -211,7 +289,80 @@ const PDFWorkbenchScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        backgroundColor: '#e0e0e0', // acts as grid gap color
+    },
+    gridContainer: {
+        flex: 1,
+        padding: 6,
+        gap: 6,
+    },
+    topHalf: {
+        flex: 4,
+        flexDirection: 'row',
+        gap: 6,
+    },
+    bottomHalf: {
+        flex: 6,
+        flexDirection: 'row',
+        gap: 6,
+    },
+    inventoryPane: {
+        flex: 6,
+        borderRadius: 8,
+        overflow: 'hidden',
         backgroundColor: '#fff',
+        borderWidth: 2,
+        borderColor: 'transparent'
+    },
+    pagesPane: {
+        flex: 4,
+        borderRadius: 8,
+        overflow: 'hidden',
+        backgroundColor: '#fff',
+        borderWidth: 2,
+        borderColor: 'transparent'
+    },
+    buildListPane: {
+        flex: 4,
+        borderRadius: 8,
+        overflow: 'hidden',
+        backgroundColor: '#fff',
+        borderWidth: 2,
+        borderColor: 'transparent'
+    },
+    previewPane: {
+        flex: 6,
+        borderRadius: 8,
+        overflow: 'hidden',
+        backgroundColor: '#fff',
+        padding: 8,
+        justifyContent: 'space-between',
+        borderWidth: 2,
+        borderColor: 'transparent'
+    },
+    paneHeader: {
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 8
+    },
+    previewBox: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#e0e0e0',
+        borderRadius: 8,
+        overflow: 'hidden',
+        marginBottom: 8
+    },
+    exportBtn: {
+        borderRadius: 8,
+        paddingVertical: 4
+    },
+    glowSource: {
+        borderColor: '#0288d1', // Light Blue 700
+    },
+    glowTarget: {
+        borderColor: '#388e3c', // Green 700
     }
 });
 
