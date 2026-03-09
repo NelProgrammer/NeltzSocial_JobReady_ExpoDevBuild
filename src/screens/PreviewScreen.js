@@ -3,6 +3,7 @@ import { View, StyleSheet, Alert, ScrollView } from 'react-native';
 import { Button, Appbar, SegmentedButtons } from 'react-native-paper';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
+import * as FileSystem from 'expo-file-system/legacy';
 import { ResumeContext } from '../context/ResumeContext';
 
 const PreviewScreen = ({ navigation }) => {
@@ -149,7 +150,40 @@ const PreviewScreen = ({ navigation }) => {
         try {
             const html = generateHtml();
             const { uri } = await Print.printToFileAsync({ html, width: 612, height: 792 }); // Letter size
-            await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+
+            // Generate filename with format My_Resume_+CCYY-MM-DD HH-MM-SS-MS
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const ms = String(now.getMilliseconds()).padStart(3, '0');
+
+            const fileName = `My_Resume_${year}-${month}-${day} ${hours}-${minutes}-${seconds}-${ms}.pdf`;
+
+            // expo-print generates a random filename. We move it to a new path with our custom name 
+            // so the share sheet recognizes the right filename.
+            const newUri = `${FileSystem.cacheDirectory}${fileName}`;
+
+            // Delete if a file with the same name already exists to prevent errors
+            const fileInfo = await FileSystem.getInfoAsync(newUri);
+            if (fileInfo.exists) {
+                await FileSystem.deleteAsync(newUri);
+            }
+
+            await FileSystem.moveAsync({
+                from: uri,
+                to: newUri
+            });
+
+            await shareAsync(newUri, {
+                UTI: '.pdf',
+                mimeType: 'application/pdf',
+                dialogTitle: `Share ${fileName}`
+            });
+
         } catch (error) {
             Alert.alert("Error", "Could not generate PDF");
             console.error(error);

@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Headline, Subheading, Button, Card, IconButton, Divider } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
 
@@ -51,93 +51,99 @@ const Education = () => {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <Headline style={{ marginBottom: 10 }}>Education</Headline>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+        >
+            <ScrollView showsVerticalScrollIndicator={false}>
+                <Headline style={{ marginBottom: 10 }}>Education</Headline>
 
-            {/* High School Section */}
-            <Card style={styles.card}>
-                <Card.Title title="High School" left={(props) => <IconButton {...props} icon="school" />} />
-                <Card.Content>
-                    <TextInput
-                        label="School Name/Province"
-                        value={highschool["Province Department"]}
-                        onChangeText={(text) => updateHighSchool("Province Department", text)}
-                        style={styles.input}
-                    />
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                {/* High School Section */}
+                <Card style={styles.card}>
+                    <Card.Title title="High School" left={(props) => <IconButton {...props} icon="school" />} />
+                    <Card.Content>
                         <TextInput
-                            label="Year Completed"
-                            value={String(highschool["Year Completed"] || '')}
-                            onChangeText={(text) => updateHighSchool("Year Completed", text)}
-                            style={[styles.input, { flex: 1, marginRight: 5 }]}
-                            keyboardType="numeric"
+                            label="School Name/Province"
+                            value={highschool["Province Department"]}
+                            onChangeText={(text) => updateHighSchool("Province Department", text)}
+                            style={styles.input}
                         />
-                        <TextInput
-                            label="Highest Grade"
-                            value={highschool["Highest Grade/Std"]}
-                            onChangeText={(text) => updateHighSchool("Highest Grade/Std", text)}
-                            style={[styles.input, { flex: 1, marginLeft: 5 }]}
-                        />
-                    </View>
-                </Card.Content>
-            </Card>
-
-            <Divider style={{ marginVertical: 15 }} />
-            <Subheading style={{ marginBottom: 10, marginLeft: 5 }}>Tertiary Education</Subheading>
-
-            {/* Tertiary Repeater */}
-            {tertiary.map((qual, index) => (
-                <Card key={index} style={styles.card}>
-                    <Card.Title
-                        title={qual.Institution || "New Institution"}
-                        subtitle={qual["Qualification Name"] || "Qualification"}
-                        left={(props) => <IconButton {...props} icon="book-education" />}
-                        right={(props) => (
-                            <View style={{ flexDirection: 'row' }}>
-                                <IconButton {...props} icon={expandedTertiaryIndex === index ? "chevron-up" : "chevron-down"} onPress={() => setExpandedTertiaryIndex(expandedTertiaryIndex === index ? null : index)} />
-                                <IconButton {...props} icon="delete" onPress={() => removeTertiary(index)} />
-                            </View>
-                        )}
-                    />
-                    {expandedTertiaryIndex === index && (
-                        <Card.Content>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <TextInput
-                                label="Institution"
-                                value={qual.Institution}
-                                onChangeText={(text) => updateTertiary(index, 'Institution', text)}
-                                style={styles.input}
+                                label="Year Completed"
+                                value={String(highschool["Year Completed"] || '')}
+                                onChangeText={(text) => updateHighSchool("Year Completed", text)}
+                                style={[styles.input, { flex: 1, marginRight: 5 }]}
+                                keyboardType="numeric"
                             />
                             <TextInput
-                                label="Qualification Name"
-                                value={qual["Qualification Name"]}
-                                onChangeText={(text) => updateTertiary(index, 'Qualification Name', text)}
-                                style={styles.input}
+                                label="Highest Grade"
+                                value={highschool["Highest Grade/Std"]}
+                                onChangeText={(text) => updateHighSchool("Highest Grade/Std", text)}
+                                style={[styles.input, { flex: 1, marginLeft: 5 }]}
                             />
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                <TextInput
-                                    label="Year"
-                                    value={String(qual.Year || '')}
-                                    onChangeText={(text) => updateTertiary(index, 'Year', text)}
-                                    style={[styles.input, { flex: 1, marginRight: 5 }]}
-                                    keyboardType="numeric"
-                                />
-                                <TextInput
-                                    label="NQF Level"
-                                    value={String(qual["NQF Level"] || '')}
-                                    onChangeText={(text) => updateTertiary(index, 'NQF Level', text)}
-                                    style={[styles.input, { flex: 1, marginLeft: 5 }]}
-                                />
-                            </View>
-                        </Card.Content>
-                    )}
+                        </View>
+                    </Card.Content>
                 </Card>
-            ))}
 
-            <Button mode="contained" icon="plus" onPress={addTertiary} style={styles.addButton}>
-                Add Qualification
-            </Button>
-            <View style={{ height: 50 }} />
-        </ScrollView>
+                <Divider style={{ marginVertical: 15 }} />
+                <Subheading style={{ marginBottom: 10, marginLeft: 5 }}>Tertiary Education</Subheading>
+
+                {/* Tertiary Repeater */}
+                {tertiary.map((qual, index) => (
+                    <Card key={index} style={styles.card}>
+                        <Card.Title
+                            title={qual.Institution || "New Institution"}
+                            subtitle={qual["Qualification Name"] || "Qualification"}
+                            left={(props) => <IconButton {...props} icon="book-education" />}
+                            right={(props) => (
+                                <View style={{ flexDirection: 'row' }}>
+                                    <IconButton {...props} icon={expandedTertiaryIndex === index ? "chevron-up" : "chevron-down"} onPress={() => setExpandedTertiaryIndex(expandedTertiaryIndex === index ? null : index)} />
+                                    <IconButton {...props} icon="delete" onPress={() => removeTertiary(index)} />
+                                </View>
+                            )}
+                        />
+                        {expandedTertiaryIndex === index && (
+                            <Card.Content>
+                                <TextInput
+                                    label="Institution"
+                                    value={qual.Institution}
+                                    onChangeText={(text) => updateTertiary(index, 'Institution', text)}
+                                    style={styles.input}
+                                />
+                                <TextInput
+                                    label="Qualification Name"
+                                    value={qual["Qualification Name"]}
+                                    onChangeText={(text) => updateTertiary(index, 'Qualification Name', text)}
+                                    style={styles.input}
+                                />
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                    <TextInput
+                                        label="Year"
+                                        value={String(qual.Year || '')}
+                                        onChangeText={(text) => updateTertiary(index, 'Year', text)}
+                                        style={[styles.input, { flex: 1, marginRight: 5 }]}
+                                        keyboardType="numeric"
+                                    />
+                                    <TextInput
+                                        label="NQF Level"
+                                        value={String(qual["NQF Level"] || '')}
+                                        onChangeText={(text) => updateTertiary(index, 'NQF Level', text)}
+                                        style={[styles.input, { flex: 1, marginLeft: 5 }]}
+                                    />
+                                </View>
+                            </Card.Content>
+                        )}
+                    </Card>
+                ))}
+
+                <Button mode="contained" icon="plus" onPress={addTertiary} style={styles.addButton}>
+                    Add Qualification
+                </Button>
+                <View style={{ height: 50 }} />
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 };
 

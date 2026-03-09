@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { ScrollView, View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Headline, Subheading } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
 
@@ -21,55 +21,61 @@ const PersonalDetails = () => {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <Headline>Personal Details</Headline>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+        >
+            <ScrollView showsVerticalScrollIndicator={false}>
+                <Headline>Personal Details</Headline>
 
-            <Subheading style={styles.header}>Names</Subheading>
-            <TextInput
-                label="First Name"
-                value={names.firstName}
-                onChangeText={(text) => updateField('names', 'firstName', text)}
-                style={styles.input}
-            />
-            <TextInput
-                label="Surname"
-                value={names.Surname}
-                onChangeText={(text) => updateField('names', 'Surname', text)}
-                style={styles.input}
-            />
-            <TextInput
-                label="Title (Mr/Mrs/etc)"
-                value={names.Prefix}
-                onChangeText={(text) => updateField('names', 'Prefix', text)}
-                style={styles.input}
-            />
+                <Subheading style={styles.header}>Names</Subheading>
+                <TextInput
+                    label="First Name"
+                    value={names.firstName}
+                    onChangeText={(text) => updateField('names', 'firstName', text)}
+                    style={styles.input}
+                />
+                <TextInput
+                    label="Surname"
+                    value={names.Surname}
+                    onChangeText={(text) => updateField('names', 'Surname', text)}
+                    style={styles.input}
+                />
+                <TextInput
+                    label="Title (Mr/Mrs/etc)"
+                    value={names.Prefix}
+                    onChangeText={(text) => updateField('names', 'Prefix', text)}
+                    style={styles.input}
+                />
 
-            <Subheading style={styles.header}>Contact</Subheading>
-            <TextInput
-                label="Email"
-                value={contact.Email}
-                onChangeText={(text) => updateField('contact', 'Email', text)}
-                style={styles.input}
-                keyboardType="email-address"
-            />
-            <TextInput
-                label="Phone"
-                value={contact.Phone}
-                onChangeText={(text) => updateField('contact', 'Phone', text)}
-                style={styles.input}
-                keyboardType="phone-pad"
-            />
+                <Subheading style={styles.header}>Contact</Subheading>
+                <TextInput
+                    label="Email"
+                    value={contact.Email}
+                    onChangeText={(text) => updateField('contact', 'Email', text)}
+                    style={styles.input}
+                    keyboardType="email-address"
+                />
+                <TextInput
+                    label="Phone"
+                    value={contact.Phone}
+                    onChangeText={(text) => updateField('contact', 'Phone', text)}
+                    style={styles.input}
+                    keyboardType="phone-pad"
+                />
 
-            <Subheading style={styles.header}>Identity</Subheading>
-            <TextInput
-                label="ID Number"
-                value={identity.idNumber}
-                onChangeText={(text) => updateField('identity', 'idNumber', text)}
-                style={styles.input}
-                keyboardType="numeric"
-            />
+                <Subheading style={styles.header}>Identity</Subheading>
+                <TextInput
+                    label="ID Number"
+                    value={identity.idNumber}
+                    onChangeText={(text) => updateField('identity', 'idNumber', text)}
+                    style={styles.input}
+                    keyboardType="numeric"
+                />
 
-        </ScrollView>
+            </ScrollView>
+        </KeyboardAvoidingView>
     );
 };
 
