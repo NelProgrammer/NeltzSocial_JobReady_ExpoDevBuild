@@ -50,9 +50,10 @@ const References = () => {
         <KeyboardAwareScrollView
             style={styles.container}
             enableOnAndroid={true}
-            extraScrollHeight={20}
+            extraScrollHeight={100}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ padding: 10, paddingBottom: 120, flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
         >
             <Headline style={{ marginBottom: 10 }}>References</Headline>
 
@@ -126,7 +127,7 @@ const References = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 10, backgroundColor: '#f5f5f5' },
+    container: { flex: 1, backgroundColor: '#f5f5f5' },
     card: { marginBottom: 10 },
     input: { marginBottom: 10, backgroundColor: '#fff', fontSize: 14 },
     addButton: { marginTop: 10, marginBottom: 20 }

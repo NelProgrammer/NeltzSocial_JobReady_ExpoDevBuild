@@ -25,9 +25,10 @@ const PersonalDetails = () => {
         <KeyboardAwareScrollView
             style={styles.container}
             enableOnAndroid={true}
-            extraScrollHeight={20}
+            extraScrollHeight={100}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 100 }}
+            contentContainerStyle={{ padding: 20, paddingBottom: 120, flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
         >
             <Headline>Personal Details</Headline>
 
@@ -81,7 +82,7 @@ const PersonalDetails = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+    container: { flex: 1, backgroundColor: '#fff' },
     input: { marginBottom: 15, backgroundColor: '#fff' },
     header: { marginTop: 10, marginBottom: 5, fontWeight: 'bold' }
 });
