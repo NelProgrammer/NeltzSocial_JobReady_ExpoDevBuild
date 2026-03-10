@@ -31,7 +31,14 @@ export const ResumeProvider = ({ children }) => {
         // Default Schema from Pseudo_Plan_Resume.md
         const initialData = {
             "personal details": {
-                names: {}, identity: {}, contact: {}, address: {}, licensing: {}, demographics: {}, legal: {}, languages: []
+                names: { firstName: "", MiddleName: "", MaidenName: "", Surname: "", Prefix: "" },
+                identity: { idNumber: "", idMask: true },
+                contact: { Phone: "", "Phone-alt": "", Email: "", LinkedIn: "", Website: "" },
+                address: { "Home Address": "", AddressFormat: "comma" },
+                licensing: { Drivers: "None", DriversVisible: false, Motorcycle: "None", MotorVisible: false },
+                demographics: { Gender: "None", Race: "Other", Nationality: "" },
+                legal: { "Criminal Record": false, Details: "" },
+                languages: []
             },
             "professional summary": "",
             experience: [],

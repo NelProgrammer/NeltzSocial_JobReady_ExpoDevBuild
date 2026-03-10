@@ -24,6 +24,28 @@ const PreviewScreen = ({ navigation }) => {
         const names = pd?.names || {};
         const contact = pd?.contact || {};
         const address = pd?.address || {};
+        const identity = pd?.identity || {};
+        const licensing = pd?.licensing || {};
+        const demographics = pd?.demographics || {};
+        const legal = pd?.legal || {};
+        const languages = pd?.languages || [];
+
+        // Formatting Helpers
+        const formatAddress = (addrStr) => {
+            if (!addrStr) return '';
+            if (address.AddressFormat === 'list') {
+                return addrStr.replace(/\n/g, '<br/>');
+            }
+            return addrStr.replace(/\n/g, ', ');
+        };
+
+        const maskId = (idStr) => {
+            if (!idStr) return '';
+            if (identity.idMask !== false && idStr.length >= 6) {
+                return `${idStr.substring(0, 6)} **** ***`;
+            }
+            return idStr;
+        };
 
         // CSS Styles
         const styles = `
@@ -49,27 +71,58 @@ const PreviewScreen = ({ navigation }) => {
             
             .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
             .ref-item { font-size: 14px; }
+            
+            .meta-section { margin-top: 15px; font-size: 13px; color: #444; }
+            .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
+            .meta-item strong { display: inline-block; width: 120px; color: #555; }
         `;
 
         const headerHtml = Layout === 'modern' ? `
             <div class="header-mod">
-                <h1>${names.firstName || ''} ${names.Surname || ''}</h1>
+                <h1>${names.Prefix ? names.Prefix + ' ' : ''}${names.firstName || ''} ${names.MiddleName ? names.MiddleName + ' ' : ''}${names.Surname || ''}</h1>
                 <div class="contact-info">
                     ${contact.Email ? `📧 ${contact.Email} | ` : ''} 
                     ${contact.Phone ? `📱 ${contact.Phone} | ` : ''} 
-                    ${address.Address ? `📍 ${address.Address.replace(/\n/g, ', ')}` : ''}
+                    ${contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]} | ` : ''} 
+                    ${contact.LinkedIn ? `🔗 ${contact.LinkedIn} | ` : ''} 
+                    ${contact.Website ? `🌐 ${contact.Website} | ` : ''} 
+                    ${address["Home Address"] ? `📍 ${formatAddress(address["Home Address"])}` : ''}
                 </div>
             </div>
         ` : `
             <div class="header-pro">
-                <h1>${names.firstName || ''} ${names.Surname || ''}</h1>
+                <h1>${names.Prefix ? names.Prefix + ' ' : ''}${names.firstName || ''} ${names.MiddleName ? names.MiddleName + ' ' : ''}${names.Surname || ''}</h1>
                 <div class="contact-info">
                     ${contact.Email ? `📧 ${contact.Email} &nbsp;|&nbsp;` : ''} 
                     ${contact.Phone ? `📱 ${contact.Phone} &nbsp;|&nbsp;` : ''} 
-                    ${address.Address ? `📍 ${address.Address.replace(/\n/g, ', ')}` : ''}
+                    ${contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]} &nbsp;|&nbsp;` : ''} 
+                    ${contact.LinkedIn ? `🔗 ${contact.LinkedIn} &nbsp;|&nbsp;` : ''} 
+                    ${contact.Website ? `🌐 ${contact.Website} &nbsp;|&nbsp;` : ''} 
+                    ${address["Home Address"] ? `📍 ${formatAddress(address["Home Address"])}` : ''}
                 </div>
             </div>
         `;
+
+        const identityHtml = identity.idNumber || demographics.Nationality || (licensing.Drivers && licensing.DriversVisible) || (licensing.Motorcycle && licensing.MotorVisible) || (legal["Criminal Record"]) ? `
+            <div class="meta-section">
+                <div class="meta-grid">
+                    ${identity.idNumber ? `<div class="meta-item"><strong>ID Number:</strong> ${maskId(identity.idNumber)}</div>` : ''}
+                    ${demographics.Nationality ? `<div class="meta-item"><strong>Nationality:</strong> ${demographics.Nationality}</div>` : ''}
+                    ${demographics.Gender && demographics.Gender !== 'None' ? `<div class="meta-item"><strong>Gender:</strong> ${demographics.Gender}</div>` : ''}
+                    ${demographics.Race && demographics.Race !== 'Other' ? `<div class="meta-item"><strong>Race:</strong> ${demographics.Race}</div>` : ''}
+                    ${licensing.DriversVisible && licensing.Drivers !== 'None' ? `<div class="meta-item"><strong>Drivers License:</strong> ${licensing.Drivers}</div>` : ''}
+                    ${licensing.MotorVisible && licensing.Motorcycle !== 'None' ? `<div class="meta-item"><strong>Motorcycle:</strong> ${licensing.Motorcycle}</div>` : ''}
+                    ${legal["Criminal Record"] ? `<div class="meta-item"><strong>Criminal Record:</strong> Yes ${legal.Details ? `(${legal.Details})` : ''}</div>` : ''}
+                </div>
+            </div>
+        ` : '';
+
+        const langHtml = languages.length > 0 ? `
+            <h3>Languages</h3>
+            <ul>
+                ${languages.filter(l => l.visible !== false).map(l => `<li><strong>${l.Language}:</strong> ${l.proficiency}</li>`).join('')}
+            </ul>
+        ` : '';
 
         const expHtml = expList && expList.length > 0 ? `
             <h3>Professional Experience</h3>
@@ -134,10 +187,12 @@ const PreviewScreen = ({ navigation }) => {
             <body>
                 <div class="container">
                     ${headerHtml}
+                    ${identityHtml}
                     ${summary ? `<h3>Executive Summary</h3><p>${summary}</p>` : ''}
                     ${expHtml}
                     ${eduHtml}
                     ${skillsHtml}
+                    ${langHtml}
                     ${refHtml}
                 </div>
             </body>
