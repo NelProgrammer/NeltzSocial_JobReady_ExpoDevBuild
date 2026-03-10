@@ -1,14 +1,18 @@
-import React, { useContext, useState } from 'react';
-import { View, StyleSheet, Alert, ScrollView } from 'react-native';
-import { Button, Appbar, SegmentedButtons } from 'react-native-paper';
+import React, { useContext, useState, useEffect } from 'react';
+import { View, StyleSheet, Alert, ScrollView, TouchableOpacity } from 'react-native';
+import { Button, Appbar, Text, Card } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
+import { WebView } from 'react-native-webview';
 import { ResumeContext } from '../context/ResumeContext';
 
 const PreviewScreen = ({ navigation }) => {
     const { resumeData, updateResumeData } = useContext(ResumeContext);
     const [loading, setLoading] = useState(false);
+    const [exportFormat, setExportFormat] = useState('word_layout');
+    const insets = useSafeAreaInsets();
 
     // Layout State (Saved in Resume Data)
     const currentLayout = resumeData?.Layout || 'professional';
@@ -247,42 +251,122 @@ const PreviewScreen = ({ navigation }) => {
         }
     };
 
+    useEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <Appbar.Action
+                    icon="share-variant"
+                    onPress={() => {
+                        if (exportFormat === 'pdf') {
+                            printToFile();
+                        } else {
+                            Alert.alert('Coming Soon', `${exportFormat === 'word_text' ? 'Word (Text)' : 'Word (Layout)'} Export will be available soon.`);
+                        }
+                    }}
+                />
+            ),
+        });
+    }, [navigation, exportFormat, resumeData]);
+
     return (
         <View style={styles.container}>
-            <Appbar.Header>
-                <Appbar.BackAction onPress={() => navigation.goBack()} />
-                <Appbar.Content title="Preview & Export" />
-                <Appbar.Action icon="share-variant" onPress={printToFile} />
-            </Appbar.Header>
-            <View style={{ padding: 20 }}>
-                <SegmentedButtons
-                    value={currentLayout}
-                    onValueChange={changeLayout}
-                    buttons={[
-                        { value: 'professional', label: 'Professional' },
-                        { value: 'modern', label: 'Modern' },
-                    ]}
-                    style={{ marginBottom: 20 }}
+            <View style={styles.topContainer}>
+                <Text style={styles.sectionTitle}>Select CV Format (Layout)</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.layoutScroll}>
+                    <TouchableOpacity onPress={() => changeLayout('professional')}>
+                        <Card style={[styles.layoutCard, currentLayout === 'professional' && styles.activeCard]}>
+                            <Card.Content style={styles.cardContent}>
+                                <Text style={[styles.layoutText, currentLayout === 'professional' && styles.activeText]}>Professional</Text>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => changeLayout('modern')}>
+                        <Card style={[styles.layoutCard, currentLayout === 'modern' && styles.activeCard]}>
+                            <Card.Content style={styles.cardContent}>
+                                <Text style={[styles.layoutText, currentLayout === 'modern' && styles.activeText]}>Modern</Text>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => changeLayout('minimalist')}>
+                        <Card style={[styles.layoutCard, currentLayout === 'minimalist' && styles.activeCard]}>
+                            <Card.Content style={styles.cardContent}>
+                                <Text style={[styles.layoutText, currentLayout === 'minimalist' && styles.activeText]}>Minimalist</Text>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
+                </ScrollView>
+            </View>
+
+            <View style={styles.previewArea}>
+                <WebView
+                    originWhitelist={['*']}
+                    source={{ html: generateHtml() }}
+                    style={{ flex: 1, width: '100%', backgroundColor: '#f5f5f5' }}
+                    showsVerticalScrollIndicator={false}
+                    javaScriptEnabled={true}
+                    domStorageEnabled={true}
                 />
             </View>
-            <ScrollView contentContainerStyle={styles.content}>
-                <View style={styles.previewPlaceholder}>
-                    <Button mode="contained" onPress={printToFile} loading={loading} contentStyle={{ height: 50 }}>
-                        Generate PDF
-                    </Button>
-                    <Button mode="text" onPress={() => Alert.alert("Tip", "Press 'Generate' to create the PDF file. You can then view, save, or share it.")} style={{ marginTop: 10 }}>
-                        How does this work?
-                    </Button>
+
+            <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 15) }]}>
+                <Text style={styles.sectionTitle}>Select Export Format</Text>
+                <View style={{ flexDirection: 'row', marginBottom: 15 }}>
+                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setExportFormat('pdf')}>
+                        <Card style={[styles.layoutCard, exportFormat === 'pdf' && styles.activeCard]}>
+                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 5 }]}>
+                                <Text style={[styles.layoutText, exportFormat === 'pdf' && styles.activeText, { textAlign: 'center' }]}>PDF</Text>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setExportFormat('word_text')}>
+                        <Card style={[styles.layoutCard, exportFormat === 'word_text' && styles.activeCard]}>
+                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 5 }]}>
+                                <Text style={[styles.layoutText, exportFormat === 'word_text' && styles.activeText, { textAlign: 'center' }]}>Word (Text)</Text>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setExportFormat('word_layout')}>
+                        <Card style={[styles.layoutCard, exportFormat === 'word_layout' && styles.activeCard, { marginRight: 0 }]}>
+                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 5 }]}>
+                                <Text style={[styles.layoutText, exportFormat === 'word_layout' && styles.activeText, { textAlign: 'center' }]}>Word (Layout)</Text>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
                 </View>
-            </ScrollView>
+                <Button
+                    mode="contained"
+                    icon={exportFormat === 'pdf' ? "file-pdf-box" : "file-word-box"}
+                    onPress={() => {
+                        if (exportFormat === 'pdf') {
+                            printToFile();
+                        } else {
+                            Alert.alert('Coming Soon', `${exportFormat === 'word_text' ? 'Word (Text)' : 'Word (Layout)'} Export will be available soon.`);
+                        }
+                    }}
+                    loading={loading && exportFormat === 'pdf'}
+                    style={styles.exportBtn}
+                    contentStyle={{ height: 50 }}
+                >
+                    Generate File / Export
+                </Button>
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
-    content: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    previewPlaceholder: { alignItems: 'center', padding: 20 }
+    container: { flex: 1, backgroundColor: '#f5f5f5' },
+    topContainer: { backgroundColor: '#fff', paddingHorizontal: 15, paddingTop: 5, paddingBottom: 10, borderBottomWidth: 1, borderColor: '#eee', elevation: 2 },
+    sectionTitle: { fontSize: 11, fontWeight: 'bold', marginBottom: 8, color: '#777', textTransform: 'uppercase' },
+    layoutScroll: { paddingBottom: 5 },
+    layoutCard: { marginRight: 10, backgroundColor: '#f9f9f9', borderWidth: 2, borderColor: 'transparent', borderRadius: 8 },
+    activeCard: { borderColor: '#6200ee', backgroundColor: '#efe9ff' },
+    cardContent: { paddingVertical: 10, paddingHorizontal: 15 },
+    layoutText: { fontWeight: 'bold', color: '#555' },
+    activeText: { color: '#6200ee' },
+    previewArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    bottomContainer: { backgroundColor: '#fff', padding: 15, borderTopWidth: 1, borderColor: '#eee', elevation: 15, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+    exportBtn: { borderRadius: 8 }
 });
 
 export default PreviewScreen;

@@ -36,7 +36,7 @@ export default function App() {
             <Stack.Screen
               name="Preview"
               component={PreviewScreen}
-              options={{ title: 'NeltzSocial - PDF Preview' }}
+              options={{ title: 'NeltzSocial - Preview & Export' }}
             />
             <Stack.Screen
               name="PDFWorkbench"
