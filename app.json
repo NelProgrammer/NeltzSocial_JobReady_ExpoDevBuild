@@ -31,9 +31,10 @@
       "expo-dev-client",
       "expo-asset"
     ],
+    "owner": "neltheprogrammer",
     "extra": {
       "eas": {
-        "projectId": "ed0861ae-35fc-4303-b074-f4540719c9e6"
+        "projectId": "278edebe-3dfd-498c-a4be-083c909798a8"
       }
     }
   }
