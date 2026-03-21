@@ -66,7 +66,13 @@ const PreviewScreen = ({ navigation }) => {
             .header-mod h1 { margin: 0; font-size: 36px; }
             .header-mod .contact-info { color: #ecf0f1; margin-top: 10px; }
 
+            /* Minimalist Header */
+            .header-min { text-align: center; margin-bottom: 40px; }
+            .header-min h1 { margin: 0; font-size: 28px; font-weight: 300; border-bottom: 1px solid #ddd; padding-bottom: 10px; display: inline-block; }
+            .header-min .contact-info { margin-top: 15px; font-size: 12px; color: #777; }
+
             h3 { color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 25px; text-transform: uppercase; font-size: 16px; letter-spacing: 1px; }
+            .min-h3 { border: none; text-align: center; color: #888; font-weight: normal; margin-top: 40px; }
             
             .job-item, .edu-item { margin-bottom: 15px; }
             .job-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; }
@@ -81,34 +87,51 @@ const PreviewScreen = ({ navigation }) => {
             .meta-item strong { display: inline-block; width: 120px; color: #555; }
         `;
 
-        const headerHtml = Layout === 'modern' ? `
-            <div class="header-mod">
-                <h1>${names.Prefix ? names.Prefix + ' ' : ''}${names.firstName || ''} ${names.MiddleName ? names.MiddleName + ' ' : ''}${names.Surname || ''}</h1>
-                <div class="contact-info">
-                    ${contact.Email ? `📧 ${contact.Email} | ` : ''} 
-                    ${contact.Phone ? `📱 ${contact.Phone} | ` : ''} 
-                    ${contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]} | ` : ''} 
-                    ${contact.LinkedIn ? `🔗 ${contact.LinkedIn} | ` : ''} 
-                    ${contact.Website ? `🌐 ${contact.Website} | ` : ''} 
-                    ${address["Home Address"] ? `📍 ${formatAddress(address["Home Address"])}` : ''}
+        let headerHtml = '';
+        if (Layout === 'modern') {
+            headerHtml = `
+                <div class="header-mod">
+                    <h1>${names.Prefix ? names.Prefix + ' ' : ''}${names.firstName || ''} ${names.MiddleName ? names.MiddleName + ' ' : ''}${names.Surname || ''}</h1>
+                    <div class="contact-info">
+                        ${contact.Email ? `📧 ${contact.Email} | ` : ''} 
+                        ${contact.Phone ? `📱 ${contact.Phone} | ` : ''} 
+                        ${contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]} | ` : ''} 
+                        ${contact.LinkedIn ? `🔗 ${contact.LinkedIn} | ` : ''} 
+                        ${contact.Website ? `🌐 ${contact.Website} | ` : ''} 
+                        ${address["Home Address"] ? `📍 ${formatAddress(address["Home Address"])}` : ''}
+                    </div>
                 </div>
-            </div>
-        ` : `
-            <div class="header-pro">
-                <h1>${names.Prefix ? names.Prefix + ' ' : ''}${names.firstName || ''} ${names.MiddleName ? names.MiddleName + ' ' : ''}${names.Surname || ''}</h1>
-                <div class="contact-info">
-                    ${contact.Email ? `📧 ${contact.Email} &nbsp;|&nbsp;` : ''} 
-                    ${contact.Phone ? `📱 ${contact.Phone} &nbsp;|&nbsp;` : ''} 
-                    ${contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]} &nbsp;|&nbsp;` : ''} 
-                    ${contact.LinkedIn ? `🔗 ${contact.LinkedIn} &nbsp;|&nbsp;` : ''} 
-                    ${contact.Website ? `🌐 ${contact.Website} &nbsp;|&nbsp;` : ''} 
-                    ${address["Home Address"] ? `📍 ${formatAddress(address["Home Address"])}` : ''}
+            `;
+        } else if (Layout === 'minimalist') {
+            headerHtml = `
+                <div class="header-min">
+                    <h1>${names.firstName || ''} ${names.Surname || ''}</h1>
+                    <div class="contact-info">
+                        ${contact.Email || ''} &bull; ${contact.Phone || ''} &bull; ${address["Home Address"] ? formatAddress(address["Home Address"]) : ''}
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            headerHtml = `
+                <div class="header-pro">
+                    <h1>${names.Prefix ? names.Prefix + ' ' : ''}${names.firstName || ''} ${names.MiddleName ? names.MiddleName + ' ' : ''}${names.Surname || ''}</h1>
+                    <div class="contact-info">
+                        ${contact.Email ? `📧 ${contact.Email} &nbsp;|&nbsp;` : ''} 
+                        ${contact.Phone ? `📱 ${contact.Phone} &nbsp;|&nbsp;` : ''} 
+                        ${contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]} &nbsp;|&nbsp;` : ''} 
+                        ${contact.LinkedIn ? `🔗 ${contact.LinkedIn} &nbsp;|&nbsp;` : ''} 
+                        ${contact.Website ? `🌐 ${contact.Website} &nbsp;|&nbsp;` : ''} 
+                        ${address["Home Address"] ? `📍 ${formatAddress(address["Home Address"])}` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        const sectionHeader = (title) => Layout === 'minimalist' ? `<h3 class="min-h3">${title.toUpperCase()}</h3>` : `<h3>${title}</h3>`;
 
         const identityHtml = identity.idNumber || demographics.Nationality || (licensing.Drivers && licensing.DriversVisible) || (licensing.Motorcycle && licensing.MotorVisible) || (legal["Criminal Record"]) ? `
             <div class="meta-section">
+                ${Layout === 'minimalist' ? sectionHeader('Personal Information') : ''}
                 <div class="meta-grid">
                     ${identity.idNumber ? `<div class="meta-item"><strong>ID Number:</strong> ${maskId(identity.idNumber)}</div>` : ''}
                     ${demographics.Nationality ? `<div class="meta-item"><strong>Nationality:</strong> ${demographics.Nationality}</div>` : ''}
@@ -122,14 +145,14 @@ const PreviewScreen = ({ navigation }) => {
         ` : '';
 
         const langHtml = languages.length > 0 ? `
-            <h3>Languages</h3>
+            ${sectionHeader('Languages')}
             <ul>
                 ${languages.filter(l => l.visible !== false).map(l => `<li><strong>${l.Language}:</strong> ${l.proficiency}</li>`).join('')}
             </ul>
         ` : '';
 
         const expHtml = expList && expList.length > 0 ? `
-            <h3>Professional Experience</h3>
+            ${sectionHeader('Professional Experience')}
             ${expList.map(job => `
                 <div class="job-item">
                     <div class="job-header">
@@ -143,7 +166,7 @@ const PreviewScreen = ({ navigation }) => {
         ` : '';
 
         const eduHtml = (eduList?.tertiary?.length > 0 || eduList?.highschool?.["Year Completed"]) ? `
-            <h3>Education</h3>
+            ${sectionHeader('Education')}
             ${eduList.tertiary.map(edu => `
                  <div class="edu-item">
                     <div class="job-header">
@@ -165,14 +188,14 @@ const PreviewScreen = ({ navigation }) => {
         ` : '';
 
         const skillsHtml = (skills.Tech || skills.Soft) ? `
-             <h3>Skills</h3>
+             ${sectionHeader('Skills')}
              ${skills.Tech ? `<p><strong>Technical:</strong> ${skills.Tech}</p>` : ''}
              ${skills.Soft ? `<p><strong>Soft Skills:</strong> ${skills.Soft}</p>` : ''}
          ` : '';
 
         const refHtml = refList && refList.length > 0 ? `
-             <h3>References</h3>
-             <div class="ref-grid">
+             ${sectionHeader('References')}
+             <div class="ref-grid" style="${Layout === 'minimalist' ? 'text-align: center;' : ''}">
                 ${refList.filter(r => r.visible).map(ref => `
                     <div class="ref-item">
                         <strong>${ref.name}</strong><br/>
@@ -182,7 +205,7 @@ const PreviewScreen = ({ navigation }) => {
                     </div>
                 `).join('')}
              </div>
-         ` : (refList && refList.length > 0 ? '' : `<h3>References</h3><p>Available upon request.</p>`);
+         ` : (refList && refList.length > 0 ? '' : `${sectionHeader('References')}<p style="${Layout === 'minimalist' ? 'text-align: center;' : ''}">Available upon request.</p>`);
 
 
         return `
@@ -192,7 +215,7 @@ const PreviewScreen = ({ navigation }) => {
                 <div class="container">
                     ${headerHtml}
                     ${identityHtml}
-                    ${summary ? `<h3>Executive Summary</h3><p>${summary}</p>` : ''}
+                    ${summary ? `${sectionHeader('Executive Summary')}<p>${summary}</p>` : ''}
                     ${expHtml}
                     ${eduHtml}
                     ${skillsHtml}
@@ -251,6 +274,67 @@ const PreviewScreen = ({ navigation }) => {
         }
     };
 
+    const generatePlainText = () => {
+        if (!resumeData) return "";
+        const { "personal details": pd, experience: expList, education: eduList, Skills: skills, "professional summary": summary } = resumeData;
+        const names = pd?.names || {};
+        
+        let text = `${names.firstName} ${names.Surname}\n\n`;
+        if (summary) text += `EXECUTIVE SUMMARY\n${summary}\n\n`;
+        
+        if (expList && expList.length > 0) {
+            text += `PROFESSIONAL EXPERIENCE\n`;
+            expList.forEach(job => {
+                text += `${job.Organization} | ${job.Role}\n${job["Start Date"]} - ${job["End Date"] || 'Present'}\n${job["Key Responsibilities"]}\n\n`;
+            });
+        }
+        
+        if (eduList?.tertiary?.length > 0) {
+            text += `EDUCATION\n`;
+            eduList.tertiary.forEach(edu => {
+                text += `${edu.Institution} | ${edu["Qualification Name"]}\n${edu.Year}\n\n`;
+            });
+        }
+        
+        return text;
+    };
+
+    const exportToWord = async (type) => {
+        setLoading(true);
+        try {
+            const now = new Date();
+            const timestamp = now.toISOString().replace(/[:.]/g, '-');
+            const fileName = `My_Resume_${timestamp}.${type === 'text' ? 'docx' : 'doc'}`;
+            const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
+            
+            let content = '';
+            if (type === 'text') {
+                content = generatePlainText();
+            } else {
+                // HTML to Word (Layout)
+                content = `
+                    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                    <head><meta charset='utf-8'><title>Resume</title></head>
+                    <body>${generateHtml()}</body>
+                    </html>
+                `;
+            }
+
+            await FileSystem.writeAsStringAsync(fileUri, content);
+
+            await shareAsync(fileUri, {
+                title: `Share ${fileName}`,
+                mimeType: type === 'text' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/msword'
+            });
+
+        } catch (error) {
+            Alert.alert("Error", "Could not export to Word");
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         navigation.setOptions({
             headerRight: () => (
@@ -260,7 +344,7 @@ const PreviewScreen = ({ navigation }) => {
                         if (exportFormat === 'pdf') {
                             printToFile();
                         } else {
-                            Alert.alert('Coming Soon', `${exportFormat === 'word_text' ? 'Word (Text)' : 'Word (Layout)'} Export will be available soon.`);
+                            exportToWord(exportFormat === 'word_text' ? 'text' : 'layout');
                         }
                     }}
                 />

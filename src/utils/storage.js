@@ -1,24 +1,26 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEYS = {
-    META: 'resume_meta',
+    META_PREFIX: 'neltz_jobready_resume_meta_',
     DATA_PREFIX: 'neltz_jobready_resume_data_',
 };
 
 export const Storage = {
     // Save Resume Meta (List of Resumes)
-    saveMeta: async (meta) => {
+    saveMeta: async (profileId, meta) => {
         try {
-            await AsyncStorage.setItem(STORAGE_KEYS.META, JSON.stringify(meta));
+            const key = `${STORAGE_KEYS.META_PREFIX}${profileId}`;
+            await AsyncStorage.setItem(key, JSON.stringify(meta));
         } catch (e) {
             console.error('Failed to save resume meta', e);
         }
     },
 
     // Load Resume Meta
-    loadMeta: async () => {
+    loadMeta: async (profileId) => {
         try {
-            const jsonValue = await AsyncStorage.getItem(STORAGE_KEYS.META);
+            const key = `${STORAGE_KEYS.META_PREFIX}${profileId}`;
+            const jsonValue = await AsyncStorage.getItem(key);
             return jsonValue != null ? JSON.parse(jsonValue) : [];
         } catch (e) {
             console.error('Failed to load resume meta', e);
@@ -27,31 +29,34 @@ export const Storage = {
     },
 
     // Save Specific Resume Data
-    saveResumeData: async (id, data) => {
+    saveResumeData: async (profileId, resumeId, data) => {
         try {
-            await AsyncStorage.setItem(`${STORAGE_KEYS.DATA_PREFIX}${id}`, JSON.stringify(data));
+            const key = `${STORAGE_KEYS.DATA_PREFIX}${profileId}_${resumeId}`;
+            await AsyncStorage.setItem(key, JSON.stringify(data));
         } catch (e) {
-            console.error(`Failed to save resume data for ${id}`, e);
+            console.error(`Failed to save resume data for ${resumeId}`, e);
         }
     },
 
     // Load Specific Resume Data
-    loadResumeData: async (id) => {
+    loadResumeData: async (profileId, resumeId) => {
         try {
-            const jsonValue = await AsyncStorage.getItem(`${STORAGE_KEYS.DATA_PREFIX}${id}`);
+            const key = `${STORAGE_KEYS.DATA_PREFIX}${profileId}_${resumeId}`;
+            const jsonValue = await AsyncStorage.getItem(key);
             return jsonValue != null ? JSON.parse(jsonValue) : null;
         } catch (e) {
-            console.error(`Failed to load resume data for ${id}`, e);
+            console.error(`Failed to load resume data for ${resumeId}`, e);
             return null;
         }
     },
 
     // Delete Resume Data
-    deleteResumeData: async (id) => {
+    deleteResumeData: async (profileId, resumeId) => {
         try {
-            await AsyncStorage.removeItem(`${STORAGE_KEYS.DATA_PREFIX}${id}`);
+            const key = `${STORAGE_KEYS.DATA_PREFIX}${profileId}_${resumeId}`;
+            await AsyncStorage.removeItem(key);
         } catch (e) {
-            console.error(`Failed to delete resume data for ${id}`, e);
+            console.error(`Failed to delete resume data for ${resumeId}`, e);
         }
     }
 };

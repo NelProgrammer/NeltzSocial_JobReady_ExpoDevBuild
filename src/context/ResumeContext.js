@@ -1,39 +1,52 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Storage } from '../utils/storage';
+import { AuthContext } from './AuthContext';
 
 export const ResumeContext = createContext();
 
 export const ResumeProvider = ({ children }) => {
+    const { user } = useContext(AuthContext);
     const [meta, setMeta] = useState([]);
     const [activeResumeId, setActiveResumeId] = useState(null);
     const [resumeData, setResumeData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Initial Load
+    // Load data when user changes
     useEffect(() => {
         const loadInitialData = async () => {
-            const storedMeta = await Storage.loadMeta();
+            if (!user) {
+                setMeta([]);
+                setResumeData(null);
+                setActiveResumeId(null);
+                setLoading(false);
+                return;
+            }
+
+            setLoading(true);
+            const storedMeta = await Storage.loadMeta(user.id);
             setMeta(storedMeta);
             if (storedMeta.length > 0) {
-                // Load the first resume by default
                 await switchResume(storedMeta[0].id);
+            } else {
+                setResumeData(null);
+                setActiveResumeId(null);
             }
             setLoading(false);
         };
         loadInitialData();
-    }, []);
+    }, [user]);
 
     // Create New Resume
     const createResume = async (name = "New Resume") => {
+        if (!user) return null;
         const id = `res_${Date.now()}`;
         const newMetaItem = { id, name, lastModified: Date.now() };
 
-        // Default Schema from Pseudo_Plan_Resume.md
         const initialData = {
             "personal details": {
                 names: { firstName: "", MiddleName: "", MaidenName: "", Surname: "", Prefix: "" },
                 identity: { idNumber: "", idMask: true },
-                contact: { Phone: "", "Phone-alt": "", Email: "", LinkedIn: "", Website: "" },
+                contact: { Phone: "", "Phone-alt": "", Email: user.email || "", LinkedIn: "", Website: "" },
                 address: { "Home Address": "", AddressFormat: "comma" },
                 licensing: { Drivers: "None", DriversVisible: false, Motorcycle: "None", MotorVisible: false },
                 demographics: { Gender: "None", Race: "Other", Nationality: "" },
@@ -45,13 +58,13 @@ export const ResumeProvider = ({ children }) => {
             education: { highschool: {}, tertiary: [] },
             Skills: {},
             References: [],
-            Layout: 'professional' // Default layout
+            Layout: 'professional'
         };
 
         const updatedMeta = [...meta, newMetaItem];
         setMeta(updatedMeta);
-        await Storage.saveMeta(updatedMeta);
-        await Storage.saveResumeData(id, initialData);
+        await Storage.saveMeta(user.id, updatedMeta);
+        await Storage.saveResumeData(user.id, id, initialData);
 
         await switchResume(id);
         return id;
@@ -59,41 +72,42 @@ export const ResumeProvider = ({ children }) => {
 
     // Switch Active Resume
     const switchResume = async (id) => {
+        if (!user) return;
         setActiveResumeId(id);
-        const data = await Storage.loadResumeData(id);
+        const data = await Storage.loadResumeData(user.id, id);
         if (data) {
             setResumeData(data);
         } else {
-            // Fallback or Error handling
             console.warn(`No data found for resume ID: ${id}`);
         }
     };
 
     // Update Resume Data (Auto-Save Logic)
     const updateResumeData = async (newData) => {
+        if (!user || !activeResumeId) return;
         setResumeData(newData);
-        if (activeResumeId) {
-            await Storage.saveResumeData(activeResumeId, newData);
-            // Update 'lastModified' in meta
-            const updatedMeta = meta.map(m => m.id === activeResumeId ? { ...m, lastModified: Date.now() } : m);
-            setMeta(updatedMeta);
-            await Storage.saveMeta(updatedMeta);
-        }
+        await Storage.saveResumeData(user.id, activeResumeId, newData);
+        
+        const updatedMeta = meta.map(m => m.id === activeResumeId ? { ...m, lastModified: Date.now() } : m);
+        setMeta(updatedMeta);
+        await Storage.saveMeta(user.id, updatedMeta);
     };
 
     // Rename Resume
     const renameResume = async (id, newName) => {
+        if (!user) return;
         const updatedMeta = meta.map(m => m.id === id ? { ...m, name: newName, lastModified: Date.now() } : m);
         setMeta(updatedMeta);
-        await Storage.saveMeta(updatedMeta);
+        await Storage.saveMeta(user.id, updatedMeta);
     };
 
     // Delete Resume
     const deleteResume = async (id) => {
+        if (!user) return;
         const updatedMeta = meta.filter(m => m.id !== id);
         setMeta(updatedMeta);
-        await Storage.saveMeta(updatedMeta);
-        await Storage.deleteResumeData(id);
+        await Storage.saveMeta(user.id, updatedMeta);
+        await Storage.deleteResumeData(user.id, id);
 
         if (activeResumeId === id) {
             setResumeData(null);

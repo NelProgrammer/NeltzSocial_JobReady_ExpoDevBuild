@@ -33,8 +33,31 @@ const PDFWorkbenchScreen = ({ navigation }) => {
 
                 await Promise.all([pdfJsAsset.downloadAsync(), pdfWorkerAsset.downloadAsync()]);
 
-                const jsSource = await FileSystem.readAsStringAsync(pdfJsAsset.localUri, { encoding: FileSystem.EncodingType.Base64 });
-                const workerSource = await FileSystem.readAsStringAsync(pdfWorkerAsset.localUri, { encoding: FileSystem.EncodingType.Base64 });
+                const getSource = async (asset) => {
+                    // In Dev mode, localUri might be an http URL (from Metro)
+                    // FileSystem.readAsStringAsync only works on file:// URIs
+                    if (asset.localUri && asset.localUri.startsWith('file')) {
+                        return await FileSystem.readAsStringAsync(asset.localUri, { encoding: FileSystem.EncodingType.Base64 });
+                    } else {
+                        // Fallback for http URIs or missing localUri: fetch the content
+                        const response = await fetch(asset.uri);
+                        const blob = await response.blob();
+                        return new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                                const base64 = reader.result.split(',')[1];
+                                resolve(base64);
+                            };
+                            reader.onerror = reject;
+                            reader.readAsDataURL(blob);
+                        });
+                    }
+                };
+
+                const [jsSource, workerSource] = await Promise.all([
+                    getSource(pdfJsAsset),
+                    getSource(pdfWorkerAsset)
+                ]);
 
                 setPdfJsSource(jsSource);
                 setPdfWorkerSource(workerSource);
