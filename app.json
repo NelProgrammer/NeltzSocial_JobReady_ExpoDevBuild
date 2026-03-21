@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "NeltzSocial - JobReady",
-    "slug": "neltzsocial-jobready",
+    "name": "NeltzSocial_JobReady_ExpoDevBuild",
+    "slug": "neltzsocial-jobready-devbuild",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
