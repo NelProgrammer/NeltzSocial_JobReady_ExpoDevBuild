@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "NeltzSocial_JobReady_ExpoDevBuild",
-    "slug": "neltzsocial-jobready-devbuild",
+    "name": "NeltzSocial - JobReady",
+    "slug": "neltzsocial-jobready",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -34,7 +34,7 @@
     "owner": "neltheprogrammer",
     "extra": {
       "eas": {
-        "projectId": "278edebe-3dfd-498c-a4be-083c909798a8"
+        "projectId": "c5c0dc5e-4622-4599-9ec3-76f6d70795e9"
       }
     }
   }

@@ -41,7 +41,7 @@ const HubScreen = () => {
         <View style={styles.container}>
             <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}>
                 <LinearGradient
-                    colors={['#6200ee', '#9c27b0']}
+                    colors={['#0f172a', '#1e293b']}
                     style={[styles.header, { paddingTop: insets.top + 20 }]}
                 >
                     <View style={styles.headerTop}>
@@ -61,12 +61,12 @@ const HubScreen = () => {
                     <Surface style={styles.activeContextCard} elevation={4}>
                         <View style={styles.contextHeader}>
                             <Text variant="labelSmall" style={styles.contextLabel}>CONTINUE EDITING</Text>
-                            <MaterialCommunityIcons name="clock-outline" size={14} color="#757575" />
+                            <MaterialCommunityIcons name="clock-outline" size={14} color="#6366f1" />
                         </View>
                         <Text variant="titleMedium" style={styles.resumeName}>{latestResume.name}</Text>
                         <TouchableOpacity style={styles.resumeAction} onPress={() => navigation.navigate('Editor', { resumeId: latestResume.id })}>
                             <Text style={styles.resumeActionText}>Open Editor</Text>
-                            <MaterialCommunityIcons name="chevron-right" size={20} color="#6200ee" />
+                            <MaterialCommunityIcons name="chevron-right" size={20} color="#6366f1" />
                         </TouchableOpacity>
                     </Surface>
                 )}
@@ -78,7 +78,7 @@ const HubScreen = () => {
                         title="Resume Builder" 
                         description="Professional templates & South African context features."
                         icon="file-document-edit" 
-                        color="#6200ee"
+                        color="#6366f1"
                         onPress={() => navigation.navigate('ResumeHome')}
                     />
                     
@@ -86,7 +86,7 @@ const HubScreen = () => {
                         title="PDF Workbench" 
                         description="Merge documents, split pages, and reorder files."
                         icon="pdf-box" 
-                        color="#ff5722"
+                        color="#f59e0b"
                         onPress={() => navigation.navigate('PDFWorkbench')}
                     />
 
@@ -94,15 +94,15 @@ const HubScreen = () => {
                         title="Review & Publish" 
                         description="Get feedback from experts and showcase your profile."
                         icon="check-decagram" 
-                        color="#4caf50"
+                        color="#10b981"
                         onPress={() => navigation.navigate('Preview')}
                     />
 
                     <AppCard 
                         title="Taxi 2 Interview" 
-                        description="Plan your commute and stay safe during the trip."
+                        description="Plan your commute and stay safe. (Coming Soon)"
                         icon="car-connected" 
-                        color="#ffc107"
+                        color="#3b82f6"
                         onPress={() => Alert.alert("Coming Soon", "Taxi 2 Interview feature is under development.")}
                     />
                 </View>
@@ -119,13 +119,12 @@ const HubScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#0f172a',
     },
     scrollView: {
         flex: 1,
     },
     header: {
-        backgroundColor: '#6200ee',
         paddingBottom: 30,
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
@@ -164,7 +163,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     contextLabel: {
-        color: '#6200ee',
+        color: '#6366f1',
         fontWeight: 'bold',
         letterSpacing: 1,
     },
@@ -182,7 +181,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     resumeActionText: {
-        color: '#6200ee',
+        color: '#6366f1',
         fontWeight: 'bold',
         marginRight: 8,
     },

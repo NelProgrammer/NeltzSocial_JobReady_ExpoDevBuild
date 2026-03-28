@@ -7,6 +7,7 @@ import { shareAsync } from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { WebView } from 'react-native-webview';
 import { ResumeContext } from '../context/ResumeContext';
+import { VIGNETTE_CSS } from '../constants/VignetteStyles';
 
 const PreviewScreen = ({ navigation }) => {
     const { resumeData, updateResumeData } = useContext(ResumeContext);
@@ -15,16 +16,31 @@ const PreviewScreen = ({ navigation }) => {
     const insets = useSafeAreaInsets();
 
     // Layout State (Saved in Resume Data)
-    const currentLayout = resumeData?.Layout || 'professional';
+    const currentLayout = resumeData?.["Document Settings"]?.Layout || 'professional';
 
     const changeLayout = (newLayout) => {
-        updateResumeData({ ...resumeData, Layout: newLayout });
+        updateResumeData({ 
+            ...resumeData, 
+            "Document Settings": { 
+                ...(resumeData["Document Settings"] || {}), 
+                Layout: newLayout 
+            } 
+        });
     };
 
     const generateHtml = () => {
         if (!resumeData) return "<html><body><h1>No Data</h1></body></html>";
 
-        const { "personal details": pd, experience: expList, education: eduList, Skills: skills, References: refList, "professional summary": summary, Layout } = resumeData;
+        const { 
+            "personal details": pd, 
+            experience: expList, 
+            education: eduList, 
+            "Skills": skills, 
+            "References": refList, 
+            "professional summary": summary, 
+            "Document Settings": docSettings 
+        } = resumeData;
+        const Layout = docSettings?.Layout || 'professional';
         const names = pd?.names || {};
         const contact = pd?.contact || {};
         const address = pd?.address || {};
@@ -53,8 +69,20 @@ const PreviewScreen = ({ navigation }) => {
 
         // CSS Styles
         const styles = `
-            body { font-family: 'Helvetica', sans-serif; color: #333; margin: 0; padding: 0; }
-            .container { padding: 40px; max-width: 800px; margin: 0 auto; }
+            ${VIGNETTE_CSS}
+            
+            body { 
+                font-family: 'Helvetica', sans-serif; 
+                color: #333; 
+                margin: 0; 
+                padding: 0; 
+                background: transparent; 
+            }
+            
+            /* Overwrite/Enhance Vignette Sheet for Mobile */
+            .vignette-sheet {
+                background: white;
+            }
             
             /* Professional Header */
             .header-pro { border-bottom: 2px solid #2c3e50; padding-bottom: 20px; margin-bottom: 30px; }
@@ -212,15 +240,19 @@ const PreviewScreen = ({ navigation }) => {
             <html>
             <head><style>${styles}</style></head>
             <body>
-                <div class="container">
-                    ${headerHtml}
-                    ${identityHtml}
-                    ${summary ? `${sectionHeader('Executive Summary')}<p>${summary}</p>` : ''}
-                    ${expHtml}
-                    ${eduHtml}
-                    ${skillsHtml}
-                    ${langHtml}
-                    ${refHtml}
+                <div class="vignette-wrapper">
+                    <div class="vignette-container">
+                        <div class="vignette-sheet">
+                            ${headerHtml}
+                            ${identityHtml}
+                            ${summary ? `${sectionHeader('Executive Summary')}<p>${summary}</p>` : ''}
+                            ${expHtml}
+                            ${eduHtml}
+                            ${skillsHtml}
+                            ${langHtml}
+                            ${refHtml}
+                        </div>
+                    </div>
                 </div>
             </body>
             </html>

@@ -53,22 +53,22 @@ function NavigationStack() {
           <Stack.Screen
             name="ResumeHome"
             component={HomeScreen}
-            options={{ title: 'Resume Builder' }}
+            options={{ title: 'NeltzSocial - JobReady: Resume Builder' }}
           />
           <Stack.Screen
             name="Editor"
             component={EditorScreen}
-            options={{ title: 'Resume Editor' }}
+            options={{ title: 'NeltzSocial - JobReady: Resume Editor' }}
           />
           <Stack.Screen
             name="Preview"
             component={PreviewScreen}
-            options={{ title: 'Preview & Export' }}
+            options={{ title: 'NeltzSocial - JobReady: Preview & Export' }}
           />
           <Stack.Screen
             name="PDFWorkbench"
             component={PDFWorkbenchScreen}
-            options={{ title: 'PDF Workbench' }}
+            options={{ title: 'NeltzSocial - JobReady: PDF Workbench' }}
           />
         </>
       )}

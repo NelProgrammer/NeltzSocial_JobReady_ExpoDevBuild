@@ -44,21 +44,26 @@ export const ResumeProvider = ({ children }) => {
 
         const initialData = {
             "personal details": {
-                names: { firstName: "", MiddleName: "", MaidenName: "", Surname: "", Prefix: "" },
+                names: { firstName: "", MiddleName: "", Surname: "", Prefix: "" },
                 identity: { idNumber: "", idMask: true },
-                contact: { Phone: "", "Phone-alt": "", Email: user.email || "", LinkedIn: "", Website: "" },
-                address: { "Home Address": "", AddressFormat: "comma" },
+                contact: { Email: user.email || "", Phone: "" },
+                address: { "Home Address": "" },
                 licensing: { Drivers: "None", DriversVisible: false, Motorcycle: "None", MotorVisible: false },
-                demographics: { Gender: "None", Race: "Other", Nationality: "" },
+                demographics: { Gender: "None", Nationality: "" },
                 legal: { "Criminal Record": false, Details: "" },
                 languages: []
             },
             "professional summary": "",
             experience: [],
-            education: { highschool: {}, tertiary: [] },
-            Skills: {},
-            References: [],
-            Layout: 'professional'
+            education: { 
+                highschool: { "Province Department": "", "Year Completed": "", "Subjects Stream": "" }, 
+                tertiary: [] 
+            },
+            "Skills": { Tech: "", Soft: "", Certs: "" },
+            "References": [],
+            "Document Settings": {
+                Layout: 'professional'
+            }
         };
 
         const updatedMeta = [...meta, newMetaItem];
