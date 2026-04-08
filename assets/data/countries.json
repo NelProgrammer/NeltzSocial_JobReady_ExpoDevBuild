@@ -1,0 +1,1502 @@
+[
+  {
+    "Country": "Afghanistan",
+    "Nationality": "Afghan",
+    "Language": "Dari, Pashto, Turkmen",
+    "Capital City": "Kabul"
+  },
+  {
+    "Country": "Albania",
+    "Nationality": "Albanian",
+    "Language": "Albanian",
+    "Capital City": "Tirana"
+  },
+  {
+    "Country": "Algeria",
+    "Nationality": "Algerian",
+    "Language": "Arabic",
+    "Capital City": "Algiers"
+  },
+  {
+    "Country": "American Samoa",
+    "Nationality": "American Samoan",
+    "Language": "English, Samoan",
+    "Capital City": "Pago Pago"
+  },
+  {
+    "Country": "Andorra",
+    "Nationality": "Andorran",
+    "Language": "Catalan",
+    "Capital City": "Andorra la Vella"
+  },
+  {
+    "Country": "Angola",
+    "Nationality": "Angolan",
+    "Language": "Portuguese",
+    "Capital City": "Luanda"
+  },
+  {
+    "Country": "Anguilla",
+    "Nationality": "Anguillian",
+    "Language": "English",
+    "Capital City": "The Valley"
+  },
+  {
+    "Country": "Antarctica",
+    "Nationality": "Antarctican",
+    "Language": "",
+    "Capital City": ""
+  },
+  {
+    "Country": "Antigua and Barbuda",
+    "Nationality": "Antiguan, Barbudan",
+    "Language": "English",
+    "Capital City": "Saint John's"
+  },
+  {
+    "Country": "Argentina",
+    "Nationality": "Argentine",
+    "Language": "Guaraní, Spanish",
+    "Capital City": "Buenos Aires"
+  },
+  {
+    "Country": "Armenia",
+    "Nationality": "Armenian",
+    "Language": "Armenian",
+    "Capital City": "Yerevan"
+  },
+  {
+    "Country": "Aruba",
+    "Nationality": "Aruban",
+    "Language": "Dutch, Papiamento",
+    "Capital City": "Oranjestad"
+  },
+  {
+    "Country": "Australia",
+    "Nationality": "Australian",
+    "Language": "English",
+    "Capital City": "Canberra"
+  },
+  {
+    "Country": "Austria",
+    "Nationality": "Austrian",
+    "Language": "Austro-Bavarian German",
+    "Capital City": "Vienna"
+  },
+  {
+    "Country": "Azerbaijan",
+    "Nationality": "Azerbaijani",
+    "Language": "Azerbaijani, Russian",
+    "Capital City": "Baku"
+  },
+  {
+    "Country": "Bahamas",
+    "Nationality": "Bahamian",
+    "Language": "English",
+    "Capital City": "Nassau"
+  },
+  {
+    "Country": "Bahrain",
+    "Nationality": "Bahraini",
+    "Language": "Arabic",
+    "Capital City": "Manama"
+  },
+  {
+    "Country": "Bangladesh",
+    "Nationality": "Bangladeshi",
+    "Language": "Bengali",
+    "Capital City": "Dhaka"
+  },
+  {
+    "Country": "Barbados",
+    "Nationality": "Barbadian",
+    "Language": "English",
+    "Capital City": "Bridgetown"
+  },
+  {
+    "Country": "Belarus",
+    "Nationality": "Belarusian",
+    "Language": "Belarusian, Russian",
+    "Capital City": "Minsk"
+  },
+  {
+    "Country": "Belgium",
+    "Nationality": "Belgian",
+    "Language": "German, French, Dutch",
+    "Capital City": "Brussels"
+  },
+  {
+    "Country": "Belize",
+    "Nationality": "Belizean",
+    "Language": "Belizean Creole, English, Spanish",
+    "Capital City": "Belmopan"
+  },
+  {
+    "Country": "Benin",
+    "Nationality": "Beninese",
+    "Language": "French",
+    "Capital City": "Porto-Novo"
+  },
+  {
+    "Country": "Bermuda",
+    "Nationality": "Bermudian",
+    "Language": "English",
+    "Capital City": "Hamilton"
+  },
+  {
+    "Country": "Bhutan",
+    "Nationality": "Bhutanese",
+    "Language": "Dzongkha",
+    "Capital City": "Thimphu"
+  },
+  {
+    "Country": "Bolivia",
+    "Nationality": "Bolivian",
+    "Language": "Aymara, Guaraní, Quechua, Spanish",
+    "Capital City": "Sucre"
+  },
+  {
+    "Country": "Bosnia and Herzegovina",
+    "Nationality": "Bosnian, Herzegovinian",
+    "Language": "Bosnian, Croatian, Serbian",
+    "Capital City": "Sarajevo"
+  },
+  {
+    "Country": "Botswana",
+    "Nationality": "Motswana",
+    "Language": "English, Tswana",
+    "Capital City": "Gaborone"
+  },
+  {
+    "Country": "Bouvet Island",
+    "Nationality": "",
+    "Language": "Norwegian",
+    "Capital City": ""
+  },
+  {
+    "Country": "Brazil",
+    "Nationality": "Brazilian",
+    "Language": "Portuguese",
+    "Capital City": "Brasília"
+  },
+  {
+    "Country": "British Indian Ocean Territory",
+    "Nationality": "Indian",
+    "Language": "English",
+    "Capital City": "Diego Garcia"
+  },
+  {
+    "Country": "British Virgin Islands",
+    "Nationality": "Virgin Islander",
+    "Language": "English",
+    "Capital City": "Road Town"
+  },
+  {
+    "Country": "Brunei",
+    "Nationality": "Bruneian",
+    "Language": "Malay",
+    "Capital City": "Bandar Seri Begawan"
+  },
+  {
+    "Country": "Bulgaria",
+    "Nationality": "Bulgarian",
+    "Language": "Bulgarian",
+    "Capital City": "Sofia"
+  },
+  {
+    "Country": "Burkina Faso",
+    "Nationality": "Burkinabe",
+    "Language": "French",
+    "Capital City": "Ouagadougou"
+  },
+  {
+    "Country": "Burundi",
+    "Nationality": "Burundian",
+    "Language": "French, Kirundi",
+    "Capital City": "Gitega"
+  },
+  {
+    "Country": "Cambodia",
+    "Nationality": "Cambodian",
+    "Language": "Khmer",
+    "Capital City": "Phnom Penh"
+  },
+  {
+    "Country": "Cameroon",
+    "Nationality": "Cameroonian",
+    "Language": "English, French",
+    "Capital City": "Yaoundé"
+  },
+  {
+    "Country": "Canada",
+    "Nationality": "Canadian",
+    "Language": "English, French",
+    "Capital City": "Ottawa"
+  },
+  {
+    "Country": "Cape Verde",
+    "Nationality": "Cape Verdian",
+    "Language": "Portuguese",
+    "Capital City": "Praia"
+  },
+  {
+    "Country": "Caribbean Netherlands",
+    "Nationality": "Dutch",
+    "Language": "English, Dutch, Papiamento",
+    "Capital City": "Kralendijk, Oranjestad, The Bottom"
+  },
+  {
+    "Country": "Cayman Islands",
+    "Nationality": "Caymanian",
+    "Language": "English",
+    "Capital City": "George Town"
+  },
+  {
+    "Country": "Central African Republic",
+    "Nationality": "Central African",
+    "Language": "French, Sango",
+    "Capital City": "Bangui"
+  },
+  {
+    "Country": "Chad",
+    "Nationality": "Chadian",
+    "Language": "Arabic, French",
+    "Capital City": "N'Djamena"
+  },
+  {
+    "Country": "Chile",
+    "Nationality": "Chilean",
+    "Language": "Spanish",
+    "Capital City": "Santiago"
+  },
+  {
+    "Country": "China",
+    "Nationality": "Chinese",
+    "Language": "Chinese",
+    "Capital City": "Beijing"
+  },
+  {
+    "Country": "Christmas Island",
+    "Nationality": "Christmas Islander",
+    "Language": "English",
+    "Capital City": "Flying Fish Cove"
+  },
+  {
+    "Country": "Cocos (Keeling) Islands",
+    "Nationality": "Cocos Islander",
+    "Language": "English",
+    "Capital City": "West Island"
+  },
+  {
+    "Country": "Colombia",
+    "Nationality": "Colombian",
+    "Language": "Spanish",
+    "Capital City": "Bogotá"
+  },
+  {
+    "Country": "Comoros",
+    "Nationality": "Comoran",
+    "Language": "Arabic, French, Comorian",
+    "Capital City": "Moroni"
+  },
+  {
+    "Country": "Congo",
+    "Nationality": "Congolese",
+    "Language": "French, Kikongo, Lingala",
+    "Capital City": "Brazzaville"
+  },
+  {
+    "Country": "Cook Islands",
+    "Nationality": "Cook Islander",
+    "Language": "English, Cook Islands Māori",
+    "Capital City": "Avarua"
+  },
+  {
+    "Country": "Costa Rica",
+    "Nationality": "Costa Rican",
+    "Language": "Spanish",
+    "Capital City": "San José"
+  },
+  {
+    "Country": "Croatia",
+    "Nationality": "Croatian",
+    "Language": "Croatian",
+    "Capital City": "Zagreb"
+  },
+  {
+    "Country": "Cuba",
+    "Nationality": "Cuban",
+    "Language": "Spanish",
+    "Capital City": "Havana"
+  },
+  {
+    "Country": "Curaçao",
+    "Nationality": "Curaçaoan",
+    "Language": "English, Dutch, Papiamento",
+    "Capital City": "Willemstad"
+  },
+  {
+    "Country": "Cyprus",
+    "Nationality": "Cypriot",
+    "Language": "Greek, Turkish",
+    "Capital City": "Nicosia"
+  },
+  {
+    "Country": "Czechia",
+    "Nationality": "Czech",
+    "Language": "Czech, Slovak",
+    "Capital City": "Prague"
+  },
+  {
+    "Country": "DR Congo",
+    "Nationality": "Congolese",
+    "Language": "French, Kikongo, Lingala, Tshiluba, Swahili",
+    "Capital City": "Kinshasa"
+  },
+  {
+    "Country": "Denmark",
+    "Nationality": "Danish",
+    "Language": "Danish",
+    "Capital City": "Copenhagen"
+  },
+  {
+    "Country": "Djibouti",
+    "Nationality": "Djibouti",
+    "Language": "Arabic, French",
+    "Capital City": "Djibouti"
+  },
+  {
+    "Country": "Dominica",
+    "Nationality": "Dominican",
+    "Language": "English",
+    "Capital City": "Roseau"
+  },
+  {
+    "Country": "Dominican Republic",
+    "Nationality": "Dominican",
+    "Language": "Spanish",
+    "Capital City": "Santo Domingo"
+  },
+  {
+    "Country": "Ecuador",
+    "Nationality": "Ecuadorean",
+    "Language": "Spanish",
+    "Capital City": "Quito"
+  },
+  {
+    "Country": "Egypt",
+    "Nationality": "Egyptian",
+    "Language": "Arabic",
+    "Capital City": "Cairo"
+  },
+  {
+    "Country": "El Salvador",
+    "Nationality": "Salvadoran",
+    "Language": "Spanish",
+    "Capital City": "San Salvador"
+  },
+  {
+    "Country": "Equatorial Guinea",
+    "Nationality": "Equatorial Guinean",
+    "Language": "French, Portuguese, Spanish",
+    "Capital City": "Malabo"
+  },
+  {
+    "Country": "Eritrea",
+    "Nationality": "Eritrean",
+    "Language": "Arabic, English, Tigrinya",
+    "Capital City": "Asmara"
+  },
+  {
+    "Country": "Estonia",
+    "Nationality": "Estonian",
+    "Language": "Estonian",
+    "Capital City": "Tallinn"
+  },
+  {
+    "Country": "Eswatini",
+    "Nationality": "Swazi",
+    "Language": "English, Swazi",
+    "Capital City": "Lobamba"
+  },
+  {
+    "Country": "Ethiopia",
+    "Nationality": "Ethiopian",
+    "Language": "Amharic",
+    "Capital City": "Addis Ababa"
+  },
+  {
+    "Country": "Falkland Islands",
+    "Nationality": "Falkland Islander",
+    "Language": "English",
+    "Capital City": "Stanley"
+  },
+  {
+    "Country": "Faroe Islands",
+    "Nationality": "Faroese",
+    "Language": "Danish, Faroese",
+    "Capital City": "Tórshavn"
+  },
+  {
+    "Country": "Fiji",
+    "Nationality": "Fijian",
+    "Language": "English, Fijian, Fiji Hindi",
+    "Capital City": "Suva"
+  },
+  {
+    "Country": "Finland",
+    "Nationality": "Finnish",
+    "Language": "Finnish, Swedish",
+    "Capital City": "Helsinki"
+  },
+  {
+    "Country": "France",
+    "Nationality": "French",
+    "Language": "French",
+    "Capital City": "Paris"
+  },
+  {
+    "Country": "French Guiana",
+    "Nationality": "Guianan",
+    "Language": "French",
+    "Capital City": "Cayenne"
+  },
+  {
+    "Country": "French Polynesia",
+    "Nationality": "French Polynesian",
+    "Language": "French",
+    "Capital City": "Papeetē"
+  },
+  {
+    "Country": "French Southern and Antarctic Lands",
+    "Nationality": "French",
+    "Language": "French",
+    "Capital City": "Port-aux-Français"
+  },
+  {
+    "Country": "Gabon",
+    "Nationality": "Gabonese",
+    "Language": "French",
+    "Capital City": "Libreville"
+  },
+  {
+    "Country": "Gambia",
+    "Nationality": "Gambian",
+    "Language": "English",
+    "Capital City": "Banjul"
+  },
+  {
+    "Country": "Georgia",
+    "Nationality": "Georgian",
+    "Language": "Georgian",
+    "Capital City": "Tbilisi"
+  },
+  {
+    "Country": "Germany",
+    "Nationality": "German",
+    "Language": "German",
+    "Capital City": "Berlin"
+  },
+  {
+    "Country": "Ghana",
+    "Nationality": "Ghanaian",
+    "Language": "English",
+    "Capital City": "Accra"
+  },
+  {
+    "Country": "Gibraltar",
+    "Nationality": "Gibraltar",
+    "Language": "English",
+    "Capital City": "Gibraltar"
+  },
+  {
+    "Country": "Greece",
+    "Nationality": "Greek",
+    "Language": "Greek",
+    "Capital City": "Athens"
+  },
+  {
+    "Country": "Greenland",
+    "Nationality": "Greenlandic",
+    "Language": "Greenlandic",
+    "Capital City": "Nuuk"
+  },
+  {
+    "Country": "Grenada",
+    "Nationality": "Grenadian",
+    "Language": "English",
+    "Capital City": "St. George's"
+  },
+  {
+    "Country": "Guadeloupe",
+    "Nationality": "Guadeloupian",
+    "Language": "French",
+    "Capital City": "Basse-Terre"
+  },
+  {
+    "Country": "Guam",
+    "Nationality": "Guamanian",
+    "Language": "Chamorro, English, Spanish",
+    "Capital City": "Hagåtña"
+  },
+  {
+    "Country": "Guatemala",
+    "Nationality": "Guatemalan",
+    "Language": "Spanish",
+    "Capital City": "Guatemala City"
+  },
+  {
+    "Country": "Guernsey",
+    "Nationality": "Channel Islander",
+    "Language": "English, French, Guernésiais",
+    "Capital City": "St. Peter Port"
+  },
+  {
+    "Country": "Guinea",
+    "Nationality": "Guinean",
+    "Language": "French",
+    "Capital City": "Conakry"
+  },
+  {
+    "Country": "Guinea-Bissau",
+    "Nationality": "Guinea-Bissauan",
+    "Language": "Portuguese, Upper Guinea Creole",
+    "Capital City": "Bissau"
+  },
+  {
+    "Country": "Guyana",
+    "Nationality": "Guyanese",
+    "Language": "English",
+    "Capital City": "Georgetown"
+  },
+  {
+    "Country": "Haiti",
+    "Nationality": "Haitian",
+    "Language": "French, Haitian Creole",
+    "Capital City": "Port-au-Prince"
+  },
+  {
+    "Country": "Heard Island and McDonald Islands",
+    "Nationality": "Heard and McDonald Islander",
+    "Language": "English",
+    "Capital City": ""
+  },
+  {
+    "Country": "Honduras",
+    "Nationality": "Honduran",
+    "Language": "Spanish",
+    "Capital City": "Tegucigalpa"
+  },
+  {
+    "Country": "Hong Kong",
+    "Nationality": "Hong Konger",
+    "Language": "English, Chinese",
+    "Capital City": "City of Victoria"
+  },
+  {
+    "Country": "Hungary",
+    "Nationality": "Hungarian",
+    "Language": "Hungarian",
+    "Capital City": "Budapest"
+  },
+  {
+    "Country": "Iceland",
+    "Nationality": "Icelander",
+    "Language": "Icelandic",
+    "Capital City": "Reykjavik"
+  },
+  {
+    "Country": "India",
+    "Nationality": "Indian",
+    "Language": "English, Hindi, Tamil",
+    "Capital City": "New Delhi"
+  },
+  {
+    "Country": "Indonesia",
+    "Nationality": "Indonesian",
+    "Language": "Indonesian",
+    "Capital City": "Jakarta"
+  },
+  {
+    "Country": "Iran",
+    "Nationality": "Iranian",
+    "Language": "Persian (Farsi)",
+    "Capital City": "Tehran"
+  },
+  {
+    "Country": "Iraq",
+    "Nationality": "Iraqi",
+    "Language": "Arabic, Aramaic, Sorani",
+    "Capital City": "Baghdad"
+  },
+  {
+    "Country": "Ireland",
+    "Nationality": "Irish",
+    "Language": "English, Irish",
+    "Capital City": "Dublin"
+  },
+  {
+    "Country": "Isle of Man",
+    "Nationality": "Manx",
+    "Language": "English, Manx",
+    "Capital City": "Douglas"
+  },
+  {
+    "Country": "Israel",
+    "Nationality": "Israeli",
+    "Language": "Arabic, Hebrew",
+    "Capital City": "Jerusalem"
+  },
+  {
+    "Country": "Italy",
+    "Nationality": "Italian",
+    "Language": "Italian",
+    "Capital City": "Rome"
+  },
+  {
+    "Country": "Ivory Coast",
+    "Nationality": "Ivorian",
+    "Language": "French",
+    "Capital City": "Yamoussoukro"
+  },
+  {
+    "Country": "Jamaica",
+    "Nationality": "Jamaican",
+    "Language": "English, Jamaican Patois",
+    "Capital City": "Kingston"
+  },
+  {
+    "Country": "Japan",
+    "Nationality": "Japanese",
+    "Language": "Japanese",
+    "Capital City": "Tokyo"
+  },
+  {
+    "Country": "Jersey",
+    "Nationality": "Channel Islander",
+    "Language": "English, French, Jèrriais",
+    "Capital City": "Saint Helier"
+  },
+  {
+    "Country": "Jordan",
+    "Nationality": "Jordanian",
+    "Language": "Arabic",
+    "Capital City": "Amman"
+  },
+  {
+    "Country": "Kazakhstan",
+    "Nationality": "Kazakhstani",
+    "Language": "Kazakh, Russian",
+    "Capital City": "Astana"
+  },
+  {
+    "Country": "Kenya",
+    "Nationality": "Kenyan",
+    "Language": "English, Swahili",
+    "Capital City": "Nairobi"
+  },
+  {
+    "Country": "Kiribati",
+    "Nationality": "I-Kiribati",
+    "Language": "English, Gilbertese",
+    "Capital City": "South Tarawa"
+  },
+  {
+    "Country": "Kosovo",
+    "Nationality": "Kosovar",
+    "Language": "Albanian, Serbian",
+    "Capital City": "Pristina"
+  },
+  {
+    "Country": "Kuwait",
+    "Nationality": "Kuwaiti",
+    "Language": "Arabic",
+    "Capital City": "Kuwait City"
+  },
+  {
+    "Country": "Kyrgyzstan",
+    "Nationality": "Kirghiz",
+    "Language": "Kyrgyz, Russian",
+    "Capital City": "Bishkek"
+  },
+  {
+    "Country": "Laos",
+    "Nationality": "Laotian",
+    "Language": "Lao",
+    "Capital City": "Vientiane"
+  },
+  {
+    "Country": "Latvia",
+    "Nationality": "Latvian",
+    "Language": "Latvian",
+    "Capital City": "Riga"
+  },
+  {
+    "Country": "Lebanon",
+    "Nationality": "Lebanese",
+    "Language": "Arabic, French",
+    "Capital City": "Beirut"
+  },
+  {
+    "Country": "Lesotho",
+    "Nationality": "Mosotho",
+    "Language": "English, Sotho",
+    "Capital City": "Maseru"
+  },
+  {
+    "Country": "Liberia",
+    "Nationality": "Liberian",
+    "Language": "English",
+    "Capital City": "Monrovia"
+  },
+  {
+    "Country": "Libya",
+    "Nationality": "Libyan",
+    "Language": "Arabic",
+    "Capital City": "Tripoli"
+  },
+  {
+    "Country": "Liechtenstein",
+    "Nationality": "Liechtensteiner",
+    "Language": "German",
+    "Capital City": "Vaduz"
+  },
+  {
+    "Country": "Lithuania",
+    "Nationality": "Lithuanian",
+    "Language": "Lithuanian",
+    "Capital City": "Vilnius"
+  },
+  {
+    "Country": "Luxembourg",
+    "Nationality": "Luxembourger",
+    "Language": "German, French, Luxembourgish",
+    "Capital City": "Luxembourg"
+  },
+  {
+    "Country": "Macau",
+    "Nationality": "Macanese",
+    "Language": "Portuguese, Chinese",
+    "Capital City": ""
+  },
+  {
+    "Country": "Madagascar",
+    "Nationality": "Malagasy",
+    "Language": "French, Malagasy",
+    "Capital City": "Antananarivo"
+  },
+  {
+    "Country": "Malawi",
+    "Nationality": "Malawian",
+    "Language": "English, Chewa",
+    "Capital City": "Lilongwe"
+  },
+  {
+    "Country": "Malaysia",
+    "Nationality": "Malaysian",
+    "Language": "English, Malay",
+    "Capital City": "Kuala Lumpur"
+  },
+  {
+    "Country": "Maldives",
+    "Nationality": "Maldivan",
+    "Language": "Maldivian",
+    "Capital City": "Malé"
+  },
+  {
+    "Country": "Mali",
+    "Nationality": "Malian",
+    "Language": "French",
+    "Capital City": "Bamako"
+  },
+  {
+    "Country": "Malta",
+    "Nationality": "Maltese",
+    "Language": "English, Maltese",
+    "Capital City": "Valletta"
+  },
+  {
+    "Country": "Marshall Islands",
+    "Nationality": "Marshallese",
+    "Language": "English, Marshallese",
+    "Capital City": "Majuro"
+  },
+  {
+    "Country": "Martinique",
+    "Nationality": "Martinican",
+    "Language": "French",
+    "Capital City": "Fort-de-France"
+  },
+  {
+    "Country": "Mauritania",
+    "Nationality": "Mauritanian",
+    "Language": "Arabic",
+    "Capital City": "Nouakchott"
+  },
+  {
+    "Country": "Mauritius",
+    "Nationality": "Mauritian",
+    "Language": "English, French, Mauritian Creole",
+    "Capital City": "Port Louis"
+  },
+  {
+    "Country": "Mayotte",
+    "Nationality": "Mahoran",
+    "Language": "French",
+    "Capital City": "Mamoudzou"
+  },
+  {
+    "Country": "Mexico",
+    "Nationality": "Mexican",
+    "Language": "Spanish",
+    "Capital City": "Mexico City"
+  },
+  {
+    "Country": "Micronesia",
+    "Nationality": "Micronesian",
+    "Language": "English",
+    "Capital City": "Palikir"
+  },
+  {
+    "Country": "Moldova",
+    "Nationality": "Moldovan",
+    "Language": "Moldavian",
+    "Capital City": "Chișinău"
+  },
+  {
+    "Country": "Monaco",
+    "Nationality": "Monegasque",
+    "Language": "French",
+    "Capital City": "Monaco"
+  },
+  {
+    "Country": "Mongolia",
+    "Nationality": "Mongolian",
+    "Language": "Mongolian",
+    "Capital City": "Ulan Bator"
+  },
+  {
+    "Country": "Montenegro",
+    "Nationality": "Montenegrin",
+    "Language": "Montenegrin",
+    "Capital City": "Podgorica"
+  },
+  {
+    "Country": "Montserrat",
+    "Nationality": "Montserratian",
+    "Language": "English",
+    "Capital City": "Plymouth"
+  },
+  {
+    "Country": "Morocco",
+    "Nationality": "Moroccan",
+    "Language": "Arabic, Berber",
+    "Capital City": "Rabat"
+  },
+  {
+    "Country": "Mozambique",
+    "Nationality": "Mozambican",
+    "Language": "Portuguese",
+    "Capital City": "Maputo"
+  },
+  {
+    "Country": "Myanmar",
+    "Nationality": "Burmese",
+    "Language": "Burmese",
+    "Capital City": "Naypyidaw"
+  },
+  {
+    "Country": "Namibia",
+    "Nationality": "Namibian",
+    "Language": "Afrikaans, German, English, Herero, Khoekhoe, Kwangali, Lozi, Ndonga, Tswana",
+    "Capital City": "Windhoek"
+  },
+  {
+    "Country": "Nauru",
+    "Nationality": "Nauruan",
+    "Language": "English, Nauru",
+    "Capital City": "Yaren"
+  },
+  {
+    "Country": "Nepal",
+    "Nationality": "Nepalese",
+    "Language": "Nepali",
+    "Capital City": "Kathmandu"
+  },
+  {
+    "Country": "Netherlands",
+    "Nationality": "Dutch",
+    "Language": "Dutch",
+    "Capital City": "Amsterdam"
+  },
+  {
+    "Country": "New Caledonia",
+    "Nationality": "New Caledonian",
+    "Language": "French",
+    "Capital City": "Nouméa"
+  },
+  {
+    "Country": "New Zealand",
+    "Nationality": "New Zealander",
+    "Language": "English, Māori, New Zealand Sign Language",
+    "Capital City": "Wellington"
+  },
+  {
+    "Country": "Nicaragua",
+    "Nationality": "Nicaraguan",
+    "Language": "Spanish",
+    "Capital City": "Managua"
+  },
+  {
+    "Country": "Niger",
+    "Nationality": "Nigerien",
+    "Language": "French",
+    "Capital City": "Niamey"
+  },
+  {
+    "Country": "Nigeria",
+    "Nationality": "Nigerian",
+    "Language": "English",
+    "Capital City": "Abuja"
+  },
+  {
+    "Country": "Niue",
+    "Nationality": "Niuean",
+    "Language": "English, Niuean",
+    "Capital City": "Alofi"
+  },
+  {
+    "Country": "Norfolk Island",
+    "Nationality": "Norfolk Islander",
+    "Language": "English, Norfuk",
+    "Capital City": "Kingston"
+  },
+  {
+    "Country": "North Korea",
+    "Nationality": "North Korean",
+    "Language": "Korean",
+    "Capital City": "Pyongyang"
+  },
+  {
+    "Country": "North Macedonia",
+    "Nationality": "Macedonian",
+    "Language": "Macedonian",
+    "Capital City": "Skopje"
+  },
+  {
+    "Country": "Northern Mariana Islands",
+    "Nationality": "American",
+    "Language": "Carolinian, Chamorro, English",
+    "Capital City": "Saipan"
+  },
+  {
+    "Country": "Norway",
+    "Nationality": "Norwegian",
+    "Language": "Norwegian Nynorsk, Norwegian Bokmål, Sami",
+    "Capital City": "Oslo"
+  },
+  {
+    "Country": "Oman",
+    "Nationality": "Omani",
+    "Language": "Arabic",
+    "Capital City": "Muscat"
+  },
+  {
+    "Country": "Pakistan",
+    "Nationality": "Pakistani",
+    "Language": "English, Urdu",
+    "Capital City": "Islamabad"
+  },
+  {
+    "Country": "Palau",
+    "Nationality": "Palauan",
+    "Language": "English, Palauan",
+    "Capital City": "Ngerulmud"
+  },
+  {
+    "Country": "Palestine",
+    "Nationality": "Palestinian",
+    "Language": "Arabic",
+    "Capital City": "Ramallah"
+  },
+  {
+    "Country": "Panama",
+    "Nationality": "Panamanian",
+    "Language": "Spanish",
+    "Capital City": "Panama City"
+  },
+  {
+    "Country": "Papua New Guinea",
+    "Nationality": "Papua New Guinean",
+    "Language": "English, Hiri Motu, Tok Pisin",
+    "Capital City": "Port Moresby"
+  },
+  {
+    "Country": "Paraguay",
+    "Nationality": "Paraguayan",
+    "Language": "Guaraní, Spanish",
+    "Capital City": "Asunción"
+  },
+  {
+    "Country": "Peru",
+    "Nationality": "Peruvian",
+    "Language": "Aymara, Quechua, Spanish",
+    "Capital City": "Lima"
+  },
+  {
+    "Country": "Philippines",
+    "Nationality": "Filipino",
+    "Language": "English, Filipino",
+    "Capital City": "Manila"
+  },
+  {
+    "Country": "Pitcairn Islands",
+    "Nationality": "Pitcairn Islander",
+    "Language": "English",
+    "Capital City": "Adamstown"
+  },
+  {
+    "Country": "Poland",
+    "Nationality": "Polish",
+    "Language": "Polish",
+    "Capital City": "Warsaw"
+  },
+  {
+    "Country": "Portugal",
+    "Nationality": "Portuguese",
+    "Language": "Portuguese",
+    "Capital City": "Lisbon"
+  },
+  {
+    "Country": "Puerto Rico",
+    "Nationality": "Puerto Rican",
+    "Language": "English, Spanish",
+    "Capital City": "San Juan"
+  },
+  {
+    "Country": "Qatar",
+    "Nationality": "Qatari",
+    "Language": "Arabic",
+    "Capital City": "Doha"
+  },
+  {
+    "Country": "Romania",
+    "Nationality": "Romanian",
+    "Language": "Romanian",
+    "Capital City": "Bucharest"
+  },
+  {
+    "Country": "Russia",
+    "Nationality": "Russian",
+    "Language": "Russian",
+    "Capital City": "Moscow"
+  },
+  {
+    "Country": "Rwanda",
+    "Nationality": "Rwandan",
+    "Language": "English, French, Kinyarwanda",
+    "Capital City": "Kigali"
+  },
+  {
+    "Country": "Réunion",
+    "Nationality": "Réunionese",
+    "Language": "French",
+    "Capital City": "Saint-Denis"
+  },
+  {
+    "Country": "Saint Barthélemy",
+    "Nationality": "Saint Barthélemy Islander",
+    "Language": "French",
+    "Capital City": "Gustavia"
+  },
+  {
+    "Country": "Saint Helena, Ascension and Tristan da Cunha",
+    "Nationality": "Saint Helenian",
+    "Language": "English",
+    "Capital City": "Jamestown"
+  },
+  {
+    "Country": "Saint Kitts and Nevis",
+    "Nationality": "Kittitian or Nevisian",
+    "Language": "English",
+    "Capital City": "Basseterre"
+  },
+  {
+    "Country": "Saint Lucia",
+    "Nationality": "Saint Lucian",
+    "Language": "English",
+    "Capital City": "Castries"
+  },
+  {
+    "Country": "Saint Martin",
+    "Nationality": "Saint Martin Islander",
+    "Language": "French",
+    "Capital City": "Marigot"
+  },
+  {
+    "Country": "Saint Pierre and Miquelon",
+    "Nationality": "Saint-Pierrais, Miquelonnais",
+    "Language": "French",
+    "Capital City": "Saint-Pierre"
+  },
+  {
+    "Country": "Saint Vincent and the Grenadines",
+    "Nationality": "Saint Vincentian",
+    "Language": "English",
+    "Capital City": "Kingstown"
+  },
+  {
+    "Country": "Samoa",
+    "Nationality": "Samoan",
+    "Language": "English, Samoan",
+    "Capital City": "Apia"
+  },
+  {
+    "Country": "San Marino",
+    "Nationality": "Sammarinese",
+    "Language": "Italian",
+    "Capital City": "City of San Marino"
+  },
+  {
+    "Country": "Saudi Arabia",
+    "Nationality": "Saudi Arabian",
+    "Language": "Arabic",
+    "Capital City": "Riyadh"
+  },
+  {
+    "Country": "Senegal",
+    "Nationality": "Senegalese",
+    "Language": "French",
+    "Capital City": "Dakar"
+  },
+  {
+    "Country": "Serbia",
+    "Nationality": "Serbian",
+    "Language": "Serbian",
+    "Capital City": "Belgrade"
+  },
+  {
+    "Country": "Seychelles",
+    "Nationality": "Seychellois",
+    "Language": "Seychellois Creole, English, French",
+    "Capital City": "Victoria"
+  },
+  {
+    "Country": "Sierra Leone",
+    "Nationality": "Sierra Leonean",
+    "Language": "English",
+    "Capital City": "Freetown"
+  },
+  {
+    "Country": "Singapore",
+    "Nationality": "Singaporean",
+    "Language": "English, Malay, Tamil, Chinese",
+    "Capital City": "Singapore"
+  },
+  {
+    "Country": "Sint Maarten",
+    "Nationality": "St. Maartener",
+    "Language": "English, French, Dutch",
+    "Capital City": "Philipsburg"
+  },
+  {
+    "Country": "Slovakia",
+    "Nationality": "Slovak",
+    "Language": "Slovak",
+    "Capital City": "Bratislava"
+  },
+  {
+    "Country": "Slovenia",
+    "Nationality": "Slovene",
+    "Language": "Slovene",
+    "Capital City": "Ljubljana"
+  },
+  {
+    "Country": "Solomon Islands",
+    "Nationality": "Solomon Islander",
+    "Language": "English",
+    "Capital City": "Honiara"
+  },
+  {
+    "Country": "Somalia",
+    "Nationality": "Somali",
+    "Language": "Arabic, Somali",
+    "Capital City": "Mogadishu"
+  },
+  {
+    "Country": "South Africa",
+    "Nationality": "South African",
+    "Language": "Afrikaans, English, Southern Ndebele, Northern Sotho, Southern Sotho, Swazi, Tswana, Tsonga, Venda, Xhosa, Zulu",
+    "Capital City": "Pretoria, Bloemfontein, Cape Town"
+  },
+  {
+    "Country": "South Georgia",
+    "Nationality": "South Georgian South Sandwich Islander",
+    "Language": "English",
+    "Capital City": "King Edward Point"
+  },
+  {
+    "Country": "South Korea",
+    "Nationality": "South Korean",
+    "Language": "Korean",
+    "Capital City": "Seoul"
+  },
+  {
+    "Country": "South Sudan",
+    "Nationality": "South Sudanese",
+    "Language": "English",
+    "Capital City": "Juba"
+  },
+  {
+    "Country": "Spain",
+    "Nationality": "Spanish",
+    "Language": "Spanish",
+    "Capital City": "Madrid"
+  },
+  {
+    "Country": "Sri Lanka",
+    "Nationality": "Sri Lankan",
+    "Language": "Sinhala, Tamil",
+    "Capital City": "Colombo"
+  },
+  {
+    "Country": "Sudan",
+    "Nationality": "Sudanese",
+    "Language": "Arabic, English",
+    "Capital City": "Khartoum"
+  },
+  {
+    "Country": "Suriname",
+    "Nationality": "Surinamer",
+    "Language": "Dutch",
+    "Capital City": "Paramaribo"
+  },
+  {
+    "Country": "Svalbard and Jan Mayen",
+    "Nationality": "Norwegian",
+    "Language": "Norwegian",
+    "Capital City": "Longyearbyen"
+  },
+  {
+    "Country": "Sweden",
+    "Nationality": "Swedish",
+    "Language": "Swedish",
+    "Capital City": "Stockholm"
+  },
+  {
+    "Country": "Switzerland",
+    "Nationality": "Swiss",
+    "Language": "French, Swiss German, Italian, Romansh",
+    "Capital City": "Bern"
+  },
+  {
+    "Country": "Syria",
+    "Nationality": "Syrian",
+    "Language": "Arabic",
+    "Capital City": "Damascus"
+  },
+  {
+    "Country": "São Tomé and Príncipe",
+    "Nationality": "Sao Tomean",
+    "Language": "Portuguese",
+    "Capital City": "São Tomé"
+  },
+  {
+    "Country": "Taiwan",
+    "Nationality": "Taiwanese",
+    "Language": "Chinese",
+    "Capital City": "Taipei"
+  },
+  {
+    "Country": "Tajikistan",
+    "Nationality": "Tadzhik",
+    "Language": "Russian, Tajik",
+    "Capital City": "Dushanbe"
+  },
+  {
+    "Country": "Tanzania",
+    "Nationality": "Tanzanian",
+    "Language": "English, Swahili",
+    "Capital City": "Dodoma"
+  },
+  {
+    "Country": "Thailand",
+    "Nationality": "Thai",
+    "Language": "Thai",
+    "Capital City": "Bangkok"
+  },
+  {
+    "Country": "Timor-Leste",
+    "Nationality": "East Timorese",
+    "Language": "Portuguese, Tetum",
+    "Capital City": "Dili"
+  },
+  {
+    "Country": "Togo",
+    "Nationality": "Togolese",
+    "Language": "French",
+    "Capital City": "Lomé"
+  },
+  {
+    "Country": "Tokelau",
+    "Nationality": "Tokelauan",
+    "Language": "English, Samoan, Tokelauan",
+    "Capital City": "Fakaofo"
+  },
+  {
+    "Country": "Tonga",
+    "Nationality": "Tongan",
+    "Language": "English, Tongan",
+    "Capital City": "Nuku'alofa"
+  },
+  {
+    "Country": "Trinidad and Tobago",
+    "Nationality": "Trinidadian",
+    "Language": "English",
+    "Capital City": "Port of Spain"
+  },
+  {
+    "Country": "Tunisia",
+    "Nationality": "Tunisian",
+    "Language": "Arabic",
+    "Capital City": "Tunis"
+  },
+  {
+    "Country": "Turkmenistan",
+    "Nationality": "Turkmen",
+    "Language": "Russian, Turkmen",
+    "Capital City": "Ashgabat"
+  },
+  {
+    "Country": "Turks and Caicos Islands",
+    "Nationality": "Turks and Caicos Islander",
+    "Language": "English",
+    "Capital City": "Cockburn Town"
+  },
+  {
+    "Country": "Tuvalu",
+    "Nationality": "Tuvaluan",
+    "Language": "English, Tuvaluan",
+    "Capital City": "Funafuti"
+  },
+  {
+    "Country": "Türkiye",
+    "Nationality": "Turkish",
+    "Language": "Turkish",
+    "Capital City": "Ankara"
+  },
+  {
+    "Country": "Uganda",
+    "Nationality": "Ugandan",
+    "Language": "English, Swahili",
+    "Capital City": "Kampala"
+  },
+  {
+    "Country": "Ukraine",
+    "Nationality": "Ukrainian",
+    "Language": "Ukrainian",
+    "Capital City": "Kyiv"
+  },
+  {
+    "Country": "United Arab Emirates",
+    "Nationality": "Emirati",
+    "Language": "Arabic",
+    "Capital City": "Abu Dhabi"
+  },
+  {
+    "Country": "United Kingdom",
+    "Nationality": "British",
+    "Language": "English",
+    "Capital City": "London"
+  },
+  {
+    "Country": "United States",
+    "Nationality": "American",
+    "Language": "English",
+    "Capital City": "Washington D.C."
+  },
+  {
+    "Country": "United States Minor Outlying Islands",
+    "Nationality": "American Islander",
+    "Language": "English",
+    "Capital City": ""
+  },
+  {
+    "Country": "United States Virgin Islands",
+    "Nationality": "Virgin Islander",
+    "Language": "English",
+    "Capital City": "Charlotte Amalie"
+  },
+  {
+    "Country": "Uruguay",
+    "Nationality": "Uruguayan",
+    "Language": "Spanish",
+    "Capital City": "Montevideo"
+  },
+  {
+    "Country": "Uzbekistan",
+    "Nationality": "Uzbekistani",
+    "Language": "Russian, Uzbek",
+    "Capital City": "Tashkent"
+  },
+  {
+    "Country": "Vanuatu",
+    "Nationality": "Ni-Vanuatu",
+    "Language": "Bislama, English, French",
+    "Capital City": "Port Vila"
+  },
+  {
+    "Country": "Vatican City",
+    "Nationality": "Vatican",
+    "Language": "Italian, Latin",
+    "Capital City": "Vatican City"
+  },
+  {
+    "Country": "Venezuela",
+    "Nationality": "Venezuelan",
+    "Language": "Spanish",
+    "Capital City": "Caracas"
+  },
+  {
+    "Country": "Vietnam",
+    "Nationality": "Vietnamese",
+    "Language": "Vietnamese",
+    "Capital City": "Hanoi"
+  },
+  {
+    "Country": "Wallis and Futuna",
+    "Nationality": "Wallis and Futuna Islander",
+    "Language": "French",
+    "Capital City": "Mata-Utu"
+  },
+  {
+    "Country": "Western Sahara",
+    "Nationality": "Sahrawi",
+    "Language": "Berber, Hassaniya, Spanish",
+    "Capital City": "El Aaiún"
+  },
+  {
+    "Country": "Yemen",
+    "Nationality": "Yemeni",
+    "Language": "Arabic",
+    "Capital City": "Sana'a"
+  },
+  {
+    "Country": "Zambia",
+    "Nationality": "Zambian",
+    "Language": "English",
+    "Capital City": "Lusaka"
+  },
+  {
+    "Country": "Zimbabwe",
+    "Nationality": "Zimbabwean",
+    "Language": "Chibarwe, English, Kalanga, Khoisan, Ndau, Northern Ndebele, Chewa, Shona, Sotho, Tonga, Tswana, Tsonga, Venda, Xhosa, Zimbabwean Sign Language",
+    "Capital City": "Harare"
+  },
+  {
+    "Country": "Åland Islands",
+    "Nationality": "Ålandish",
+    "Language": "Swedish",
+    "Capital City": "Mariehamn"
+  }
+]

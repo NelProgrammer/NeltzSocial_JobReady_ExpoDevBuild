@@ -157,6 +157,18 @@ const PersonalDetails = () => {
                     {expandedSection === 'Address' && (
                         <Card.Content>
                             <Divider style={{ marginBottom: 10 }} />
+                            <Dropdown
+                                style={styles.dropdown}
+                                data={[
+                                    { label: 'Free-Standing', value: 'Free-Standing' },
+                                    { label: 'Apartment-Block', value: 'Apartment-Block' }
+                                ]}
+                                labelField="label"
+                                valueField="value"
+                                placeholder="Select Housing Type"
+                                value={address.AddressType || 'Free-Standing'}
+                                onChange={item => updateField('address', 'AddressType', item.value)}
+                            />
                             <TextInput
                                 label="Home Address"
                                 value={address["Home Address"]}

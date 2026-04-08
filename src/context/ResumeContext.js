@@ -47,7 +47,7 @@ export const ResumeProvider = ({ children }) => {
                 names: { firstName: "", MiddleName: "", Surname: "", Prefix: "" },
                 identity: { idNumber: "", idMask: true },
                 contact: { Email: user.email || "", Phone: "" },
-                address: { "Home Address": "" },
+                address: { "Home Address": "", "AddressType": "Free-Standing" },
                 licensing: { Drivers: "None", DriversVisible: false, Motorcycle: "None", MotorVisible: false },
                 demographics: { Gender: "None", Nationality: "" },
                 legal: { "Criminal Record": false, Details: "" },

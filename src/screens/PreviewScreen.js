@@ -126,7 +126,7 @@ const PreviewScreen = ({ navigation }) => {
                         ${contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]} | ` : ''} 
                         ${contact.LinkedIn ? `🔗 ${contact.LinkedIn} | ` : ''} 
                         ${contact.Website ? `🌐 ${contact.Website} | ` : ''} 
-                        ${address["Home Address"] ? `📍 ${formatAddress(address["Home Address"])}` : ''}
+                        ${address.AddressType ? `[${address.AddressType}] ` : ''}${address["Home Address"] ? `${formatAddress(address["Home Address"])}` : ''}
                     </div>
                 </div>
             `;
@@ -135,7 +135,10 @@ const PreviewScreen = ({ navigation }) => {
                 <div class="header-min">
                     <h1>${names.firstName || ''} ${names.Surname || ''}</h1>
                     <div class="contact-info">
-                        ${contact.Email || ''} &bull; ${contact.Phone || ''} &bull; ${address["Home Address"] ? formatAddress(address["Home Address"]) : ''}
+                        ${contact.Email || ''} &bull; ${contact.Phone || ''}
+                    </div>
+                    <div class="contact-info">
+                        ${address.AddressType ? `[${address.AddressType}] ` : ''}${address["Home Address"] ? formatAddress(address["Home Address"]) : ''}
                     </div>
                 </div>
             `;
@@ -149,7 +152,7 @@ const PreviewScreen = ({ navigation }) => {
                         ${contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]} &nbsp;|&nbsp;` : ''} 
                         ${contact.LinkedIn ? `🔗 ${contact.LinkedIn} &nbsp;|&nbsp;` : ''} 
                         ${contact.Website ? `🌐 ${contact.Website} &nbsp;|&nbsp;` : ''} 
-                        ${address["Home Address"] ? `📍 ${formatAddress(address["Home Address"])}` : ''}
+                        ${address.AddressType ? `[${address.AddressType}] ` : ''}${address["Home Address"] ? `${formatAddress(address["Home Address"])}` : ''}
                     </div>
                 </div>
             `;
