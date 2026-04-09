@@ -9,6 +9,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Asset } from 'expo-asset';
+import WorkbookVignette from '../components/preview/WorkbookVignette';
 
 import FileInventory from '../components/pdf/FileInventory';
 import PageSelector from '../components/pdf/PageSelector';
@@ -302,75 +303,10 @@ const PDFWorkbenchScreen = ({ navigation }) => {
                                         {activeSide === 'source' ? 'No PDF Selected' : 'No Pages Added'}
                                     </Text>
                                 </>
-                            ) : isGenerating || !pdfJsSource ? (
-                                <ActivityIndicator animating={true} color="#6200ee" size="large" />
-                            ) : previewBase64 ? (
-                                <WebView
-                                    originWhitelist={['*']}
-                                    source={{
-                                        html: `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, minimum-scale=1.0, user-scalable=yes">
-    <script src="data:application/javascript;base64,${pdfJsSource}"></script>
-    <style>
-        body { margin: 0; padding: 10px; background-color: #525659; display: flex; flex-direction: column; align-items: center; }
-        canvas { max-width: 100%; margin-bottom: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); background-color: white; }
-        #loading { color: white; margin-top: 20px; font-family: sans-serif; }
-    </style>
-</head>
-<body>
-    <div id="loading">Loading PDF Viewer Offline...</div>
-    <div id="pdf-container"></div>
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'data:application/javascript;base64,${pdfWorkerSource}';
-        
-        const base64Pdf = '${previewBase64}';
-        const pdfData = atob(base64Pdf);
-        const uint8Array = new Uint8Array(pdfData.length);
-        for (let i = 0; i < pdfData.length; i++) {
-            uint8Array[i] = pdfData.charCodeAt(i);
-        }
-
-        const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
-        loadingTask.promise.then(pdf => {
-            document.getElementById('loading').style.display = 'none';
-            const container = document.getElementById('pdf-container');
-            
-            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                pdf.getPage(pageNum).then(page => {
-                    const scale = 1.5;
-                    const viewport = page.getViewport({ scale: scale });
-                    
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    
-                    container.appendChild(canvas);
-                    
-                    const renderContext = {
-                        canvasContext: context,
-                        viewport: viewport
-                    };
-                    page.render(renderContext);
-                });
-            }
-        }).catch(err => {
-            document.getElementById('loading').innerText = 'Error loading PDF offline: ' + err.message;
-        });
-    </script>
-</body>
-</html>
-                                        `
-                                    }}
-                                    style={{ flex: 1, width: '100%', height: '100%', borderRadius: 8, overflow: 'hidden', backgroundColor: '#525659' }}
-                                    scrollEnabled={true}
-                                    nestedScrollEnabled={true}
-                                />
                             ) : (
-                                <MaterialCommunityIcons name="alert-circle-outline" size={64} color="#ff5252" />
+                                <View style={styles.vignetteContainer}>
+                                    <WorkbookVignette buildList={buildList} />
+                                </View>
                             )}
                         </View>
 
@@ -463,6 +399,11 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         overflow: 'hidden',
         marginBottom: 8
+    },
+    vignetteContainer: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
     },
     exportBtn: {
         borderRadius: 8,

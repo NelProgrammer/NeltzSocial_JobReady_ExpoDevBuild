@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { ScrollView, View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { TextInput, Headline, Switch, Text, Button, IconButton, List, Card, Divider } from 'react-native-paper';
+import { TextInput, Headline, Switch, Text, Button, IconButton, List, Card, Divider, SegmentedButtons } from 'react-native-paper';
 import { Dropdown } from 'react-native-element-dropdown';
 import { ResumeContext } from '../context/ResumeContext';
 
@@ -22,6 +22,16 @@ const PersonalDetails = () => {
     const demographics = pd.demographics || {};
     const legal = pd.legal || {};
     const languages = pd.languages || [];
+    const [nationalities, setNationalities] = useState([]);
+
+    React.useEffect(() => {
+        // Load nationalities from root assets/data/nationalities_dropdown.json
+        // Note: In Expo, we can't easily require local json dynamically from another folder 
+        // if it's not in the same project root. But we found it in the root assets.
+        // For simplicity, we'll use the one we saw.
+        const nationalitiesData = require('../../assets/data/nationalities_dropdown.json');
+        setNationalities(nationalitiesData.map(n => ({ label: n, value: n })));
+    }, []);
 
     const updateField = (section, key, value) => {
         const newData = { ...resumeData };
@@ -157,17 +167,15 @@ const PersonalDetails = () => {
                     {expandedSection === 'Address' && (
                         <Card.Content>
                             <Divider style={{ marginBottom: 10 }} />
-                            <Dropdown
-                                style={styles.dropdown}
-                                data={[
-                                    { label: 'Free-Standing', value: 'Free-Standing' },
-                                    { label: 'Apartment-Block', value: 'Apartment-Block' }
-                                ]}
-                                labelField="label"
-                                valueField="value"
-                                placeholder="Select Housing Type"
+                            <Text style={styles.label}>Housing Type</Text>
+                            <SegmentedButtons
                                 value={address.AddressType || 'Free-Standing'}
-                                onChange={item => updateField('address', 'AddressType', item.value)}
+                                onValueChange={value => updateField('address', 'AddressType', value)}
+                                buttons={[
+                                    { label: 'Free-Standing', value: 'Free-Standing' },
+                                    { label: 'Apartment', value: 'Apartment-Block' }
+                                ]}
+                                style={styles.segmentedButtons}
                             />
                             <TextInput
                                 label="Home Address"
@@ -258,11 +266,16 @@ const PersonalDetails = () => {
                                 value={demographics.Race || 'Other'}
                                 onChange={item => updateField('demographics', 'Race', item.value)}
                             />
-                            <TextInput
-                                label="Nationality"
-                                value={demographics.Nationality}
-                                onChangeText={(text) => updateField('demographics', 'Nationality', text)}
-                                style={styles.input}
+                            <Dropdown
+                                style={styles.dropdown}
+                                data={nationalities}
+                                labelField="label"
+                                valueField="value"
+                                placeholder="Select Nationality"
+                                value={demographics.Nationality || 'South African'}
+                                onChange={item => updateField('demographics', 'Nationality', item.value)}
+                                search
+                                searchPlaceholder="Search..."
                             />
                         </Card.Content>
                     )}
@@ -426,7 +439,9 @@ const styles = StyleSheet.create({
     input: { marginBottom: 10, backgroundColor: '#fff', fontSize: 14 },
     header: { marginTop: 10, marginBottom: 5, fontWeight: 'bold' },
     switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, paddingVertical: 5 },
-    dropdown: { height: 50, borderColor: 'gray', borderWidth: 1, borderRadius: 5, paddingHorizontal: 8, marginBottom: 10, backgroundColor: '#fff', fontSize: 14 },
+    dropdown: { height: 50, borderColor: '#ccc', borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, marginBottom: 10, backgroundColor: '#fff' },
+    label: { fontSize: 12, color: '#777', marginBottom: 5, marginLeft: 2 },
+    segmentedButtons: { marginBottom: 15 },
     repeaterBox: { borderWidth: 1, borderColor: '#eee', borderRadius: 8, padding: 15, marginBottom: 10, backgroundColor: '#fafafa', position: 'relative' },
     deleteBtn: { position: 'absolute', top: -5, right: -5 }
 });

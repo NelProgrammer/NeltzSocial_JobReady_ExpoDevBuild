@@ -8,6 +8,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { WebView } from 'react-native-webview';
 import { ResumeContext } from '../context/ResumeContext';
 import { VIGNETTE_CSS } from '../constants/VignetteStyles';
+import NativeVignette from '../components/preview/NativeVignette';
 
 const PreviewScreen = ({ navigation }) => {
     const { resumeData, updateResumeData } = useContext(ResumeContext);
@@ -413,18 +414,25 @@ const PreviewScreen = ({ navigation }) => {
                             </Card.Content>
                         </Card>
                     </TouchableOpacity>
+                    <TouchableOpacity onPress={() => changeLayout('chronological')}>
+                        <Card style={[styles.layoutCard, currentLayout === 'chronological' && styles.activeCard]}>
+                            <Card.Content style={styles.cardContent}>
+                                <Text style={[styles.layoutText, currentLayout === 'chronological' && styles.activeText]}>Chronological</Text>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => changeLayout('functional')}>
+                        <Card style={[styles.layoutCard, currentLayout === 'functional' && styles.activeCard]}>
+                            <Card.Content style={styles.cardContent}>
+                                <Text style={[styles.layoutText, currentLayout === 'functional' && styles.activeText]}>Functional</Text>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
                 </ScrollView>
             </View>
 
             <View style={styles.previewArea}>
-                <WebView
-                    originWhitelist={['*']}
-                    source={{ html: generateHtml() }}
-                    style={{ flex: 1, width: '100%', backgroundColor: '#f5f5f5' }}
-                    showsVerticalScrollIndicator={false}
-                    javaScriptEnabled={true}
-                    domStorageEnabled={true}
-                />
+                <NativeVignette data={resumeData} layout={currentLayout} />
             </View>
 
             <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 15) }]}>
