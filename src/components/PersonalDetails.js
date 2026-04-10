@@ -183,7 +183,16 @@ const PersonalDetails = () => {
                                 onChangeText={(text) => updateField('address', 'Home Address', text)}
                                 style={styles.input}
                                 multiline
-                                numberOfLines={3}
+                                numberOfLines={4}
+                                placeholder={
+                                    (address.AddressType === 'Apartment-Block') 
+                                        ? (address.AddressFormat === 'list' 
+                                            ? "e.g.\nApt 12B, The Paragon\n14 Long Street\nCape Town\n8000" 
+                                            : "e.g. Apt 12B, The Paragon, 14 Long Street, Cape Town, 8000")
+                                        : (address.AddressFormat === 'list'
+                                            ? "e.g.\n10 Nelson Mandela Blvd\nSandton\nJohannesburg\n2196"
+                                            : "e.g. 10 Nelson Mandela Blvd, Sandton, Johannesburg, 2196")
+                                }
                             />
                             <View style={styles.switchRow}>
                                 <Text>Format as Bulleted List?</Text>

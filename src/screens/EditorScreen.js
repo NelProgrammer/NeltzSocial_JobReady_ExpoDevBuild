@@ -1,7 +1,7 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { Text, Button, Card } from 'react-native-paper';
+import { Text, Button, Card, IconButton, Portal, Dialog, TextInput } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ResumeContext } from '../context/ResumeContext';
 import PersonalDetails from '../components/PersonalDetails';
@@ -14,14 +14,64 @@ const Tab = createMaterialTopTabNavigator();
 
 const EditorScreen = ({ route, navigation }) => {
     const { resumeId } = route.params;
-    const { resumeData, switchResume, updateResumeData } = useContext(ResumeContext);
+    const { resumeData, switchResume, updateResumeData, meta, renameResume, duplicateResume } = useContext(ResumeContext);
     const insets = useSafeAreaInsets();
+    
+    const [renameDialogVisible, setRenameDialogVisible] = useState(false);
+    const [newName, setNewName] = useState('');
 
     useEffect(() => {
         if (resumeId) {
             switchResume(resumeId);
         }
     }, [resumeId]);
+
+    useEffect(() => {
+        const activeMeta = meta.find(m => m.id === resumeId);
+        const resumeName = activeMeta ? activeMeta.name : 'Resume Editor';
+
+        navigation.setOptions({
+            title: resumeName,
+            headerRight: () => (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <IconButton 
+                        icon="content-copy" 
+                        iconColor="#fff" 
+                        size={20} 
+                        style={{ margin: 0 }}
+                        onPress={() => {
+                            Alert.alert('Duplicate CV', 'Create a copy of this Resume?', [
+                                { text: 'Cancel', style: 'cancel' },
+                                { text: 'Copy', onPress: async () => {
+                                    const newId = await duplicateResume(resumeId);
+                                    if (newId) {
+                                        navigation.setParams({ resumeId: newId });
+                                    }
+                                }}
+                            ]);
+                        }} 
+                    />
+                    <IconButton 
+                        icon="pencil" 
+                        iconColor="#fff" 
+                        size={20} 
+                        style={{ margin: 0 }}
+                        onPress={() => {
+                            setNewName(resumeName);
+                            setRenameDialogVisible(true);
+                        }} 
+                    />
+                    <IconButton 
+                        icon="close" 
+                        iconColor="#fff" 
+                        size={22} 
+                        style={{ margin: 0 }}
+                        onPress={() => navigation.goBack()} 
+                    />
+                </View>
+            ),
+        });
+    }, [navigation, meta, resumeId]);
 
     const currentLayout = resumeData?.Layout || 'professional';
 
@@ -51,6 +101,29 @@ const EditorScreen = ({ route, navigation }) => {
                     Preview Resume
                 </Button>
             </View>
+
+            <Portal>
+                <Dialog visible={renameDialogVisible} onDismiss={() => setRenameDialogVisible(false)}>
+                    <Dialog.Title>Rename Resume</Dialog.Title>
+                    <Dialog.Content>
+                        <TextInput
+                            label="Resume Name"
+                            value={newName}
+                            onChangeText={setNewName}
+                            mode="outlined"
+                        />
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setRenameDialogVisible(false)}>Cancel</Button>
+                        <Button onPress={() => {
+                            if (newName.trim()) {
+                                renameResume(resumeId, newName.trim());
+                            }
+                            setRenameDialogVisible(false);
+                        }}>Save</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
         </View>
     );
 };

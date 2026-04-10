@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Appbar, Text, Button, Surface, ActivityIndicator } from 'react-native-paper';
 import * as DocumentPicker from 'expo-document-picker';
@@ -9,8 +9,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Asset } from 'expo-asset';
-import WorkbookVignette from '../components/preview/WorkbookVignette';
-
+import SmartPreviewer from '../components/preview/SmartPreviewer';
 import FileInventory from '../components/pdf/FileInventory';
 import PageSelector from '../components/pdf/PageSelector';
 import BuildList from '../components/pdf/BuildList';
@@ -123,6 +122,13 @@ const PDFWorkbenchScreen = ({ navigation }) => {
             isMounted = false;
         };
     }, [buildList, files, activeSide, selectedFileId]);
+
+    // Force glow logic to source panel if list is emptied
+    React.useEffect(() => {
+        if (buildList.length === 0 && activeSide === 'target') {
+            setActiveSide('source');
+        }
+    }, [buildList.length]);
 
     // 1. Upload Logic
     const handleUploadFile = async () => {
@@ -255,8 +261,8 @@ const PDFWorkbenchScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={[styles.container, { paddingBottom: insets.bottom }]}>
-            <View style={styles.gridContainer}>
+        <View style={styles.container}>
+            <View style={[styles.gridContainer, { paddingBottom: Math.max(insets.bottom, 6) }]}>
                 {/* Top Half: Inventory (60%) & Pages (40%) */}
                 <View style={styles.topHalf}>
                     <Surface style={[styles.inventoryPane, activeSide === 'source' && styles.glowSource]} elevation={2}>
@@ -296,7 +302,7 @@ const PDFWorkbenchScreen = ({ navigation }) => {
                         </Text>
 
                         <View style={styles.previewBox}>
-                            {previewBase64 === null ? (
+                            {previewBase64 === null && !isGenerating ? (
                                 <>
                                     <MaterialCommunityIcons name="file-pdf-box" size={64} color="#bdbdbd" />
                                     <Text variant="bodyMedium" style={{ marginTop: 8, color: '#757575' }}>
@@ -304,9 +310,12 @@ const PDFWorkbenchScreen = ({ navigation }) => {
                                     </Text>
                                 </>
                             ) : (
-                                <View style={styles.vignetteContainer}>
-                                    <WorkbookVignette buildList={buildList} />
-                                </View>
+                                <SmartPreviewer
+                                    mode="workbook"
+                                    pdfUri={previewBase64 ? `data:application/pdf;base64,${previewBase64}` : null}
+                                    isGenerating={isGenerating}
+                                    buildList={buildList}
+                                />
                             )}
                         </View>
 

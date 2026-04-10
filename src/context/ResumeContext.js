@@ -106,6 +106,38 @@ export const ResumeProvider = ({ children }) => {
         await Storage.saveMeta(user.id, updatedMeta);
     };
 
+    // Duplicate Resume
+    const duplicateResume = async (id) => {
+        if (!user) return null;
+        
+        // Find existing meta to get Name
+        const existingMeta = meta.find(m => m.id === id);
+        if (!existingMeta) return null;
+
+        // Fetch existing data
+        const sourceData = await Storage.loadResumeData(user.id, id);
+        if (!sourceData) return null;
+
+        // Create new ID
+        const newId = `res_${Date.now()}`;
+        const newName = `${existingMeta.name} - Copy`;
+        
+        // Deep copy data
+        const clonedData = JSON.parse(JSON.stringify(sourceData));
+        
+        // Save new info
+        const newMetaItem = { id: newId, name: newName, lastModified: Date.now() };
+        const updatedMeta = [...meta, newMetaItem];
+        setMeta(updatedMeta);
+        
+        await Storage.saveMeta(user.id, updatedMeta);
+        await Storage.saveResumeData(user.id, newId, clonedData);
+        
+        // Switch to the clone
+        await switchResume(newId);
+        return newId;
+    };
+
     // Delete Resume
     const deleteResume = async (id) => {
         if (!user) return;
@@ -133,7 +165,8 @@ export const ResumeProvider = ({ children }) => {
             switchResume,
             updateResumeData,
             renameResume,
-            deleteResume
+            deleteResume,
+            duplicateResume
         }}>
             {children}
         </ResumeContext.Provider>

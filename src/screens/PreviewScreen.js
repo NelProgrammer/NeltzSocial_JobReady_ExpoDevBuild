@@ -8,12 +8,16 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { WebView } from 'react-native-webview';
 import { ResumeContext } from '../context/ResumeContext';
 import { VIGNETTE_CSS } from '../constants/VignetteStyles';
-import NativeVignette from '../components/preview/NativeVignette';
+import SmartPreviewer from '../components/preview/SmartPreviewer';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
+import * as Device from 'expo-device';
 
 const PreviewScreen = ({ navigation }) => {
     const { resumeData, updateResumeData } = useContext(ResumeContext);
     const [loading, setLoading] = useState(false);
     const [exportFormat, setExportFormat] = useState('word_layout');
+    const [previewUri, setPreviewUri] = useState(null);
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const insets = useSafeAreaInsets();
 
     // Layout State (Saved in Resume Data)
@@ -263,6 +267,53 @@ const PreviewScreen = ({ navigation }) => {
         `;
     };
 
+    // Background PDF Generation for Preview
+    useEffect(() => {
+        let isMounted = true;
+
+        // TIER 3 (Low End / SA Budget Market intercept)
+        const memoryBytes = Device.totalMemory || 0;
+        const yearClass = Device.deviceYearClass || 0;
+        const isLowEnd = (memoryBytes > 0 && memoryBytes < 3221225472) || (yearClass > 0 && yearClass < 2019); // < 3GB or pre-2019
+        const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+        if (isExpoGo || isLowEnd) {
+            // Drop back instantly to Vignette. Skip generation entirely to save overhead.
+            return;
+        }
+
+        // TIER 1 Threshold (Mid-range & Up)
+        const isHighEnd = memoryBytes >= 4294967296; // >= 4GB Framework to safely bridge massive Base64 strings by bypassing slow eMMC storage.
+
+        const generateBackgroundPdf = async () => {
+             setIsGeneratingPdf(true);
+             try {
+                const html = generateHtml();
+                
+                if (isHighEnd && Platform.OS !== 'web') {
+                    // TIER 1: In-Memory Base64 Processing (Zero local disk IO)
+                    const { base64 } = await Print.printToFileAsync({ html, width: 612, height: 792, base64: true });
+                    if (isMounted) setPreviewUri(`data:application/pdf;base64,${base64}`);
+                } else {
+                    // TIER 2: Fast Disk Caching (Offloads memory footprint)
+                    const { uri } = await Print.printToFileAsync({ html, width: 612, height: 792 });
+                    if (isMounted) setPreviewUri(uri);
+                }
+
+             } catch (e) {
+                 console.log("Background PDF generation failed", e);
+             } finally {
+                 if (isMounted) setIsGeneratingPdf(false);
+             }
+        };
+
+        const timeout = setTimeout(generateBackgroundPdf, 400); // debounce
+        return () => {
+            isMounted = false;
+            clearTimeout(timeout);
+        }
+    }, [resumeData, currentLayout, exportFormat]);
+
     const printToFile = async () => {
         setLoading(true);
         try {
@@ -340,14 +391,15 @@ const PreviewScreen = ({ navigation }) => {
         try {
             const now = new Date();
             const timestamp = now.toISOString().replace(/[:.]/g, '-');
-            const fileName = `My_Resume_${timestamp}.${type === 'text' ? 'docx' : 'doc'}`;
+            const extension = type === 'text' ? 'docx' : 'doc';
+            const fileName = `My_Resume_${type === 'google_docs' ? 'GoogleDocs' : 'Word'}_${timestamp}.${extension}`;
             const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
             
             let content = '';
             if (type === 'text') {
                 content = generatePlainText();
             } else {
-                // HTML to Word (Layout)
+                // HTML to Word/Google Docs (Layout)
                 content = `
                     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                     <head><meta charset='utf-8'><title>Resume</title></head>
@@ -358,13 +410,17 @@ const PreviewScreen = ({ navigation }) => {
 
             await FileSystem.writeAsStringAsync(fileUri, content);
 
+            // Google Docs on mobile intercepts standard doc/docx MIMEs.
+            const mimeType = type === 'text' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/msword';
+
             await shareAsync(fileUri, {
-                title: `Share ${fileName}`,
-                mimeType: type === 'text' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/msword'
+                title: type === 'google_docs' ? `Save ${fileName} to Google Drive / Docs` : `Share ${fileName}`,
+                mimeType: mimeType,
+                dialogTitle: type === 'google_docs' ? 'Open with Google Docs or Save to Drive' : 'Share File'
             });
 
         } catch (error) {
-            Alert.alert("Error", "Could not export to Word");
+            Alert.alert("Error", "Could not export document");
             console.error(error);
         } finally {
             setLoading(false);
@@ -391,8 +447,8 @@ const PreviewScreen = ({ navigation }) => {
     return (
         <View style={styles.container}>
             <View style={styles.topContainer}>
-                <Text style={styles.sectionTitle}>Select CV Format (Layout)</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.layoutScroll}>
+                <Text style={styles.sectionTitle}>Select CV Format (Layout) 👉 Swipe for more</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.layoutScroll}>
                     <TouchableOpacity onPress={() => changeLayout('professional')}>
                         <Card style={[styles.layoutCard, currentLayout === 'professional' && styles.activeCard]}>
                             <Card.Content style={styles.cardContent}>
@@ -432,42 +488,61 @@ const PreviewScreen = ({ navigation }) => {
             </View>
 
             <View style={styles.previewArea}>
-                <NativeVignette data={resumeData} layout={currentLayout} />
+                <SmartPreviewer 
+                    data={resumeData} 
+                    layout={currentLayout} 
+                    exportFormat={exportFormat} 
+                    pdfUri={previewUri} 
+                    isGenerating={isGeneratingPdf} 
+                />
             </View>
 
             <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 15) }]}>
-                <Text style={styles.sectionTitle}>Select Export Format</Text>
-                <View style={{ flexDirection: 'row', marginBottom: 15 }}>
-                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setExportFormat('pdf')}>
+                <Text style={styles.sectionTitle}>Select Export Format 👉 Swipe for more</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={true} style={{ marginBottom: 15 }}>
+                    <TouchableOpacity onPress={() => setExportFormat('pdf')}>
                         <Card style={[styles.layoutCard, exportFormat === 'pdf' && styles.activeCard]}>
-                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 5 }]}>
+                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 15 }]}>
                                 <Text style={[styles.layoutText, exportFormat === 'pdf' && styles.activeText, { textAlign: 'center' }]}>PDF</Text>
                             </Card.Content>
                         </Card>
                     </TouchableOpacity>
-                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setExportFormat('word_text')}>
-                        <Card style={[styles.layoutCard, exportFormat === 'word_text' && styles.activeCard]}>
-                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 5 }]}>
-                                <Text style={[styles.layoutText, exportFormat === 'word_text' && styles.activeText, { textAlign: 'center' }]}>Word (Text)</Text>
-                            </Card.Content>
-                        </Card>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={{ flex: 1 }} onPress={() => setExportFormat('word_layout')}>
-                        <Card style={[styles.layoutCard, exportFormat === 'word_layout' && styles.activeCard, { marginRight: 0 }]}>
-                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 5 }]}>
+                    <TouchableOpacity onPress={() => setExportFormat('word_layout')}>
+                        <Card style={[styles.layoutCard, exportFormat === 'word_layout' && styles.activeCard]}>
+                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 15 }]}>
                                 <Text style={[styles.layoutText, exportFormat === 'word_layout' && styles.activeText, { textAlign: 'center' }]}>Word (Layout)</Text>
                             </Card.Content>
                         </Card>
                     </TouchableOpacity>
-                </View>
+                    <TouchableOpacity onPress={() => setExportFormat('word_text')}>
+                        <Card style={[styles.layoutCard, exportFormat === 'word_text' && styles.activeCard]}>
+                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 15 }]}>
+                                <Text style={[styles.layoutText, exportFormat === 'word_text' && styles.activeText, { textAlign: 'center' }]}>Word (Text)</Text>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setExportFormat('google_docs')}>
+                        <Card style={[styles.layoutCard, exportFormat === 'google_docs' && styles.activeCard, { marginRight: 0 }]}>
+                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 15 }]}>
+                                <Text style={[styles.layoutText, exportFormat === 'google_docs' && styles.activeText, { textAlign: 'center' }]}>Google Docs</Text>
+                            </Card.Content>
+                        </Card>
+                    </TouchableOpacity>
+                </ScrollView>
                 <Button
                     mode="contained"
-                    icon={exportFormat === 'pdf' ? "file-pdf-box" : "file-word-box"}
+                    icon={exportFormat === 'pdf' ? "file-pdf-box" : exportFormat === 'google_docs' ? "google-drive" : "file-word-box"}
                     onPress={() => {
                         if (exportFormat === 'pdf') {
                             printToFile();
                         } else {
-                            Alert.alert('Coming Soon', `${exportFormat === 'word_text' ? 'Word (Text)' : 'Word (Layout)'} Export will be available soon.`);
+                            // Map exportFormat states to exportToWord types
+                            const typeMap = {
+                                'word_text': 'text',
+                                'word_layout': 'layout',
+                                'google_docs': 'google_docs'
+                            };
+                            exportToWord(typeMap[exportFormat]);
                         }
                     }}
                     loading={loading && exportFormat === 'pdf'}

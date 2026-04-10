@@ -19,6 +19,11 @@ const HubScreen = () => {
 
     const latestResume = meta.length > 0 ? meta.sort((a, b) => b.lastModified - a.lastModified)[0] : null;
 
+    const getInitials = (name) => {
+        if (!name) return 'U';
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    };
+
     const AppCard = ({ title, description, icon, color, onPress }) => (
         <TouchableOpacity style={styles.cardContainer} onPress={onPress}>
             <Surface style={styles.appCard} elevation={2}>
@@ -45,15 +50,34 @@ const HubScreen = () => {
                     style={[styles.header, { paddingTop: insets.top + 20 }]}
                 >
                     <View style={styles.headerTop}>
-                        <View>
+                        <View style={styles.headerLeft}>
                             <Text variant="headlineMedium" style={styles.welcomeText}>Hello, {user?.name?.split(' ')[0] || 'User'}</Text>
-                            <Text variant="bodyLarge" style={styles.subtitleText}>Your career dashboard is ready.</Text>
+                            <Text variant="bodyLarge" style={styles.subtitleText}>{user?.email || 'Guest User'}</Text>
+                            <Text variant="bodySmall" style={styles.dashboardSubtitle}>Your career dashboard is ready.</Text>
                         </View>
-                        <Image 
-                            source={require('../../assets/logo.png')} 
-                            style={styles.logoSmall}
-                            resizeMode="contain"
-                        />
+                        <View style={styles.profileSection}>
+                            {user?.avatar ? (
+                                <Avatar.Image size={48} source={{ uri: user.avatar }} />
+                            ) : (
+                                <Avatar.Text size={48} label={getInitials(user?.name)} style={styles.avatarFallback} />
+                            )}
+                            <TouchableOpacity style={styles.logoutBtn} onPress={() => {
+                                Alert.alert(
+                                    "Logout",
+                                    "Are you sure you want to log out of your profile?",
+                                    [
+                                        { text: "Cancel", style: "cancel" },
+                                        { text: "Logout", style: "destructive", onPress: () => {
+                                            logout();
+                                            // Navigation is usually handled by the auth context wrapper automatically kicking out
+                                        }}
+                                    ]
+                                );
+                            }}>
+                                <MaterialCommunityIcons name="logout" size={16} color="#fff" />
+                                <Text style={styles.logoutText}>Log Out</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </LinearGradient>
 
@@ -144,9 +168,37 @@ const styles = StyleSheet.create({
         color: 'rgba(255,255,255,0.8)',
         marginTop: 4,
     },
-    logoSmall: {
-        width: 60,
-        height: 60,
+    headerLeft: {
+        flex: 1,
+    },
+    dashboardSubtitle: {
+        color: 'rgba(255,255,255,0.6)',
+        marginTop: 2,
+    },
+    profileSection: {
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    avatarFallback: {
+        backgroundColor: '#6366f1',
+    },
+    logoutBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255,50,50,0.15)',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(255,50,50,0.3)'
+    },
+    logoutText: {
+        color: '#ff6b6b',
+        fontSize: 10,
+        fontWeight: 'bold',
+        marginLeft: 4,
+        textTransform: 'uppercase'
     },
     activeContextCard: {
         backgroundColor: '#fff',

@@ -9,7 +9,7 @@ const VIGNETTE_PADDING = 20;
 const PAGE_WIDTH = SCREEN_WIDTH - (VIGNETTE_PADDING * 2);
 const PAGE_HEIGHT = PAGE_WIDTH * A4_RATIO;
 
-const NativeVignette = ({ data, layout = 'professional', glow = null }) => {
+const NativeVignette = ({ data, layout = 'professional', glow = null, exportFormat = 'pdf' }) => {
     if (!data) return null;
 
     // Glow setup
@@ -110,9 +110,59 @@ const NativeVignette = ({ data, layout = 'professional', glow = null }) => {
     };
 
     const renderSectionHeader = (title) => {
+        if (exportFormat === 'word_text') {
+            return <Text style={styles.plainSectionTitle}>{title.toUpperCase()}</Text>;
+        }
         const titleStyle = layout === 'minimalist' ? styles.sectionTitleMin : styles.sectionTitle;
         return <Text style={titleStyle}>{title.toUpperCase()}</Text>;
     };
+
+    if (exportFormat === 'word_text') {
+        return (
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <View style={[styles.glowWrapper, glow && { borderColor: glowColor, borderWidth: 4, elevation: 15 }]}>
+                    <Surface style={styles.page} elevation={4}>
+                        <Text style={styles.plainTextHeader}>{names.firstName} {names.Surname}</Text>
+                        <Text style={styles.plainTextContact}>{contact.Email} | {contact.Phone}</Text>
+                        <Text style={styles.plainTextContact}>{address["Home Address"] ? address["Home Address"].replace(/\n/g, ', ') : ''}</Text>
+                        <Divider style={{ marginVertical: 15 }} />
+
+                        {summary && (
+                            <View style={styles.section}>
+                                {renderSectionHeader('Executive Summary')}
+                                <Text style={styles.plainTextBody}>{summary}</Text>
+                            </View>
+                        )}
+                        
+                        {expList.length > 0 && (
+                            <View style={styles.section}>
+                                {renderSectionHeader('Professional Experience')}
+                                {expList.map((job, idx) => (
+                                    <View key={idx} style={styles.entry}>
+                                        <Text style={styles.plainTextBold}>{job.Organization} | {job.Role}</Text>
+                                        <Text style={styles.plainTextSub}>{job["Start Date"]} - {job["End Date"] || 'Present'}</Text>
+                                        <Text style={styles.plainTextBody}>{job["Key Responsibilities"]}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+
+                        {(eduList.tertiary?.length > 0) && (
+                            <View style={styles.section}>
+                                {renderSectionHeader('Education')}
+                                {eduList.tertiary?.map((edu, idx) => (
+                                    <View key={idx} style={styles.entry}>
+                                        <Text style={styles.plainTextBold}>{edu.Institution} | {edu["Qualification Name"]}</Text>
+                                        <Text style={styles.plainTextSub}>{edu.Year}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+                    </Surface>
+                </View>
+            </ScrollView>
+        );
+    }
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -240,6 +290,14 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         padding: 30,
     },
+    // Plain Text Settings
+    plainTextHeader: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
+    plainTextContact: { fontFamily: 'monospace', fontSize: 12, marginBottom: 2 },
+    plainSectionTitle: { fontFamily: 'monospace', fontSize: 14, fontWeight: 'bold', marginTop: 15, marginBottom: 10, textDecorationLine: 'underline' },
+    plainTextBody: { fontFamily: 'monospace', fontSize: 12, lineHeight: 18 },
+    plainTextBold: { fontFamily: 'monospace', fontSize: 12, fontWeight: 'bold' },
+    plainTextSub: { fontFamily: 'monospace', fontSize: 12, marginBottom: 5 },
+
     // Professional Layout
     headerPro: { borderBottomWidth: 2, borderBottomColor: '#2c3e50', paddingBottom: 15, marginBottom: 20 },
     namePro: { fontSize: 24, fontWeight: 'bold', color: '#2c3e50', textTransform: 'uppercase', letterSpacing: 1 },

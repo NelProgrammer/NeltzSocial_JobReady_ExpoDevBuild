@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Button, Surface, TextInput, useTheme, Divider, IconButton, Avatar } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -8,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 const LoginScreen = () => {
     const { profiles, login, createProfile, deleteProfile, quickStart } = useContext(AuthContext);
     const theme = useTheme();
+    const insets = useSafeAreaInsets();
     const [newName, setNewName] = useState('');
 
     const handleCreateProfile = () => {
@@ -20,7 +22,7 @@ const LoginScreen = () => {
     return (
         <LinearGradient colors={['#0f172a', '#1e293b']} style={styles.container}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-                <ScrollView contentContainerStyle={styles.scrollContent}>
+                <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20, paddingBottom: Math.max(insets.bottom, 20) }]}>
                     <View style={styles.logoContainer}>
                         <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
                         <Text variant="headlineMedium" style={styles.title}>JobReady</Text>
