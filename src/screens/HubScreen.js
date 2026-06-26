@@ -109,7 +109,7 @@ const HubScreen = () => {
                     <AppCard 
                         title="PDF Workbench" 
                         description="Merge documents, split pages, and reorder files."
-                        icon="pdf-box" 
+                        icon="file-pdf-box" 
                         color="#f59e0b"
                         onPress={() => navigation.navigate('PDFWorkbench')}
                     />
