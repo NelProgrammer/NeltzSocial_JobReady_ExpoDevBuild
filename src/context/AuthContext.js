@@ -1,7 +1,10 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { Platform } from 'react-native';
 import { Storage } from '../utils/storage';
 
 export const AuthContext = createContext();
+
+const BACKEND_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -63,9 +66,30 @@ export const AuthProvider = ({ children }) => {
 
     const createProfile = async (name, socialLinks = {}) => {
         try {
+            // Generate a unique mock token for local verification
+            const mockToken = 'mock_' + name.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
+            
+            // Attempt to register/login on the backend API
+            const response = await fetch(`${BACKEND_URL}/auth/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider: 'google',
+                    token: mockToken
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server returned status code: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
             const newProfile = {
-                id: 'prof_' + Date.now(),
-                name: name,
+                id: result.profile_id,
+                name: result.name || name,
+                email: result.email || '',
+                accessToken: result.access_token,
                 created: new Date().toISOString(),
                 lastLogin: Date.now(),
                 socialLinks: socialLinks
@@ -79,9 +103,29 @@ export const AuthProvider = ({ children }) => {
             setUser(newProfile);
             return newProfile;
         } catch (e) {
-            console.error('[Auth] Profile creation failed', e);
+            console.warn('[Auth] Backend profile registration skipped, falling back to local mode', e.message);
+            
+            // Offline/Local Fallback
+            const localId = 'prof_' + Date.now();
+            const newProfile = {
+                id: localId,
+                name: name,
+                accessToken: null,
+                created: new Date().toISOString(),
+                lastLogin: Date.now(),
+                socialLinks: socialLinks
+            };
+
+            const updatedProfiles = [...(profiles || []), newProfile];
+            await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+            await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfile.id);
+
+            setProfiles(updatedProfiles);
+            setUser(newProfile);
+            return newProfile;
         }
     };
+
 
     const deleteProfile = async (profileId) => {
         try {
