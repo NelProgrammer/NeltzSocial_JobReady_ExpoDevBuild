@@ -9,7 +9,7 @@ const VIGNETTE_PADDING = 20;
 const PAGE_WIDTH = SCREEN_WIDTH - (VIGNETTE_PADDING * 2);
 const PAGE_HEIGHT = PAGE_WIDTH * A4_RATIO;
 
-const NativeVignette = ({ data, layout = 'professional', glow = null, exportFormat = 'pdf' }) => {
+const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, exportFormat = 'pdf' }) => {
     if (!data) return null;
 
     // Glow setup
@@ -353,4 +353,4 @@ const styles = StyleSheet.create({
     refDetail: { fontSize: 10, color: '#666' }
 });
 
-export default NativeVignette;
+export default NativeVignette_Preview;

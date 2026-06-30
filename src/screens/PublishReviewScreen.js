@@ -6,7 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import { ResumeContext } from '../context/ResumeContext';
 import { Storage } from '../utils/storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Vignette from '../components/Vignette';
+import Vignette_PubRev from '../components/Vignette_PubRev';
 
 const PublishReviewScreen = ({ navigation }) => {
     const { user } = useContext(AuthContext);
@@ -366,7 +366,7 @@ const PublishReviewScreen = ({ navigation }) => {
                         {/* Top half: Resume rendering */}
                         <View style={{ flex: 1.2, borderBottomWidth: 1, borderColor: '#ccc' }}>
                             {activeSubmission?.resumeData ? (
-                                <Vignette data={activeSubmission.resumeData} />
+                                <Vignette_PubRev data={activeSubmission.resumeData} />
                             ) : (
                                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                                     <Text>No resume snapshot data found.</Text>

@@ -3,7 +3,7 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Divider } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const Vignette = ({ data, layout = 'professional' }) => {
+const Vignette_PubRev = ({ data, layout = 'professional' }) => {
     if (!data) return null;
 
     const pd = data["personal details"] || {};
@@ -207,4 +207,4 @@ const styles = StyleSheet.create({
     refDetail: { fontSize: 11, color: '#64748b' }
 });
 
-export default Vignette;
+export default Vignette_PubRev;

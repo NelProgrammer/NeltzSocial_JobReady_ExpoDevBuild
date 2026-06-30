@@ -3,7 +3,7 @@ import { View, Platform, StyleSheet, ActivityIndicator, Animated } from 'react-n
 import { Text } from 'react-native-paper';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
-import NativeVignette from './NativeVignette';
+import NativeVignette_Preview from './NativeVignette_Preview';
 import WorkbookVignette from './WorkbookVignette';
 
 // We dynamically import react-native-pdf so that it doesn't instantly crash 
@@ -95,7 +95,7 @@ const SmartPreviewer = ({ data, layout, exportFormat, pdfUri, isGenerating, mode
         content = mode === 'workbook' ? (
             <WorkbookVignette buildList={buildList} />
         ) : (
-            <NativeVignette data={data} layout={layout} exportFormat={exportFormat} />
+            <NativeVignette_Preview data={data} layout={layout} exportFormat={exportFormat} />
         );
     } else if (engineState === 'web_iframe') {
         if (!pdfUri) {
