@@ -125,6 +125,22 @@ const Experience = () => {
                                 onChangeText={(text) => updateExpField(index, 'Reason for Leaving', text)}
                                 style={styles.input}
                             />
+                            <TextInput
+                                label="Systems / Tools Used"
+                                value={exp["Systems Used"]}
+                                onChangeText={(text) => updateExpField(index, 'Systems Used', text)}
+                                style={styles.input}
+                                placeholder="e.g. MS Office, SAP, Figma"
+                            />
+                            <TextInput
+                                label="Key Achievements"
+                                value={exp["Achievements"]}
+                                onChangeText={(text) => updateExpField(index, 'Achievements', text)}
+                                style={styles.input}
+                                multiline
+                                numberOfLines={2}
+                                placeholder="e.g. Increased efficiency by 15%"
+                            />
                         </Card.Content>
                     )}
                 </Card>

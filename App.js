@@ -10,6 +10,8 @@ import EditorScreen from './src/screens/EditorScreen';
 import PreviewScreen from './src/screens/PreviewScreen';
 import PDFWorkbenchScreen from './src/screens/PDFWorkbenchScreen';
 import LoginScreen from './src/screens/LoginScreen';
+import PublishReviewScreen from './src/screens/PublishReviewScreen';
+import TaxiScreen from './src/screens/TaxiScreen';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -69,6 +71,16 @@ function NavigationStack() {
             name="PDFWorkbench"
             component={PDFWorkbenchScreen}
             options={{ title: 'NeltzSocial - JobReady: PDF Workbench' }}
+          />
+          <Stack.Screen
+            name="PublishReview"
+            component={PublishReviewScreen}
+            options={{ title: 'NeltzSocial - JobReady: Publish & Review' }}
+          />
+          <Stack.Screen
+            name="Taxi"
+            component={TaxiScreen}
+            options={{ title: 'NeltzSocial - JobReady: Taxi 2 Interview' }}
           />
         </>
       )}

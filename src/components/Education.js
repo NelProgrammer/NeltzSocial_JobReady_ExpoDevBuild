@@ -87,6 +87,13 @@ const Education = () => {
                             style={[styles.input, { flex: 1, marginLeft: 5 }]}
                         />
                     </View>
+                    <TextInput
+                        label="Subjects / Stream"
+                        value={highschool["Subjects Stream"]}
+                        onChangeText={(text) => updateHighSchool("Subjects Stream", text)}
+                        style={styles.input}
+                        placeholder="e.g. Science, Maths, Accounting"
+                    />
                 </Card.Content>
             </Card>
 

@@ -119,15 +119,15 @@ const HubScreen = () => {
                         description="Get feedback from experts and showcase your profile."
                         icon="check-decagram" 
                         color="#10b981"
-                        onPress={() => navigation.navigate('Preview')}
+                        onPress={() => navigation.navigate('PublishReview')}
                     />
 
                     <AppCard 
                         title="Taxi 2 Interview" 
-                        description="Plan your commute and stay safe. (Coming Soon)"
+                        description="Plan your commute and stay safe."
                         icon="car-connected" 
                         color="#3b82f6"
-                        onPress={() => Alert.alert("Coming Soon", "Taxi 2 Interview feature is under development.")}
+                        onPress={() => navigation.navigate('Taxi')}
                     />
                 </View>
 
