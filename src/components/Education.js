@@ -14,6 +14,12 @@ const Education = () => {
     const highschool = education.highschool || {};
     const tertiary = education.tertiary || [];
 
+    React.useEffect(() => {
+        if (tertiary.length === 0) {
+            addTertiary();
+        }
+    }, [tertiary]);
+
     // --- High School Update ---
     const updateHighSchool = (key, value) => {
         const newEdu = { ...education, highschool: { ...highschool, [key]: value } };

@@ -14,6 +14,25 @@ export const ResumeProvider = ({ children }) => {
     const [resumeData, setResumeData] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const DEFAULT_UI_SETTINGS = {
+        TechFormat: 'bullet',
+        SoftFormat: 'bullet',
+        ProfCertsFormat: 'bullet',
+        NonAcadCertsFormat: 'bullet',
+        SystemsUsedFormat: 'bullet',
+        AddressFormat: 'bullet',
+        Layout: 'professional',
+        placeholders: {
+            Tech: "- Skill {Details}\n- e.g. React {Advanced}\n- e.g. JavaScript {Intermediate}",
+            Soft: "- Skill {Details}\n- e.g. Leadership {Team Management}\n- e.g. Communication {Presentation}",
+            ProfCerts: "- Certification/Designation {Issuer}\n- e.g. PMP {PMI}\n- e.g. AWS Solutions Architect {Amazon}",
+            NonAcadCerts: "- Certification/Designation {Issuer}\n- e.g. First Aid Level 1 {Red Cross}\n- e.g. Fire Fighting {Safety First}",
+            SystemsUsed: "- SystemName {List of functionalities used}\n- e.g. MS Word {Document formatting, Mail merge}",
+            Address: "- Street Address\n- Suburb/Town\n- City\n- Postal Code"
+        }
+    };
+    const [uiSettings, setUiSettings] = useState(DEFAULT_UI_SETTINGS);
+
     // Two-Way Sync Engine Implementation
     const syncResumes = async (profileId, token) => {
         if (!profileId || !token) return;
@@ -164,6 +183,90 @@ export const ResumeProvider = ({ children }) => {
         }
     };
 
+    // Synchronize UI Settings Manifest and Push/Pull
+    const syncUiSettings = async (profileId, token) => {
+        if (!profileId || !token) return;
+        try {
+            const manifestResponse = await fetch(`${BACKEND_URL}/sync/ui_settings/manifest`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!manifestResponse.ok) return;
+            const serverManifest = await manifestResponse.json();
+            const serverManifestMap = new Map(serverManifest.map(item => [item.resume_id, item.last_modified]));
+
+            const localMeta = await Storage.loadMeta(profileId);
+            const toUpload = [];
+            const toDownloadIds = [];
+
+            for (const item of localMeta) {
+                const localSettings = await Storage.loadUiSettings(profileId, item.id);
+                const serverTime = serverManifestMap.get(item.id);
+                if (localSettings) {
+                    const localTime = localSettings.lastModified || 0;
+                    if (serverTime === undefined || localTime > serverTime * 1000) {
+                        toUpload.push(item.id);
+                    }
+                }
+            }
+
+            for (const item of serverManifest) {
+                const localSettings = await Storage.loadUiSettings(profileId, item.resume_id);
+                const localTime = localSettings ? (localSettings.lastModified || 0) : 0;
+                if (item.last_modified * 1000 > localTime) {
+                    toDownloadIds.push(item.resume_id);
+                }
+            }
+
+            if (toDownloadIds.length > 0) {
+                const downloadResponse = await fetch(`${BACKEND_URL}/sync/ui_settings`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (downloadResponse.ok) {
+                    const serverSettings = await downloadResponse.json();
+                    for (const serverSet of serverSettings) {
+                        if (toDownloadIds.includes(serverSet.resume_id)) {
+                            await Storage.saveUiSettings(profileId, serverSet.resume_id, {
+                                ...serverSet.settings_json,
+                                lastModified: serverSet.last_modified * 1000
+                            });
+                        }
+                    }
+                    if (activeResumeId && toDownloadIds.includes(activeResumeId)) {
+                        const activeSettings = await Storage.loadUiSettings(profileId, activeResumeId);
+                        if (activeSettings) setUiSettings(activeSettings);
+                    }
+                }
+            }
+
+            if (toUpload.length > 0) {
+                const itemsToPush = [];
+                for (const resId of toUpload) {
+                    const settings = await Storage.loadUiSettings(profileId, resId);
+                    if (settings) {
+                        itemsToPush.push({
+                            resume_id: resId,
+                            profile_id: profileId,
+                            settings_json: settings,
+                            last_modified: (settings.lastModified || Date.now()) / 1000
+                        });
+                    }
+                }
+                if (itemsToPush.length > 0) {
+                    await fetch(`${BACKEND_URL}/sync/ui_settings/push`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ items: itemsToPush })
+                    });
+                }
+            }
+        } catch (error) {
+            console.warn('[Sync] UI settings synchronization skipped:', error.message);
+        }
+    };
+
     // Load data when user changes
     useEffect(() => {
         const loadInitialData = async () => {
@@ -187,9 +290,16 @@ export const ResumeProvider = ({ children }) => {
                 if (data) {
                     setResumeData(data);
                 }
+                const settings = await Storage.loadUiSettings(user.id, activeId);
+                if (settings) {
+                    setUiSettings(settings);
+                } else {
+                    setUiSettings({ ...DEFAULT_UI_SETTINGS, lastModified: Date.now() });
+                }
             } else {
                 setResumeData(null);
                 setActiveResumeId(null);
+                setUiSettings(DEFAULT_UI_SETTINGS);
             }
             
             setLoading(false);
@@ -197,6 +307,7 @@ export const ResumeProvider = ({ children }) => {
             // Execute cloud sync in background if active session has accessToken
             if (user.accessToken) {
                 syncResumes(user.id, user.accessToken);
+                syncUiSettings(user.id, user.accessToken);
             }
         };
         loadInitialData();
@@ -217,16 +328,16 @@ export const ResumeProvider = ({ children }) => {
                 licensing: { Drivers: "None", DriversVisible: false, Motorcycle: "None", MotorVisible: false },
                 demographics: { Gender: "None", Nationality: "" },
                 legal: { "Criminal Record": false, Details: "" },
-                languages: []
+                languages: [{ Language: "", proficiency: "Basic", visible: true }]
             },
             "professional summary": "",
-            experience: [],
+            experience: [{ Organization: "", Role: "", Department: "", "Start Date": "", "End Date": "", "Key Responsibilities": "", "Responsibility Format": "list", "Reason for Leaving": "", "Systems Used": "", "Achievements": "" }],
             education: { 
                 highschool: { "Province Department": "", "Year Completed": "", "Subjects Stream": "" }, 
-                tertiary: [] 
+                tertiary: [{ Institution: "", "Qualification Name": "", "NQF Level": "", "Year": "", "Completed": false, "Key Modules": [] }] 
             },
             "Skills": { Tech: "", Soft: "", Certs: "" },
-            "References": [],
+            "References": [{ name: "", org: "", relation: "", phone: "", email: "", visible: true }],
             "Document Settings": {
                 Layout: 'professional'
             }
@@ -236,11 +347,13 @@ export const ResumeProvider = ({ children }) => {
         setMeta(updatedMeta);
         await Storage.saveMeta(user.id, updatedMeta);
         await Storage.saveResumeData(user.id, id, initialData);
+        await Storage.saveUiSettings(user.id, id, { ...DEFAULT_UI_SETTINGS, lastModified: Date.now() });
 
         await switchResume(id);
 
         if (user.accessToken) {
             syncResumes(user.id, user.accessToken);
+            syncUiSettings(user.id, user.accessToken);
         }
 
         return id;
@@ -255,6 +368,25 @@ export const ResumeProvider = ({ children }) => {
             setResumeData(data);
         } else {
             console.warn(`No data found for resume ID: ${id}`);
+        }
+        const settings = await Storage.loadUiSettings(user.id, id);
+        if (settings) {
+            setUiSettings(settings);
+        } else {
+            setUiSettings({ ...DEFAULT_UI_SETTINGS, lastModified: Date.now() });
+        }
+    };
+
+    // Update UI Settings (Auto-Save)
+    const updateUiSettings = async (newSettings) => {
+        if (!user || !activeResumeId) return;
+        const timestamp = Date.now();
+        const settingsToSave = { ...newSettings, lastModified: timestamp };
+        setUiSettings(settingsToSave);
+        await Storage.saveUiSettings(user.id, activeResumeId, settingsToSave);
+
+        if (user.accessToken) {
+            syncUiSettings(user.id, user.accessToken);
         }
     };
 
@@ -344,6 +476,8 @@ export const ResumeProvider = ({ children }) => {
             activeResumeId,
             resumeData,
             loading,
+            uiSettings,
+            updateUiSettings,
             createResume,
             switchResume,
             updateResumeData,

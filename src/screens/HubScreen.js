@@ -1,5 +1,5 @@
-import { useContext } from 'react';
-import { View, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Alert } from 'react-native';
+import { useContext, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Alert, BackHandler } from 'react-native';
 import { Appbar, Text, Card, useTheme, Avatar, Surface, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
@@ -18,6 +18,44 @@ const HubScreen = () => {
     const { meta } = useContext(ResumeContext);
 
     const latestResume = meta.length > 0 ? meta.sort((a, b) => b.lastModified - a.lastModified)[0] : null;
+
+    // --- Double-Tap Back Button to Exit ---
+    const lastBackPress = useRef(0);
+
+    useEffect(() => {
+        const backAction = () => {
+            const now = Date.now();
+            // If back pressed twice within 2 seconds, show exit confirmation
+            if (now - lastBackPress.current < 2000) {
+                Alert.alert(
+                    "Exit App",
+                    "Are you sure you want to close JobReady?",
+                    [
+                        { text: "Cancel", style: "cancel" },
+                        { text: "Exit", style: "destructive", onPress: () => BackHandler.exitApp() }
+                    ]
+                );
+            } else {
+                lastBackPress.current = now;
+            }
+            return true; // Prevent default back navigation
+        };
+
+        const subscription = BackHandler.addEventListener('hardwareBackPress', backAction);
+        return () => subscription.remove();
+    }, []);
+
+    // --- Exit Confirmation Dialog ---
+    const showExitConfirmation = () => {
+        Alert.alert(
+            "Exit App",
+            "Are you sure you want to close JobReady?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Exit", style: "destructive", onPress: () => BackHandler.exitApp() }
+            ]
+        );
+    };
 
     const getInitials = (name) => {
         if (!name) return 'U';
@@ -47,8 +85,14 @@ const HubScreen = () => {
             <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}>
                 <LinearGradient
                     colors={['#0f172a', '#1e293b']}
-                    style={[styles.header, { paddingTop: insets.top + 20 }]}
+                    style={[styles.header, { paddingTop: insets.top + 12 }]}
                 >
+                    {/* Exit App Button — Top Left */}
+                    <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
+                        <MaterialCommunityIcons name="power" size={16} color="#fff" />
+                        <Text style={styles.exitBtnTopLeftText}>Exit App</Text>
+                    </TouchableOpacity>
+
                     <View style={styles.headerTop}>
                         <View style={styles.headerLeft}>
                             <Text variant="headlineMedium" style={styles.welcomeText}>Hello, {user?.name?.split(' ')[0] || 'User'}</Text>
@@ -69,7 +113,6 @@ const HubScreen = () => {
                                         { text: "Cancel", style: "cancel" },
                                         { text: "Logout", style: "destructive", onPress: () => {
                                             logout();
-                                            // Navigation is usually handled by the auth context wrapper automatically kicking out
                                         }}
                                     ]
                                 );
@@ -80,20 +123,6 @@ const HubScreen = () => {
                         </View>
                     </View>
                 </LinearGradient>
-
-                {latestResume && (
-                    <Surface style={styles.activeContextCard} elevation={4}>
-                        <View style={styles.contextHeader}>
-                            <Text variant="labelSmall" style={styles.contextLabel}>CONTINUE EDITING</Text>
-                            <MaterialCommunityIcons name="clock-outline" size={14} color="#6366f1" />
-                        </View>
-                        <Text variant="titleMedium" style={styles.resumeName}>{latestResume.name}</Text>
-                        <TouchableOpacity style={styles.resumeAction} onPress={() => navigation.navigate('Editor', { resumeId: latestResume.id })}>
-                            <Text style={styles.resumeActionText}>Open Editor</Text>
-                            <MaterialCommunityIcons name="chevron-right" size={20} color="#6366f1" />
-                        </TouchableOpacity>
-                    </Surface>
-                )}
 
                 <View style={styles.menuContainer}>
                     <Text variant="titleLarge" style={styles.sectionTitle}>Success Suite</Text>
@@ -154,6 +183,26 @@ const styles = StyleSheet.create({
         borderBottomRightRadius: 30,
         paddingHorizontal: 24,
     },
+    exitBtnTopLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.15)',
+    },
+    exitBtnTopLeftText: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 11,
+        fontWeight: 'bold',
+        marginLeft: 6,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
     headerTop: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -200,42 +249,8 @@ const styles = StyleSheet.create({
         marginLeft: 4,
         textTransform: 'uppercase'
     },
-    activeContextCard: {
-        backgroundColor: '#fff',
-        borderRadius: 16,
-        padding: 16,
-        marginTop: -40, // Pulls the card up into the header area
-        marginHorizontal: 24,
-        marginBottom: 24,
-    },
-    contextHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
-    },
-    contextLabel: {
-        color: '#6366f1',
-        fontWeight: 'bold',
-        letterSpacing: 1,
-    },
-    resumeName: {
-        fontWeight: 'bold',
-        marginBottom: 12,
-        color: '#333',
-    },
-    resumeAction: {
-        backgroundColor: '#f0eaff',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 10,
-        borderRadius: 8,
-    },
-    resumeActionText: {
-        color: '#6366f1',
-        fontWeight: 'bold',
-        marginRight: 8,
+    menuContainer: {
+        marginTop: 20,
     },
     scrollContent: {
         paddingBottom: 40,

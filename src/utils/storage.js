@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const STORAGE_KEYS = {
     META_PREFIX: 'neltz_jobready_resume_meta_',
     DATA_PREFIX: 'neltz_jobready_resume_data_',
+    UI_SETTINGS_PREFIX: 'neltz_jobready_ui_settings_',
     PROFILES: 'neltz_jobready_profiles',
     LAST_ACTIVE_ID: 'neltz_jobready_last_active_id',
 };
@@ -66,6 +67,23 @@ export const Storage = {
     // Delete Resume Data
     deleteResumeData: async (profileId, resumeId) => {
         const key = `${STORAGE_KEYS.DATA_PREFIX}${profileId}_${resumeId}`;
+        await Storage.remove(key);
+    },
+
+    // Save Specific UI Settings
+    saveUiSettings: async (profileId, resumeId, settings) => {
+        const key = `${STORAGE_KEYS.UI_SETTINGS_PREFIX}${profileId}_${resumeId}`;
+        await Storage.set(key, settings);
+    },
+
+    // Load Specific UI Settings
+    loadUiSettings: async (profileId, resumeId) => {
+        return await Storage.get(`${STORAGE_KEYS.UI_SETTINGS_PREFIX}${profileId}_${resumeId}`);
+    },
+
+    // Delete UI Settings
+    deleteUiSettings: async (profileId, resumeId) => {
+        const key = `${STORAGE_KEYS.UI_SETTINGS_PREFIX}${profileId}_${resumeId}`;
         await Storage.remove(key);
     }
 };

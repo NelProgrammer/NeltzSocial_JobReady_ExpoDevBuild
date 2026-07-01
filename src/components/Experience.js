@@ -1,16 +1,22 @@
 import React, { useContext, useState } from 'react';
 import { ScrollView, View, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { TextInput, Headline, Button, Card, Paragraph, IconButton, Divider } from 'react-native-paper';
+import { TextInput, Headline, Button, Card, Paragraph, IconButton, Divider, Switch, Text } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
 
 const Experience = () => {
-    const { resumeData, updateResumeData } = useContext(ResumeContext);
+    const { resumeData, updateResumeData, uiSettings, updateUiSettings } = useContext(ResumeContext);
     const [expandedIndex, setExpandedIndex] = useState(null);
 
     if (!resumeData) return null;
 
     const experiences = resumeData.experience || [];
+
+    React.useEffect(() => {
+        if (experiences.length === 0) {
+            addExperience();
+        }
+    }, [experiences]);
 
     const addExperience = () => {
         const newExp = {
@@ -47,6 +53,27 @@ const Experience = () => {
         const newExp = [...experiences];
         newExp[index][key] = value;
         updateResumeData({ ...resumeData, experience: newExp });
+    };
+
+    const handleSystemsChange = (index, text) => {
+        if (uiSettings.SystemsUsedFormat !== 'comma') {
+            if (text && !text.startsWith('- ')) {
+                text = '- ' + text;
+            }
+            const oldText = experiences[index]["Systems Used"] || "";
+            if (text.endsWith('\n') && text.length > oldText.length) {
+                text = text + '- ';
+            }
+            const lines = text.split('\n');
+            const processed = lines.map(line => {
+                if (line.length > 0 && !line.startsWith('- ')) {
+                    return '- ' + line;
+                }
+                return line;
+            });
+            text = processed.join('\n');
+        }
+        updateExpField(index, 'Systems Used', text);
     };
 
     return (
@@ -125,13 +152,25 @@ const Experience = () => {
                                 onChangeText={(text) => updateExpField(index, 'Reason for Leaving', text)}
                                 style={styles.input}
                             />
-                            <TextInput
+                             <TextInput
                                 label="Systems / Tools Used"
                                 value={exp["Systems Used"]}
-                                onChangeText={(text) => updateExpField(index, 'Systems Used', text)}
+                                onChangeText={(text) => handleSystemsChange(index, text)}
                                 style={styles.input}
-                                placeholder="e.g. MS Office, SAP, Figma"
+                                multiline
+                                placeholder={
+                                    uiSettings.SystemsUsedFormat !== 'comma'
+                                        ? "- SystemName {List of functionalities used}\n- e.g. MS Word {Document formatting, Mail merge}"
+                                        : "SystemName {List of functionalities used}, e.g. MS Word {Document formatting, Mail merge}"
+                                }
                             />
+                            <View style={styles.switchRow}>
+                                <Text style={{ fontSize: 13 }}>Format Systems as Bulleted List?</Text>
+                                <Switch
+                                    value={uiSettings.SystemsUsedFormat !== 'comma'}
+                                    onValueChange={(val) => updateUiSettings({ ...uiSettings, SystemsUsedFormat: val ? 'bullet' : 'comma' })}
+                                />
+                            </View>
                             <TextInput
                                 label="Key Achievements"
                                 value={exp["Achievements"]}
@@ -158,7 +197,8 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f5f5f5' },
     card: { marginBottom: 10 },
     input: { marginBottom: 10, backgroundColor: '#fff', fontSize: 14 },
-    addButton: { marginTop: 10, marginBottom: 20 }
+    addButton: { marginTop: 10, marginBottom: 20 },
+    switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, paddingVertical: 5 }
 });
 
 export default Experience;

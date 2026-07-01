@@ -6,7 +6,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { ResumeContext } from '../context/ResumeContext';
 
 const PersonalDetails = () => {
-    const { resumeData, updateResumeData } = useContext(ResumeContext);
+    const { resumeData, updateResumeData, uiSettings, updateUiSettings } = useContext(ResumeContext);
     const [expandedSection, setExpandedSection] = useState(null);
     const toggleSection = (section) => setExpandedSection(expandedSection === section ? null : section);
     const [expandedAccordion, setExpandedAccordion] = React.useState('Names');
@@ -33,11 +33,39 @@ const PersonalDetails = () => {
         setNationalities(nationalitiesData.map(n => ({ label: n, value: n })));
     }, []);
 
+    React.useEffect(() => {
+        if (languages.length === 0) {
+            addLanguage();
+            setExpandedSection('Languages');
+        }
+    }, [languages]);
+
     const updateField = (section, key, value) => {
         const newData = { ...resumeData };
         if (!newData["personal details"][section]) newData["personal details"][section] = {};
         newData["personal details"][section][key] = value;
         updateResumeData(newData);
+    };
+
+    const handleAddressChange = (text) => {
+        if (uiSettings.AddressFormat !== 'comma') {
+            if (text && !text.startsWith('- ')) {
+                text = '- ' + text;
+            }
+            const oldText = address["Home Address"] || "";
+            if (text.endsWith('\n') && text.length > oldText.length) {
+                text = text + '- ';
+            }
+            const lines = text.split('\n');
+            const processed = lines.map(line => {
+                if (line.length > 0 && !line.startsWith('- ')) {
+                    return '- ' + line;
+                }
+                return line;
+            });
+            text = processed.join('\n');
+        }
+        updateField('address', 'Home Address', text);
     };
 
     const addLanguage = () => {
@@ -94,11 +122,26 @@ const PersonalDetails = () => {
                                 onChangeText={(text) => updateField('names', 'Surname', text)}
                                 style={styles.input}
                             />
-                            <TextInput
-                                label="Title (Mr/Mrs/etc)"
-                                value={names.Prefix}
-                                onChangeText={(text) => updateField('names', 'Prefix', text)}
-                                style={styles.input}
+                            <Text style={styles.label}>Title</Text>
+                            <Dropdown
+                                style={styles.dropdown}
+                                data={[
+                                    { label: 'Mr', value: 'Mr' },
+                                    { label: 'Mrs', value: 'Mrs' },
+                                    { label: 'Ms', value: 'Ms' },
+                                    { label: 'Dr', value: 'Dr' },
+                                    { label: 'Prof', value: 'Prof' },
+                                    { label: 'Adv', value: 'Adv' },
+                                    { label: 'Rev', value: 'Rev' },
+                                    { label: 'Prince', value: 'Prince' },
+                                    { label: 'Princess', value: 'Princess' },
+                                    { label: 'None', value: 'None' }
+                                ]}
+                                labelField="label"
+                                valueField="value"
+                                placeholder="Select Title"
+                                value={names.Prefix || 'None'}
+                                onChange={item => updateField('names', 'Prefix', item.value === 'None' ? '' : item.value)}
                             />
                         </Card.Content>
                     )}
@@ -180,25 +223,25 @@ const PersonalDetails = () => {
                             <TextInput
                                 label="Home Address"
                                 value={address["Home Address"]}
-                                onChangeText={(text) => updateField('address', 'Home Address', text)}
+                                onChangeText={(text) => handleAddressChange(text)}
                                 style={styles.input}
                                 multiline
                                 numberOfLines={4}
                                 placeholder={
                                     (address.AddressType === 'Apartment-Block') 
-                                        ? (address.AddressFormat === 'list' 
-                                            ? "e.g.\nApt 12B, The Paragon\n14 Long Street\nCape Town\n8000" 
+                                        ? (uiSettings.AddressFormat !== 'comma' 
+                                            ? "- Apt 12B, The Paragon\n- 14 Long Street\n- Cape Town\n- 8000" 
                                             : "e.g. Apt 12B, The Paragon, 14 Long Street, Cape Town, 8000")
-                                        : (address.AddressFormat === 'list'
-                                            ? "e.g.\n10 Nelson Mandela Blvd\nSandton\nJohannesburg\n2196"
+                                        : (uiSettings.AddressFormat !== 'comma'
+                                            ? "- 10 Nelson Mandela Blvd\n- Sandton\n- Johannesburg\n- 2196"
                                             : "e.g. 10 Nelson Mandela Blvd, Sandton, Johannesburg, 2196")
                                 }
                             />
                             <View style={styles.switchRow}>
                                 <Text>Format as Bulleted List?</Text>
                                 <Switch
-                                    value={address.AddressFormat === 'list'}
-                                    onValueChange={(val) => updateField('address', 'AddressFormat', val ? 'list' : 'comma')}
+                                    value={uiSettings.AddressFormat !== 'comma'}
+                                    onValueChange={(val) => updateUiSettings({ ...uiSettings, AddressFormat: val ? 'bullet' : 'comma' })}
                                 />
                             </View>
                         </Card.Content>
@@ -301,48 +344,65 @@ const PersonalDetails = () => {
                     {expandedSection === 'Licensing' && (
                         <Card.Content>
                             <Divider style={{ marginBottom: 10 }} />
+                            <Text style={styles.label}>Motor Vehicle Drivers License</Text>
                             <Dropdown
                                 style={styles.dropdown}
                                 data={[
-                                    { label: 'None', value: 'None' },
-                                    { label: 'Code B (Light Motor Vehicle)', value: 'Code B' },
-                                    { label: 'Code EB (Light Articulated)', value: 'Code EB' },
-                                    { label: 'Code C1 (Heavy Motor 3.5t-16t)', value: 'Code C1' },
-                                    { label: 'Code C (Heavy Motor >16t)', value: 'Code C' },
-                                    { label: 'Code EC1 (Heavy Artic. 3.5t-16t)', value: 'Code EC1' },
-                                    { label: 'Code EC (Heavy Artic. >16t)', value: 'Code EC' }
+                                    { label: 'No Motor Vehicle Drivers License', value: 'None' },
+                                    { label: '🚗 Code B (Light Motor Vehicle)', value: 'Code B' },
+                                    { label: '🚗+💨 Code EB (Light Articulated / Trailer)', value: 'Code EB' },
+                                    { label: '🚚 Code C1 (Heavy Motor 3.5t-16t)', value: 'Code C1' },
+                                    { label: '🚛 Code C (Heavy Motor >16t)', value: 'Code C' },
+                                    { label: '🚚+💨 Code EC1 (Heavy Artic. / Trailer)', value: 'Code EC1' },
+                                    { label: '🚛+💨+💨 Code EC (Extra Heavy Artic. / Double Trailer)', value: 'Code EC' }
                                 ]}
                                 labelField="label"
                                 valueField="value"
-                                placeholder="Drivers License"
+                                placeholder="Select Motor Vehicle License (or none)"
                                 value={licensing.Drivers || 'None'}
-                                onChange={item => updateField('licensing', 'Drivers', item.value)}
+                                onChange={item => {
+                                    updateField('licensing', 'Drivers', item.value);
+                                    if (item.value === 'None') {
+                                        updateField('licensing', 'DriversVisible', false);
+                                    } else {
+                                        updateField('licensing', 'DriversVisible', true);
+                                    }
+                                }}
                             />
                             <View style={styles.switchRow}>
                                 <Text>Show Drivers License?</Text>
                                 <Switch
-                                    value={licensing.DriversVisible || false}
+                                    value={licensing.DriversVisible !== false}
                                     onValueChange={(val) => updateField('licensing', 'DriversVisible', val)}
                                 />
                             </View>
+                            <Text style={styles.label}>Motorcycle Drivers License</Text>
                             <Dropdown
                                 style={styles.dropdown}
                                 data={[
-                                    { label: 'None', value: 'None' },
-                                    { label: 'Code A1 (Motorcycle <=125cc)', value: 'Code A1' },
-                                    { label: 'Code A (Motorcycle >125cc)', value: 'Code A' }
+                                    { label: 'No Motorcycle Drivers License', value: 'None' },
+                                    { label: '🛵 Code A1 (Motorcycle <=125cc)', value: 'Code A1' },
+                                    { label: '🏍️ Code A (Motorcycle >125cc)', value: 'Code A' }
                                 ]}
                                 labelField="label"
                                 valueField="value"
-                                placeholder="Motorcycle License"
+                                placeholder="Select Motorcycle License (or none)"
                                 value={licensing.Motorcycle || 'None'}
-                                onChange={item => updateField('licensing', 'Motorcycle', item.value)}
+                                onChange={item => {
+                                    updateField('licensing', 'Motorcycle', item.value);
+                                    if (item.value === 'None') {
+                                        updateField('licensing', 'MotorVisible', false);
+                                    } else {
+                                        updateField('licensing', 'MotorVisible', true);
+                                    }
+                                }}
                             />
                             <View style={styles.switchRow}>
                                 <Text>Show Motorcycle License?</Text>
                                 <Switch
-                                    value={licensing.MotorVisible || false}
+                                    value={(licensing.Motorcycle && licensing.Motorcycle !== 'None') ? (licensing.MotorVisible !== false) : false}
                                     onValueChange={(val) => updateField('licensing', 'MotorVisible', val)}
+                                    disabled={!licensing.Motorcycle || licensing.Motorcycle === 'None'}
                                 />
                             </View>
                         </Card.Content>

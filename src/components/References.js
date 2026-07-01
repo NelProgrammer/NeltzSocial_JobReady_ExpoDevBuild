@@ -12,6 +12,12 @@ const References = () => {
 
     const references = resumeData.References || [];
 
+    React.useEffect(() => {
+        if (references.length === 0) {
+            addReference();
+        }
+    }, [references]);
+
     const addReference = () => {
         const newRef = {
             "name": "", "org": "", "relation": "", "phone": "", "phone-": "", "email": "", "visible": true

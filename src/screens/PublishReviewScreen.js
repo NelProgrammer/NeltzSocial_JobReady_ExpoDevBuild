@@ -32,7 +32,8 @@ const PublishReviewScreen = ({ navigation }) => {
     const reviewers = [
         { id: 'rev_1', name: 'Thandi Mokoena', role: 'HR Specialist', rating: 4.8, avatar: '👩‍💼' },
         { id: 'rev_2', name: 'John Smith', role: 'Technical Lead', rating: 4.9, avatar: '👨‍💻' },
-        { id: 'rev_3', name: 'Sarah Jenkins', role: 'Career Coach', rating: 4.7, avatar: '👩‍🏫' }
+        { id: 'rev_3', name: 'Sarah Jenkins', role: 'Career Coach', rating: 4.7, avatar: '👩‍🏫' },
+        { id: 'rev_4', name: 'Naledi Dlamini', role: 'Call Centre Team Leader', rating: 4.6, avatar: '🎧' }
     ];
 
     useEffect(() => {

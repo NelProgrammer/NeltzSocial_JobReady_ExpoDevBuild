@@ -1,5 +1,5 @@
-import React, { useContext, useState } from 'react';
-import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useContext, useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Alert, BackHandler } from 'react-native';
 import { Text, Button, Surface, TextInput, useTheme, Divider, IconButton, Avatar } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
@@ -12,6 +12,44 @@ const LoginScreen = () => {
     const insets = useSafeAreaInsets();
     const [newName, setNewName] = useState('');
 
+    // --- Double-Tap Back Button to Exit ---
+    const lastBackPress = useRef(0);
+
+    useEffect(() => {
+        const backAction = () => {
+            const now = Date.now();
+            // If back pressed twice within 2 seconds, show exit confirmation
+            if (now - lastBackPress.current < 2000) {
+                Alert.alert(
+                    "Exit App",
+                    "Are you sure you want to close JobReady?",
+                    [
+                        { text: "Cancel", style: "cancel" },
+                        { text: "Exit", style: "destructive", onPress: () => BackHandler.exitApp() }
+                    ]
+                );
+            } else {
+                lastBackPress.current = now;
+            }
+            return true; // Prevent default back navigation
+        };
+
+        const subscription = BackHandler.addEventListener('hardwareBackPress', backAction);
+        return () => subscription.remove();
+    }, []);
+
+    // --- Exit Confirmation Dialog ---
+    const showExitConfirmation = () => {
+        Alert.alert(
+            "Exit App",
+            "Are you sure you want to close JobReady?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Exit", style: "destructive", onPress: () => BackHandler.exitApp() }
+            ]
+        );
+    };
+
     const handleCreateProfile = () => {
         if (newName.trim()) {
             createProfile(newName.trim());
@@ -22,7 +60,14 @@ const LoginScreen = () => {
     return (
         <LinearGradient colors={['#0f172a', '#1e293b']} style={styles.container}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-                <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20, paddingBottom: Math.max(insets.bottom, 20) }]}>
+                <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 20) }]}>
+                    
+                    {/* Exit App Button — Top Left */}
+                    <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
+                        <MaterialCommunityIcons name="power" size={16} color="#fff" />
+                        <Text style={styles.exitBtnTopLeftText}>Exit App</Text>
+                    </TouchableOpacity>
+
                     <View style={styles.logoContainer}>
                         <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
                         <Text variant="headlineMedium" style={styles.title}>JobReady</Text>
@@ -135,6 +180,26 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     scrollContent: { flexGrow: 1, padding: 24, justifyContent: 'center' },
+    exitBtnTopLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        backgroundColor: 'rgba(255,255,255,0.08)',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.15)',
+    },
+    exitBtnTopLeftText: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 11,
+        fontWeight: 'bold',
+        marginLeft: 6,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
     logoContainer: { alignItems: 'center', marginBottom: 32 },
     logo: { width: 80, height: 80 },
     title: { color: '#fff', fontWeight: 'bold', marginTop: 12 },
@@ -173,4 +238,3 @@ const styles = StyleSheet.create({
 });
 
 export default LoginScreen;
-
