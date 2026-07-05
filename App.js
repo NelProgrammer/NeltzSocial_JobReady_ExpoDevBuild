@@ -32,58 +32,53 @@ function NavigationStack() {
 
   return (
     <Stack.Navigator 
-      initialRouteName={user ? "Hub" : "Login"}
+      initialRouteName="Hub"
       screenOptions={{
         headerStyle: { backgroundColor: '#6200ee' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: 'bold' },
       }}
     >
-      {!user ? (
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ headerShown: false }}
-        />
-      ) : (
-        <>
-          <Stack.Screen
-            name="Hub"
-            component={HubScreen}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="ResumeHome"
-            component={HomeScreen}
-            options={{ title: 'NeltzSocial - JobReady: Resume Builder' }}
-          />
-          <Stack.Screen
-            name="Editor"
-            component={EditorScreen}
-            options={{ title: 'NeltzSocial - JobReady: Resume Editor' }}
-          />
-          <Stack.Screen
-            name="Preview"
-            component={PreviewScreen}
-            options={{ title: 'NeltzSocial - JobReady: Preview & Export' }}
-          />
-          <Stack.Screen
-            name="PDFWorkbench"
-            component={PDFWorkbenchScreen}
-            options={{ title: 'NeltzSocial - JobReady: PDF Workbench' }}
-          />
-          <Stack.Screen
-            name="PublishReview"
-            component={PublishReviewScreen}
-            options={{ title: 'NeltzSocial - JobReady: Publish & Review' }}
-          />
-          <Stack.Screen
-            name="Taxi"
-            component={TaxiScreen}
-            options={{ title: 'NeltzSocial - JobReady: Taxi 2 Interview' }}
-          />
-        </>
-      )}
+      <Stack.Screen
+        name="Hub"
+        component={HubScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ResumeHome"
+        component={HomeScreen}
+        options={{ title: 'NeltzSocial - JobReady: Resume Builder' }}
+      />
+      <Stack.Screen
+        name="Editor"
+        component={EditorScreen}
+        options={{ title: 'NeltzSocial - JobReady: Resume Editor' }}
+      />
+      <Stack.Screen
+        name="Preview"
+        component={PreviewScreen}
+        options={{ title: 'NeltzSocial - JobReady: Preview & Export' }}
+      />
+      <Stack.Screen
+        name="PDFWorkbench"
+        component={PDFWorkbenchScreen}
+        options={{ title: 'NeltzSocial - JobReady: PDF Workbench' }}
+      />
+      <Stack.Screen
+        name="PublishReview"
+        component={PublishReviewScreen}
+        options={{ title: 'NeltzSocial - JobReady: Publish & Review' }}
+      />
+      <Stack.Screen
+        name="Taxi"
+        component={TaxiScreen}
+        options={{ title: 'NeltzSocial - JobReady: Taxi 2 Interview' }}
+      />
     </Stack.Navigator>
   );
 }

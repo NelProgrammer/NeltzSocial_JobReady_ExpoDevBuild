@@ -337,10 +337,7 @@ export const ResumeProvider = ({ children }) => {
                 tertiary: [{ Institution: "", "Qualification Name": "", "NQF Level": "", "Year": "", "Completed": false, "Key Modules": [] }] 
             },
             "Skills": { Tech: "", Soft: "", Certs: "" },
-            "References": [{ name: "", org: "", relation: "", phone: "", email: "", visible: true }],
-            "Document Settings": {
-                Layout: 'professional'
-            }
+            "References": [{ name: "", org: "", relation: "", phone: "", email: "", visible: true }]
         };
 
         const updatedMeta = [...meta, newMetaItem];

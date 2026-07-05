@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Alert, BackHandler } from 'react-native';
 import { Appbar, Text, Card, useTheme, Avatar, Surface, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
@@ -14,7 +14,7 @@ const HubScreen = () => {
     const navigation = useNavigation();
     const theme = useTheme();
     const insets = useSafeAreaInsets();
-    const { user, logout } = useContext(AuthContext);
+    const { user, logout, quickStart } = useContext(AuthContext);
     const { meta } = useContext(ResumeContext);
 
     const latestResume = meta.length > 0 ? meta.sort((a, b) => b.lastModified - a.lastModified)[0] : null;
@@ -105,21 +105,28 @@ const HubScreen = () => {
                             ) : (
                                 <Avatar.Text size={48} label={getInitials(user?.name)} style={styles.avatarFallback} />
                             )}
-                            <TouchableOpacity style={styles.logoutBtn} onPress={() => {
-                                Alert.alert(
-                                    "Logout",
-                                    "Are you sure you want to log out of your profile?",
-                                    [
-                                        { text: "Cancel", style: "cancel" },
-                                        { text: "Logout", style: "destructive", onPress: () => {
-                                            logout();
-                                        }}
-                                    ]
-                                );
-                            }}>
-                                <MaterialCommunityIcons name="logout" size={16} color="#fff" />
-                                <Text style={styles.logoutText}>Log Out</Text>
-                            </TouchableOpacity>
+                            {user ? (
+                                <TouchableOpacity style={styles.logoutBtn} onPress={() => {
+                                    Alert.alert(
+                                        "Logout",
+                                        "Are you sure you want to log out of your profile?",
+                                        [
+                                            { text: "Cancel", style: "cancel" },
+                                            { text: "Logout", style: "destructive", onPress: () => {
+                                                logout();
+                                            }}
+                                        ]
+                                    );
+                                }}>
+                                    <MaterialCommunityIcons name="logout" size={16} color="#fff" />
+                                    <Text style={styles.logoutText}>Log Out</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate('Login')}>
+                                    <MaterialCommunityIcons name="login" size={16} color="#fff" />
+                                    <Text style={styles.loginText}>Log In</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </View>
                 </LinearGradient>
@@ -132,7 +139,12 @@ const HubScreen = () => {
                         description="Professional templates & South African context features."
                         icon="file-document-edit" 
                         color="#6366f1"
-                        onPress={() => navigation.navigate('ResumeHome')}
+                        onPress={async () => {
+                            if (!user) {
+                                await quickStart();
+                            }
+                            navigation.navigate('ResumeHome');
+                        }}
                     />
                     
                     <AppCard 
@@ -244,6 +256,24 @@ const styles = StyleSheet.create({
     },
     logoutText: {
         color: '#ff6b6b',
+        fontSize: 10,
+        fontWeight: 'bold',
+        marginLeft: 4,
+        textTransform: 'uppercase'
+    },
+    loginBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(99,102,241,0.15)',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: 'rgba(99,102,241,0.3)'
+    },
+    loginText: {
+        color: '#818cf8',
         fontSize: 10,
         fontWeight: 'bold',
         marginLeft: 4,

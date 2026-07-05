@@ -56,10 +56,7 @@ export const translateParsedTextToResume = (text) => {
             tertiary: [] 
         },
         "Skills": { Tech: "", Soft: "", Certs: "" },
-        "References": [],
-        "Document Settings": {
-            Layout: 'professional'
-        }
+        "References": []
     };
 
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);

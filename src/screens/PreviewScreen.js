@@ -13,21 +13,22 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
 
 const PreviewScreen = ({ navigation }) => {
-    const { resumeData, updateResumeData } = useContext(ResumeContext);
+    const { resumeData, updateResumeData, uiSettings, updateUiSettings } = useContext(ResumeContext);
     const [loading, setLoading] = useState(false);
     const [exportFormat, setExportFormat] = useState('word_layout');
     const [previewUri, setPreviewUri] = useState(null);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
     const insets = useSafeAreaInsets();
 
-    // Layout State (Saved in Resume Data)
-    const currentLayout = resumeData?.["Document Settings"]?.Layout || 'professional';
+    // Layout State (Saved in UI Settings)
+    const currentLayout = uiSettings?.Layout || uiSettings?.["Document Settings"]?.Layout || 'professional';
 
     const changeLayout = (newLayout) => {
-        updateResumeData({ 
-            ...resumeData, 
+        updateUiSettings({ 
+            ...uiSettings, 
+            Layout: newLayout,
             "Document Settings": { 
-                ...(resumeData["Document Settings"] || {}), 
+                ...(uiSettings?.["Document Settings"] || {}), 
                 Layout: newLayout 
             } 
         });
@@ -42,10 +43,9 @@ const PreviewScreen = ({ navigation }) => {
             education: eduList, 
             "Skills": skills, 
             "References": refList, 
-            "professional summary": summary, 
-            "Document Settings": docSettings 
+            "professional summary": summary 
         } = resumeData;
-        const Layout = docSettings?.Layout || 'professional';
+        const Layout = uiSettings?.Layout || uiSettings?.["Document Settings"]?.Layout || 'professional';
         const names = pd?.names || {};
         const contact = pd?.contact || {};
         const address = pd?.address || {};
