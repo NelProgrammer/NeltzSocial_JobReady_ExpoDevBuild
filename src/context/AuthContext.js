@@ -1,30 +1,105 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { Storage } from '../utils/storage';
+import { scanBackendUrl } from '../utils/network';
 
 export const AuthContext = createContext();
 
-const BACKEND_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+const PORT = process.env.EXPO_PUBLIC_API_PORT || '8000';
+const PRODUCTION_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.jobready.neltzsocial.com';
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [profiles, setProfiles] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [backendUrl, setBackendUrl] = useState(() => {
+        const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.hostUri;
+        const ip = hostUri ? hostUri.split(':')[0] : (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
+        return !__DEV__ ? PRODUCTION_URL : `http://${ip}:${PORT}`;
+    });
 
     useEffect(() => {
         const initAuth = async () => {
             try {
-                // 1. Load Profiles List
+                // 1. Load Local Profiles
                 const storedProfiles = await Storage.get(Storage.KEYS.PROFILES) || [];
                 setProfiles(storedProfiles);
 
-                // 2. Check for Active Session
+                // 2. Scan & Discover active backend port
+                const resolvedUrl = await scanBackendUrl();
+                setBackendUrl(resolvedUrl);
+
+                // 3. Fetch & Sync with Server Profiles
+                try {
+                    const response = await fetch(`${resolvedUrl}/auth/profiles`);
+                    if (response.ok) {
+                        const serverProfiles = await response.json();
+                        const serverMap = new Map(serverProfiles.map(p => [p.profile_id, p]));
+                        const localMap = new Map(storedProfiles.map(p => [p.id, p]));
+                        const mergedProfiles = [];
+
+                        // Process server profiles (either update local or create fresh from DB)
+                        for (const s of serverProfiles) {
+                            const local = localMap.get(s.profile_id);
+                            if (local) {
+                                mergedProfiles.push({
+                                    ...local,
+                                    email: s.email || local.email,
+                                    name: s.name || local.name
+                                });
+                            } else {
+                                mergedProfiles.push({
+                                    id: s.profile_id,
+                                    name: s.name || 'Cloud User',
+                                    email: s.email || '',
+                                    accessToken: s.access_token || null,
+                                    created: new Date().toISOString(),
+                                    lastLogin: Date.now()
+                                });
+                            }
+                        }
+
+                        // Keep local-only offline profiles (without accessTokens, e.g., local mock accounts)
+                        for (const l of storedProfiles) {
+                            if (!serverMap.has(l.id) && !l.accessToken) {
+                                mergedProfiles.push(l);
+                            }
+                        }
+
+                        await Storage.set(Storage.KEYS.PROFILES, mergedProfiles);
+                        setProfiles(mergedProfiles);
+                        
+                        // 3. Check for Active Session
+                        const lastActiveId = await Storage.get(Storage.KEYS.LAST_ACTIVE_ID);
+                        if (lastActiveId) {
+                            const activeProfile = mergedProfiles.find(p => p.id === lastActiveId);
+                            if (activeProfile) {
+                                setUser(activeProfile);
+                            } else {
+                                setUser(null);
+                                await Storage.remove(Storage.KEYS.LAST_ACTIVE_ID);
+                            }
+                        } else {
+                            setUser(null);
+                        }
+                        return; // Successfully synced
+                    }
+                } catch (apiErr) {
+                    console.warn('[Auth] Remote profile sync failed, falling back to local storage:', apiErr.message);
+                }
+
+                // Local Fallback if API fails
                 const lastActiveId = await Storage.get(Storage.KEYS.LAST_ACTIVE_ID);
                 if (lastActiveId) {
                     const activeProfile = storedProfiles.find(p => p.id === lastActiveId);
                     if (activeProfile) {
                         setUser(activeProfile);
+                    } else {
+                        setUser(null);
                     }
+                } else {
+                    setUser(null);
                 }
             } catch (e) {
                 console.error('[Auth] Initialization failed', e);
@@ -70,7 +145,7 @@ export const AuthProvider = ({ children }) => {
             const mockToken = 'mock_' + name.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
             
             // Attempt to register/login on the backend API
-            const response = await fetch(`${BACKEND_URL}/auth/verify`, {
+            const response = await fetch(`${backendUrl}/auth/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -129,6 +204,7 @@ export const AuthProvider = ({ children }) => {
 
     const deleteProfile = async (profileId) => {
         try {
+            // Delete locally first
             const updatedProfiles = profiles.filter(p => p.id !== profileId);
             await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
             
@@ -136,6 +212,15 @@ export const AuthProvider = ({ children }) => {
             if (user?.id === profileId) {
                 setUser(null);
                 await Storage.remove(Storage.KEYS.LAST_ACTIVE_ID);
+            }
+
+            // Sync profile deletion to database
+            try {
+                await fetch(`${backendUrl}/auth/profiles/${profileId}`, {
+                    method: 'DELETE'
+                });
+            } catch (serverErr) {
+                console.warn('[Auth] Remote profile delete failed:', serverErr.message);
             }
         } catch (e) {
             console.error('[Auth] Profile deletion failed', e);
@@ -155,7 +240,8 @@ export const AuthProvider = ({ children }) => {
             logout, 
             createProfile, 
             deleteProfile, 
-            quickStart 
+            quickStart,
+            backendUrl
         }}>
             {children}
         </AuthContext.Provider>

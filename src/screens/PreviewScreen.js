@@ -58,10 +58,28 @@ const PreviewScreen = ({ navigation }) => {
         // Formatting Helpers
         const formatAddress = (addrStr) => {
             if (!addrStr) return '';
-            if (address.AddressFormat === 'list') {
+            if (uiSettings?.AddressFormat === 'bullet' || uiSettings?.AddressFormat === 'list') {
                 return addrStr.replace(/\n/g, '<br/>');
             }
             return addrStr.replace(/\n/g, ', ');
+        };
+
+        const formatBulletList = (text, format) => {
+            if (!text) return '';
+            if (format === 'comma') {
+                const lines = text.split('\n')
+                    .map(line => line.replace(/^-\s*/, '').trim())
+                    .filter(line => line.length > 0);
+                return lines.join(', ');
+            } else {
+                const lines = text.split('\n')
+                    .map(line => line.replace(/^-\s*/, '').trim())
+                    .filter(line => line.length > 0);
+                if (lines.length === 0) return text;
+                return `<ul style="margin: 5px 0 10px 0; padding-left: 20px; list-style-type: disc;">` + 
+                    lines.map(line => `<li>${line}</li>`).join('') + 
+                    `</ul>`;
+            }
         };
 
         const maskId = (idStr) => {
@@ -190,13 +208,16 @@ const PreviewScreen = ({ navigation }) => {
         const expHtml = expList && expList.length > 0 ? `
             ${sectionHeader('Professional Experience')}
             ${expList.map(job => `
-                <div class="job-item">
-                    <div class="job-header">
-                        <span>${job.Organization}</span>
+                <div class="job-item" style="margin-bottom: 20px;">
+                    <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
+                        <span>${job.Organization}${job.Department ? ` (${job.Department})` : ''}</span>
                         <span>${job["Start Date"]} - ${job["End Date"] || 'Present'}</span>
                     </div>
-                    <div class="job-role">${job.Role}</div>
-                    <div class="job-desc">${job["Key Responsibilities"]}</div>
+                    <div class="job-role" style="font-style: italic; color: #555; margin-bottom: 5px;">${job.Role}</div>
+                    <div class="job-desc" style="font-size: 14px; line-height: 1.5; white-space: pre-line; margin-bottom: 5px;">${job["Key Responsibilities"]}</div>
+                    ${job.Achievements ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Key Achievements:</strong> ${job.Achievements}</div>` : ''}
+                    ${job["Systems Used"] ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Systems & Tools Used:</strong> ${formatBulletList(job["Systems Used"], uiSettings?.SystemsUsedFormat)}</div>` : ''}
+                    ${job["Reason for Leaving"] ? `<div style="font-size: 12.5px; margin-top: 5px; font-style: italic; color: #777;">Reason for leaving: ${job["Reason for Leaving"]}</div>` : ''}
                 </div>
             `).join('')}
         ` : '';
@@ -204,8 +225,8 @@ const PreviewScreen = ({ navigation }) => {
         const eduHtml = (eduList?.tertiary?.length > 0 || eduList?.highschool?.["Year Completed"]) ? `
             ${sectionHeader('Education')}
             ${eduList.tertiary.map(edu => `
-                 <div class="edu-item">
-                    <div class="job-header">
+                 <div class="edu-item" style="margin-bottom: 15px;">
+                    <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
                         <span>${edu.Institution}</span>
                         <span>${edu.Year}</span>
                     </div>
@@ -213,8 +234,8 @@ const PreviewScreen = ({ navigation }) => {
                 </div>
             `).join('')}
             ${eduList.highschool["Year Completed"] ? `
-                <div class="edu-item">
-                     <div class="job-header">
+                <div class="edu-item" style="margin-bottom: 15px;">
+                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
                         <span>${eduList.highschool["Province Department"]}</span>
                         <span>${eduList.highschool["Year Completed"]}</span>
                     </div>
@@ -223,10 +244,12 @@ const PreviewScreen = ({ navigation }) => {
             ` : ''}
         ` : '';
 
-        const skillsHtml = (skills.Tech || skills.Soft) ? `
-             ${sectionHeader('Skills')}
-             ${skills.Tech ? `<p><strong>Technical:</strong> ${skills.Tech}</p>` : ''}
-             ${skills.Soft ? `<p><strong>Soft Skills:</strong> ${skills.Soft}</p>` : ''}
+        const skillsHtml = (skills.Tech || skills.Soft || skills["Professional Certs"] || skills.Certs || skills["Non-Academic Certs"]) ? `
+             ${sectionHeader('Skills & Certifications')}
+             ${skills.Tech ? `<div style="margin-bottom: 10px;"><strong>Technical Skills:</strong> ${formatBulletList(skills.Tech, uiSettings?.TechFormat)}</div>` : ''}
+             ${skills.Soft ? `<div style="margin-bottom: 10px;"><strong>Soft Skills:</strong> ${formatBulletList(skills.Soft, uiSettings?.SoftFormat)}</div>` : ''}
+             ${(skills["Professional Certs"] || skills.Certs) ? `<div style="margin-bottom: 10px;"><strong>Professional Certifications:</strong> ${formatBulletList(skills["Professional Certs"] || skills.Certs, uiSettings?.ProfCertsFormat)}</div>` : ''}
+             ${skills["Non-Academic Certs"] ? `<div style="margin-bottom: 10px;"><strong>Non-Academic Certifications:</strong> ${formatBulletList(skills["Non-Academic Certs"], uiSettings?.NonAcadCertsFormat)}</div>` : ''}
          ` : '';
 
         const refHtml = refList && refList.length > 0 ? `

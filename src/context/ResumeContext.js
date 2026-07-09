@@ -1,14 +1,15 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { Storage } from '../utils/storage';
 import { AuthContext } from './AuthContext';
 
 export const ResumeContext = createContext();
 
-const BACKEND_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+// Dynamic backend URL is resolved from AuthContext
 
 export const ResumeProvider = ({ children }) => {
-    const { user } = useContext(AuthContext);
+    const { user, backendUrl } = useContext(AuthContext);
     const [meta, setMeta] = useState([]);
     const [activeResumeId, setActiveResumeId] = useState(null);
     const [resumeData, setResumeData] = useState(null);
@@ -39,7 +40,7 @@ export const ResumeProvider = ({ children }) => {
         
         try {
             // 1. Fetch Server Manifest
-            const manifestResponse = await fetch(`${BACKEND_URL}/sync/manifest`, {
+            const manifestResponse = await fetch(`${backendUrl}/sync/manifest`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             
@@ -81,7 +82,7 @@ export const ResumeProvider = ({ children }) => {
             // 3. Process Downloads
             if (toDownloadIds.length > 0) {
                 console.log(`[Sync] Downloading ${toDownloadIds.length} updated resumes from server...`);
-                const downloadResponse = await fetch(`${BACKEND_URL}/sync/resumes`, {
+                const downloadResponse = await fetch(`${backendUrl}/sync/resumes`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
@@ -140,7 +141,7 @@ export const ResumeProvider = ({ children }) => {
                 }
                 
                 if (itemsToPush.length > 0) {
-                    const pushResponse = await fetch(`${BACKEND_URL}/sync/push`, {
+                    const pushResponse = await fetch(`${backendUrl}/sync/push`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -187,7 +188,7 @@ export const ResumeProvider = ({ children }) => {
     const syncUiSettings = async (profileId, token) => {
         if (!profileId || !token) return;
         try {
-            const manifestResponse = await fetch(`${BACKEND_URL}/sync/ui_settings/manifest`, {
+            const manifestResponse = await fetch(`${backendUrl}/sync/ui_settings/manifest`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (!manifestResponse.ok) return;
@@ -218,7 +219,7 @@ export const ResumeProvider = ({ children }) => {
             }
 
             if (toDownloadIds.length > 0) {
-                const downloadResponse = await fetch(`${BACKEND_URL}/sync/ui_settings`, {
+                const downloadResponse = await fetch(`${backendUrl}/sync/ui_settings`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (downloadResponse.ok) {
@@ -252,7 +253,7 @@ export const ResumeProvider = ({ children }) => {
                     }
                 }
                 if (itemsToPush.length > 0) {
-                    await fetch(`${BACKEND_URL}/sync/ui_settings/push`, {
+                    await fetch(`${backendUrl}/sync/ui_settings/push`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
