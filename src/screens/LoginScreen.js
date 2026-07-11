@@ -5,12 +5,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 
 const LoginScreen = () => {
-    const { profiles, login, createProfile, deleteProfile, quickStart } = useContext(AuthContext);
+    const { user, profiles, login, createProfile, deleteProfile, quickStart } = useContext(AuthContext);
     const theme = useTheme();
     const insets = useSafeAreaInsets();
+    const navigation = useNavigation();
     const [newName, setNewName] = useState('');
+
+    useEffect(() => {
+        if (user) {
+            navigation.navigate('Hub');
+        }
+    }, [user]);
 
     // --- Double-Tap Back Button to Exit ---
     const lastBackPress = useRef(0);
