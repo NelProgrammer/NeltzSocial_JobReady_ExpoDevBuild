@@ -5,18 +5,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
 
 const LoginScreen = () => {
-    const { user, profiles, login, createProfile, deleteProfile, quickStart } = useContext(AuthContext);
+    const { profiles, login, createProfile, deleteProfile, quickStart } = useContext(AuthContext);
     const theme = useTheme();
     const insets = useSafeAreaInsets();
-    const navigation = useNavigation();
     const [newName, setNewName] = useState('');
 
     useEffect(() => {
         if (user) {
-            navigation.navigate('Hub');
+            if (navigation.canGoBack()) {
+                navigation.goBack();
+            } else {
+                navigation.navigate('Hub');
+            }
         }
     }, [user]);
 
@@ -69,7 +71,7 @@ const LoginScreen = () => {
         <LinearGradient colors={['#0f172a', '#1e293b']} style={styles.container}>
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
                 <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 20) }]}>
-                    
+
                     {/* Exit App Button — Top Left */}
                     <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
                         <MaterialCommunityIcons name="power" size={16} color="#fff" />
@@ -84,22 +86,22 @@ const LoginScreen = () => {
 
                     <Surface style={styles.surface} elevation={0}>
                         <Text variant="titleLarge" style={styles.surfaceTitle}>Welcome</Text>
-                        
+
                         {/* 1. SOCIAL PROVIDERS (Colored to match Web) */}
                         <View style={styles.socialGrid}>
-                            <Button 
-                                mode="contained" 
-                                icon="google" 
-                                onPress={() => {}} 
+                            <Button
+                                mode="contained"
+                                icon="google"
+                                onPress={() => { }}
                                 style={[styles.socialBtn, { backgroundColor: '#4285F4' }]}
                                 labelStyle={{ color: '#fff' }}
                             >
                                 Google
                             </Button>
-                            <Button 
-                                mode="contained" 
-                                icon="linkedin" 
-                                onPress={() => {}} 
+                            <Button
+                                mode="contained"
+                                icon="linkedin"
+                                onPress={() => { }}
                                 style={[styles.socialBtn, { backgroundColor: '#0077B5' }]}
                                 labelStyle={{ color: '#fff' }}
                             >
@@ -107,19 +109,19 @@ const LoginScreen = () => {
                             </Button>
                         </View>
                         <View style={[styles.socialGrid, { marginTop: 12 }]}>
-                            <Button 
-                                mode="contained" 
-                                icon="facebook" 
-                                onPress={() => {}} 
+                            <Button
+                                mode="contained"
+                                icon="facebook"
+                                onPress={() => { }}
                                 style={[styles.socialBtn, { backgroundColor: '#1877F2' }]}
                                 labelStyle={{ color: '#fff' }}
                             >
                                 Facebook
                             </Button>
-                            <Button 
-                                mode="contained" 
-                                icon="twitter" 
-                                onPress={() => {}} 
+                            <Button
+                                mode="contained"
+                                icon="twitter"
+                                onPress={() => { }}
                                 style={[styles.socialBtn, { backgroundColor: '#000' }]}
                                 labelStyle={{ color: '#fff' }}
                             >
@@ -144,11 +146,11 @@ const LoginScreen = () => {
                                             <Text style={styles.profileSub}>{p.socialLinks?.google ? 'Social Account' : 'Local Profile'}</Text>
                                         </View>
                                     </TouchableOpacity>
-                                    <IconButton 
-                                        icon="trash-can-outline" 
-                                        iconColor="rgba(255,0,0,0.4)" 
-                                        size={20} 
-                                        onPress={() => deleteProfile(p.id)} 
+                                    <IconButton
+                                        icon="trash-can-outline"
+                                        iconColor="rgba(255,0,0,0.4)"
+                                        size={20}
+                                        onPress={() => deleteProfile(p.id)}
                                     />
                                 </View>
                             ))}

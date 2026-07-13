@@ -9,6 +9,22 @@ export const AuthContext = createContext();
 const PORT = process.env.EXPO_PUBLIC_API_PORT || '8000';
 const PRODUCTION_URL = process.env.EXPO_PUBLIC_API_URL || 'https://api.jobready.neltzsocial.com';
 
+const fetchWithTimeout = async (url, options = {}, timeout = 5000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(id);
+        return response;
+    } catch (err) {
+        clearTimeout(id);
+        throw err;
+    }
+};
+
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [profiles, setProfiles] = useState([]);
@@ -32,7 +48,7 @@ export const AuthProvider = ({ children }) => {
 
                 // 3. Fetch & Sync with Server Profiles
                 try {
-                    const response = await fetch(`${resolvedUrl}/auth/profiles`);
+                    const response = await fetchWithTimeout(`${resolvedUrl}/auth/profiles`, {}, 3000);
                     if (response.ok) {
                         const serverProfiles = await response.json();
                         const serverMap = new Map(serverProfiles.map(p => [p.profile_id, p]));
@@ -60,10 +76,13 @@ export const AuthProvider = ({ children }) => {
                             }
                         }
 
-                        // Keep local-only offline profiles (without accessTokens, e.g., local mock accounts)
+                        // Keep local-only/offline profiles (ensuring we don't wipe active profiles if server database is reset)
                         for (const l of storedProfiles) {
-                            if (!serverMap.has(l.id) && !l.accessToken) {
-                                mergedProfiles.push(l);
+                            if (!serverMap.has(l.id)) {
+                                mergedProfiles.push({
+                                    ...l,
+                                    accessToken: null // Remove access token so it behaves as local fallback
+                                });
                             }
                         }
 
@@ -145,14 +164,14 @@ export const AuthProvider = ({ children }) => {
             const mockToken = 'mock_' + name.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
             
             // Attempt to register/login on the backend API
-            const response = await fetch(`${backendUrl}/auth/verify`, {
+            const response = await fetchWithTimeout(`${backendUrl}/auth/verify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     provider: 'google',
                     token: mockToken
                 })
-            });
+            }, {}, 5000);
 
             if (!response.ok) {
                 throw new Error(`Server returned status code: ${response.status}`);
@@ -216,9 +235,9 @@ export const AuthProvider = ({ children }) => {
 
             // Sync profile deletion to database
             try {
-                await fetch(`${backendUrl}/auth/profiles/${profileId}`, {
+                await fetchWithTimeout(`${backendUrl}/auth/profiles/${profileId}`, {
                     method: 'DELETE'
-                });
+                }, {}, 5000);
             } catch (serverErr) {
                 console.warn('[Auth] Remote profile delete failed:', serverErr.message);
             }

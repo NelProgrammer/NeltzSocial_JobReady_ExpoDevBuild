@@ -8,6 +8,22 @@ export const ResumeContext = createContext();
 
 // Dynamic backend URL is resolved from AuthContext
 
+const fetchWithTimeout = async (url, options = {}, timeout = 5000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(id);
+        return response;
+    } catch (err) {
+        clearTimeout(id);
+        throw err;
+    }
+};
+
 export const ResumeProvider = ({ children }) => {
     const { user, backendUrl } = useContext(AuthContext);
     const [meta, setMeta] = useState([]);
@@ -40,9 +56,9 @@ export const ResumeProvider = ({ children }) => {
         
         try {
             // 1. Fetch Server Manifest
-            const manifestResponse = await fetch(`${backendUrl}/sync/manifest`, {
+            const manifestResponse = await fetchWithTimeout(`${backendUrl}/sync/manifest`, {
                 headers: { 'Authorization': `Bearer ${token}` }
-            });
+            }, 5000);
             
             if (!manifestResponse.ok) {
                 console.warn(`[Sync] Failed to fetch manifest: ${manifestResponse.status}`);
@@ -82,9 +98,9 @@ export const ResumeProvider = ({ children }) => {
             // 3. Process Downloads
             if (toDownloadIds.length > 0) {
                 console.log(`[Sync] Downloading ${toDownloadIds.length} updated resumes from server...`);
-                const downloadResponse = await fetch(`${backendUrl}/sync/resumes`, {
+                const downloadResponse = await fetchWithTimeout(`${backendUrl}/sync/resumes`, {
                     headers: { 'Authorization': `Bearer ${token}` }
-                });
+                }, 5000);
                 
                 if (downloadResponse.ok) {
                     const serverResumes = await downloadResponse.json();
@@ -141,14 +157,14 @@ export const ResumeProvider = ({ children }) => {
                 }
                 
                 if (itemsToPush.length > 0) {
-                    const pushResponse = await fetch(`${backendUrl}/sync/push`, {
+                    const pushResponse = await fetchWithTimeout(`${backendUrl}/sync/push`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
                         },
                         body: JSON.stringify({ items: itemsToPush })
-                    });
+                    }, 5000);
                     
                     if (pushResponse.ok) {
                         const pushResult = await pushResponse.json();
@@ -188,9 +204,9 @@ export const ResumeProvider = ({ children }) => {
     const syncUiSettings = async (profileId, token) => {
         if (!profileId || !token) return;
         try {
-            const manifestResponse = await fetch(`${backendUrl}/sync/ui_settings/manifest`, {
+            const manifestResponse = await fetchWithTimeout(`${backendUrl}/sync/ui_settings/manifest`, {
                 headers: { 'Authorization': `Bearer ${token}` }
-            });
+            }, 5000);
             if (!manifestResponse.ok) return;
             const serverManifest = await manifestResponse.json();
             const serverManifestMap = new Map(serverManifest.map(item => [item.resume_id, item.last_modified]));
@@ -219,9 +235,9 @@ export const ResumeProvider = ({ children }) => {
             }
 
             if (toDownloadIds.length > 0) {
-                const downloadResponse = await fetch(`${backendUrl}/sync/ui_settings`, {
+                const downloadResponse = await fetchWithTimeout(`${backendUrl}/sync/ui_settings`, {
                     headers: { 'Authorization': `Bearer ${token}` }
-                });
+                }, 5000);
                 if (downloadResponse.ok) {
                     const serverSettings = await downloadResponse.json();
                     for (const serverSet of serverSettings) {
@@ -253,14 +269,14 @@ export const ResumeProvider = ({ children }) => {
                     }
                 }
                 if (itemsToPush.length > 0) {
-                    await fetch(`${backendUrl}/sync/ui_settings/push`, {
+                    await fetchWithTimeout(`${backendUrl}/sync/ui_settings/push`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'Authorization': `Bearer ${token}`
                         },
                         body: JSON.stringify({ items: itemsToPush })
-                    });
+                    }, 5000);
                 }
             }
         } catch (error) {
