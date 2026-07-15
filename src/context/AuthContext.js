@@ -171,7 +171,7 @@ export const AuthProvider = ({ children }) => {
                     provider: 'google',
                     token: mockToken
                 })
-            }, {}, 5000);
+            }, 5000);
 
             if (!response.ok) {
                 throw new Error(`Server returned status code: ${response.status}`);
@@ -237,7 +237,7 @@ export const AuthProvider = ({ children }) => {
             try {
                 await fetchWithTimeout(`${backendUrl}/auth/profiles/${profileId}`, {
                     method: 'DELETE'
-                }, {}, 5000);
+                }, 5000);
             } catch (serverErr) {
                 console.warn('[Auth] Remote profile delete failed:', serverErr.message);
             }
