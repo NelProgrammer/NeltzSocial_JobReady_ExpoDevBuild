@@ -137,7 +137,7 @@ const LoginScreen = () => {
 
                         {/* 2. PROFILE LIST */}
                         <View style={styles.profileList}>
-                            {(profiles || []).sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0)).slice(0, 5).map(p => (
+                            {[...profiles].sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0)).slice(0, 5).map(p => (
                                 <View key={p.id} style={styles.profileItem}>
                                     <TouchableOpacity style={styles.profileInfo} onPress={() => login(p.id)}>
                                         <Avatar.Icon size={32} icon="account" backgroundColor="#6366f1" />

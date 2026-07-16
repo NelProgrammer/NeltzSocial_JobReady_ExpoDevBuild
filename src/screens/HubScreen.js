@@ -17,7 +17,7 @@ const HubScreen = () => {
     const { user, logout, quickStart } = useContext(AuthContext);
     const { meta } = useContext(ResumeContext);
 
-    const latestResume = meta.length > 0 ? meta.sort((a, b) => b.lastModified - a.lastModified)[0] : null;
+    const latestResume = meta.length > 0 ? [...meta].sort((a, b) => b.lastModified - a.lastModified)[0] : null;
 
     // --- Double-Tap Back Button to Exit ---
     const lastBackPress = useRef(0);
