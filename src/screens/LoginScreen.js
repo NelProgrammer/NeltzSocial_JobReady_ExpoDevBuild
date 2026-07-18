@@ -5,9 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-
+import { useNavigation } from '@react-navigation/native';
 const LoginScreen = () => {
-    const { profiles, login, createProfile, deleteProfile, quickStart } = useContext(AuthContext);
+    const navigation = useNavigation();
+    const { user, profiles, login, createProfile, deleteProfile, quickStart } = useContext(AuthContext);
     const theme = useTheme();
     const insets = useSafeAreaInsets();
     const [newName, setNewName] = useState('');

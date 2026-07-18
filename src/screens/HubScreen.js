@@ -105,28 +105,28 @@ const HubScreen = () => {
                             ) : (
                                 <Avatar.Text size={48} label={getInitials(user?.name)} style={styles.avatarFallback} />
                             )}
-                            {user ? (
-                                <TouchableOpacity style={styles.logoutBtn} onPress={() => {
-                                    Alert.alert(
-                                        "Logout",
-                                        "Are you sure you want to log out of your profile?",
-                                        [
-                                            { text: "Cancel", style: "cancel" },
-                                            { text: "Logout", style: "destructive", onPress: () => {
-                                                logout();
-                                            }}
-                                        ]
-                                    );
-                                }}>
-                                    <MaterialCommunityIcons name="logout" size={16} color="#fff" />
-                                    <Text style={styles.logoutText}>Log Out</Text>
-                                </TouchableOpacity>
-                            ) : (
-                                <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate('Login')}>
-                                    <MaterialCommunityIcons name="login" size={16} color="#fff" />
-                                    <Text style={styles.loginText}>Log In</Text>
-                                </TouchableOpacity>
-                            )}
+                            {user && !user.isGuest ? (
+    <TouchableOpacity style={styles.logoutBtn} onPress={() => {
+        Alert.alert(
+            "Logout",
+            "Are you sure you want to log out of your profile?",
+            [
+                { text: "Cancel", style: "cancel" },
+                { text: "Logout", style: "destructive", onPress: async () => {
+                    await logout();
+                }},
+            ]
+        );
+    }}>
+        <MaterialCommunityIcons name="logout" size={16} color="#fff" />
+        <Text style={styles.logoutText}>Log Out</Text>
+    </TouchableOpacity>
+) : (
+    <TouchableOpacity style={styles.loginBtn} onPress={() => navigation.navigate('Login')}>
+        <MaterialCommunityIcons name="login" size={16} color="#fff" />
+        <Text style={styles.loginText}>Log In / Register</Text>
+    </TouchableOpacity>
+)}
                         </View>
                     </View>
                 </LinearGradient>

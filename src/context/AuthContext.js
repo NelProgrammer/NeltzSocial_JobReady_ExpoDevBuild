@@ -40,9 +40,20 @@ export const AuthProvider = ({ children }) => {
             try {
                 // 1. Load Local Profiles
                 const storedProfiles = await Storage.get(Storage.KEYS.PROFILES) || [];
-                setProfiles(storedProfiles);
-
-                // 2. Scan & Discover active backend port
+                let profilesArray = storedProfiles;
+                if (profilesArray.length === 0) {
+                    const guest = {
+                        id: 'guest_' + Date.now(),
+                        name: 'Guest',
+                        email: '',
+                        isGuest: true,
+                        created: new Date().toISOString(),
+                        lastLogin: Date.now(),
+                    };
+                    profilesArray = [guest];
+                    await Storage.set(Storage.KEYS.PROFILES, profilesArray);
+                }
+                setProfiles(profilesArray);  // 2. Scan & Discover active backend port
                 const resolvedUrl = await scanBackendUrl();
                 setBackendUrl(resolvedUrl);
 
