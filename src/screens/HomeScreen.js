@@ -7,6 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pickAndParseDocument, translateParsedTextToResume } from '../utils/FileParserHelper';
 import HeadlessParser from '../components/HeadlessParser';
 import { Storage } from '../utils/storage';
+import SyncIndicator from '../components/SyncIndicator';
+import { useSyncQueue } from '../hooks/useSyncQueue';
 import { AuthContext } from '../context/AuthContext';
 
 const HomeScreen = () => {
@@ -14,6 +16,7 @@ const HomeScreen = () => {
     const { meta, createResume, deleteResume, switchResume, renameResume, updateResumeData } = useContext(ResumeContext);
     const navigation = useNavigation();
     const insets = useSafeAreaInsets();
+  useSyncQueue();
     
     // Import State
     const [fileContext, setFileContext] = useState(null);
@@ -91,14 +94,14 @@ const HomeScreen = () => {
             description={`Last Edited: ${new Date(item.lastModified).toLocaleDateString()}`}
             left={props => <List.Icon {...props} icon="file-document-outline" />}
             right={props => (
-                <View style={{ flexDirection: 'row' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <SyncIndicator resumeId={item.id} size={20} />
                     <IconButton icon="pencil" onPress={() => handleRename(item.id, item.name)} />
                     <IconButton icon="delete" onPress={() => handleDelete(item.id)} />
                     <IconButton icon="chevron-right" onPress={() => handleOpen(item.id)} />
                 </View>
             )}
             onPress={() => handleOpen(item.id)}
-
         />
     );
 

@@ -5,6 +5,7 @@
   "version": "54.0.44",
   "main": "index.js",
   "scripts": {
+    "dev": "expo start",
     "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -14,6 +15,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-community/netinfo": "^12.0.1",
     "@react-navigation/material-top-tabs": "^7.4.13",
     "@react-navigation/native": "^7.1.28",
     "@react-navigation/native-stack": "^7.13.0",
@@ -48,9 +50,22 @@
   "devDependencies": {
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^14.0.1",
+    "@types/jest": "^30.0.0",
+    "@types/react": "~19.1.10",
+    "babel-preset-expo": "^57.0.3",
     "jest": "^29.7.0",
     "jest-expo": "^57.0.2",
     "react-test-renderer": "^19.2.7",
-    "test-renderer": "1.1"
+    "test-renderer": "1.1",
+    "typescript": "~5.9.2"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.js"
+    ],
+    "globals": {
+      "IS_REACT_ACT_ENVIRONMENT": true
+    }
   }
 }

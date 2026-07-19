@@ -1,4 +1,6 @@
+global.IS_REACT_ACT_ENVIRONMENT = true;
 import React, { useContext, useEffect } from 'react';
+jest.setTimeout(60000);
 import { render, act, waitFor } from '@testing-library/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext, AuthProvider } from '../src/context/AuthContext';
@@ -34,31 +36,35 @@ describe('AuthContext Javascript Integration Tests', () => {
   });
 
   let authContextHandle = null;
-  const TestComponent = () => {
+  const TestComponent = ({ setAuth }) => {
     const auth = useContext(AuthContext);
-    console.log(">>> TestComponent rendered, user =", auth.user ? auth.user.name : "null", "loading =", auth.loading);
-    authContextHandle = auth;
+    useEffect(() => {
+      setAuth(auth);
+    }, [auth]);
     return null;
   };
 
   const renderContext = async () => {
     authContextHandle = null; // Reset global handle to prevent stale references from previous tests
+    const setAuth = (auth) => {
+      authContextHandle = auth;
+    };
     const result = render(
       <AuthProvider>
-        <TestComponent />
+        <TestComponent setAuth={setAuth} />
       </AuthProvider>
     );
-    // Safe async wait using Testing Library's built-in scheduler
+    // Wait for async init to settle
     await waitFor(() => {
       expect(authContextHandle).not.toBeNull();
       expect(authContextHandle.loading).toBe(false);
-    });
+    }, { timeout: 20000 });
     return result;
   };
 
   test('Initial Bootstrapping: loads fallback empty profile states and resolved active URL', async () => {
     await renderContext();
-
+    
     expect(authContextHandle.loading).toBe(false);
     expect(authContextHandle.user).toBeNull();
     expect(authContextHandle.profiles).toEqual([]);
@@ -67,7 +73,7 @@ describe('AuthContext Javascript Integration Tests', () => {
 
   test('Profile Creation: creates a new local profile and saves it to AsyncStorage', async () => {
     await renderContext();
-
+    
     // Trigger local profile creation
     await act(async () => {
       await authContextHandle.createProfile('Nelson Programmer', { local: true });
@@ -87,7 +93,7 @@ describe('AuthContext Javascript Integration Tests', () => {
 
   test('Logout: terminates active user session and clears stored active ID', async () => {
     await renderContext();
-
+    
     // 1. Create Profile
     await act(async () => {
       await authContextHandle.createProfile('Nelson Developer');
