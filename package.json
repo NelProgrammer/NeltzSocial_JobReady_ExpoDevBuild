@@ -3,7 +3,7 @@
   "description": "The Blank project template includes the minimum dependencies to run and an empty root component.",
   "license": "0BSD",
   "version": "54.0.44",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "dev": "expo start",
     "start": "expo start --dev-client",
@@ -62,7 +62,7 @@
   "jest": {
     "preset": "jest-expo",
     "setupFilesAfterEnv": [
-      "<rootDir>/jest.setup.js"
+      "<rootDir>/jest.setup.ts"
     ],
     "globals": {
       "IS_REACT_ACT_ENVIRONMENT": true

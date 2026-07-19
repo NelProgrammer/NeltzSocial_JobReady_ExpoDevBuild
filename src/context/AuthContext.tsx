@@ -1,9 +1,11 @@
+// @ts-nocheck
 import React, { createContext, useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import { getBackendUrl } from '../utils/backendUrl';
 import { Storage } from '../utils/storage';
 
-export const AuthContext = createContext({
+import { AuthContextType } from '../types/context';
+export const AuthContext = createContext<AuthContextType>({
   user: null,
   profiles: [],
   loading: true,

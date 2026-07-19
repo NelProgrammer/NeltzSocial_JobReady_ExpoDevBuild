@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Platform, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { Text } from 'react-native-paper';

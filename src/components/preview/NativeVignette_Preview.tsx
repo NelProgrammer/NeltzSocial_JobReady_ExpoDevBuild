@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { Surface, Text, Divider } from 'react-native-paper';

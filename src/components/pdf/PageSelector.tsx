@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Surface, IconButton } from 'react-native-paper';

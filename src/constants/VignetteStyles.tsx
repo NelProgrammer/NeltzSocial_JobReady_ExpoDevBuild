@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * HTML-Vignette Stylings 
  * Shared CSS for high-fidelity previews across Web and Expo.

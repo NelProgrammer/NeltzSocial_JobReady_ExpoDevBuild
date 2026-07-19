@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useContext, useState, useEffect } from 'react';
 import { View, StyleSheet, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import { Button, Appbar, Text, Card } from 'react-native-paper';

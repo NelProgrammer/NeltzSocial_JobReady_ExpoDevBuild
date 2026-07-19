@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useContext, useState } from 'react';
 import { View, FlatList, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { Appbar, List, FAB, Text, Divider, Menu, IconButton, Button } from 'react-native-paper';

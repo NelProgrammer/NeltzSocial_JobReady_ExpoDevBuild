@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { Button, Text, IconButton, Surface } from 'react-native-paper';

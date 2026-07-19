@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useRef, useEffect } from 'react';
 import { View } from 'react-native';
 import { WebView } from 'react-native-webview';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // src/components/RecruitmentApp.js
 
 /*

@@ -1,3 +1,4 @@
+// @ts-nocheck
 // jest.setup.js
 // Global mocks for Jest tests
 

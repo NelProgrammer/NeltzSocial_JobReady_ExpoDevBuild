@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { Alert } from 'react-native';

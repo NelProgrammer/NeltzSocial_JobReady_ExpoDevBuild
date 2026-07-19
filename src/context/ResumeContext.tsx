@@ -1,10 +1,11 @@
+// @ts-nocheck
 import React, { createContext, useState, useEffect, useContext } from 'react';
+import { ResumeContextType } from '../types/context';
+export const ResumeContext = createContext<ResumeContextType | null>(null);
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { Storage } from '../utils/storage';
 import { AuthContext } from './AuthContext';
-
-export const ResumeContext = createContext();
 
 // Dynamic backend URL is resolved from AuthContext
 
