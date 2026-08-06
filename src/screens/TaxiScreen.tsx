@@ -6,22 +6,22 @@ import { AuthContext } from '../context/AuthContext';
 import { Storage } from '../utils/storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const TaxiScreen = ({ navigation }) => {
+const TaxiScreen = ({ navigation }: { navigation: any }) => {
     const { user } = useContext(AuthContext);
     const insets = useSafeAreaInsets();
 
-    const [activeTrip, setActiveTrip] = useState(null);
-    const [savedTrips, setSavedTrips] = useState([]);
+    const [activeTrip, setActiveTrip] = useState<any>(null);
+    const [savedTrips, setSavedTrips] = useState<any[]>([]);
     
     // Form State
     const [origin, setOrigin] = useState('');
     const [destination, setDestination] = useState('');
     const [mode, setMode] = useState('taxi'); // taxi, uber, bus
-    const [estimate, setEstimate] = useState(null);
-    const [verificationStatus, setVerificationStatus] = useState(null);
+    const [estimate, setEstimate] = useState<any>(null);
+    const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
 
     const [modeMenuVisible, setModeMenuVisible] = useState(false);
-    const [simInterval, setSimInterval] = useState(null);
+    const [simInterval, setSimInterval] = useState<any>(null);
 
     const safetyContacts = [
         { name: 'Mom', phone: '0831234567' },
@@ -37,8 +37,8 @@ const TaxiScreen = ({ navigation }) => {
 
     const loadData = async () => {
         if (!user) return;
-        const trips = await Storage.get('taxi_trips', user.id) || [];
-        const active = await Storage.get('taxi_active_trip', user.id) || null;
+        const trips = await Storage.get(`taxi_trips_${user.id}`) || [];
+        const active = await Storage.get(`taxi_active_trip_${user.id}`) || null;
         setSavedTrips(trips);
         setActiveTrip(active);
 
@@ -47,16 +47,16 @@ const TaxiScreen = ({ navigation }) => {
         }
     };
 
-    const saveData = async (updatedTrips, updatedActive) => {
+    const saveData = async (updatedTrips: any[], updatedActive: any) => {
         setSavedTrips(updatedTrips);
         setActiveTrip(updatedActive);
         if (user) {
-            await Storage.set('taxi_trips', updatedTrips, user.id);
-            await Storage.set('taxi_active_trip', updatedActive, user.id);
+            await Storage.set(`taxi_trips_${user.id}`, updatedTrips);
+            await Storage.set(`taxi_active_trip_${user.id}`, updatedActive);
         }
     };
 
-    const runAddressVerification = (addr) => {
+    const runAddressVerification = (addr: string) => {
         setDestination(addr);
         const addrLower = addr.toLowerCase();
         if (!addr.trim()) {
@@ -132,12 +132,12 @@ const TaxiScreen = ({ navigation }) => {
         Alert.alert("Success", "Commute route saved successfully!");
     };
 
-    const handleStartTrip = async (tripId) => {
-        const trip = savedTrips.find(t => t.id === tripId);
+    const handleStartTrip = async (tripId: string) => {
+        const trip = savedTrips.find((t: any) => t.id === tripId);
         if (!trip) return;
 
         trip.status = 'Active';
-        const updatedTrips = savedTrips.map(t => t.id === tripId ? trip : t);
+        const updatedTrips = savedTrips.map((t: any) => t.id === tripId ? trip : t);
         const clonedActive = JSON.parse(JSON.stringify(trip));
 
         await saveData(updatedTrips, clonedActive);
@@ -147,7 +147,7 @@ const TaxiScreen = ({ navigation }) => {
     const handleEndTrip = async () => {
         if (activeTrip) {
             const activeId = activeTrip.id;
-            const updatedTrips = savedTrips.map(t => {
+            const updatedTrips = savedTrips.map((t: any) => {
                 if (t.id === activeId) {
                     return { ...t, status: 'Completed' };
                 }
@@ -159,13 +159,13 @@ const TaxiScreen = ({ navigation }) => {
         Alert.alert("Trip Completed", "Commute finished safely! Verify location on arrival.");
     };
 
-    const startSimulation = (currActive, allTrips) => {
+    const startSimulation = (currActive: any, allTrips: any[]) => {
         if (simInterval) clearInterval(simInterval);
 
         let activeRef = { ...currActive };
 
         const interval = setInterval(async () => {
-            if (activeRef.estimate.distance > 0) {
+            if (activeRef.estimate && activeRef.estimate.distance > 0) {
                 const newDist = Math.max(0, activeRef.estimate.distance - 0.2);
                 activeRef.estimate.distance = newDist;
 
@@ -185,7 +185,7 @@ const TaxiScreen = ({ navigation }) => {
 
                 setActiveTrip({ ...activeRef });
                 if (user) {
-                    await Storage.set('taxi_active_trip', activeRef, user.id);
+                    await Storage.set(`taxi_active_trip_${user.id}`, activeRef);
                 }
             }
         }, 4000);
@@ -200,7 +200,7 @@ const TaxiScreen = ({ navigation }) => {
         }
     };
 
-    const handleSendAlert = async (type) => {
+    const handleSendAlert = async (type: string) => {
         if (!activeTrip) return;
 
         let message = '';
@@ -221,7 +221,7 @@ const TaxiScreen = ({ navigation }) => {
         }
     };
 
-    const handleDeleteSavedTrip = async (tripId) => {
+    const handleDeleteSavedTrip = async (tripId: string) => {
         Alert.alert(
             "Delete Commute",
             "Delete this planned trip?",
@@ -403,7 +403,7 @@ const TaxiScreen = ({ navigation }) => {
                             </Card.Content>
                         </Card>
                     ) : (
-                        savedTrips.map(trip => (
+                        savedTrips.map((trip: any) => (
                             <Card key={trip.id} style={styles.tripCard} elevation={1}>
                                 <Card.Content style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <View style={{ flex: 1 }}>

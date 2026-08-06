@@ -12,9 +12,9 @@ const DEFAULT_HOST = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http:
 export const BackendAPI = {
     BASE_URL: DEFAULT_HOST,
 
-    request: async function (endpoint, method = 'GET', body = null) {
+    request: async function (endpoint: string, method: string = 'GET', body: any = null) {
         try {
-            const options = {
+            const options: RequestInit = {
                 method,
                 headers: { 'Content-Type': 'application/json' }
             };
@@ -29,20 +29,20 @@ export const BackendAPI = {
         }
     },
 
-    verifyAuth: async function (provider, token) {
+    verifyAuth: async function (provider: string, token: string) {
         return this.request('/auth/verify', 'POST', { provider, token });
     },
 
-    fetchResumes: async function (profileId) {
+    fetchResumes: async function (profileId: string) {
         return this.request(`/sync/resumes/${profileId}`);
     },
 
-    syncResume: async function (resumeItem) {
+    syncResume: async function (resumeItem: any) {
         return this.request('/sync/resumes', 'POST', resumeItem);
     },
 
-    searchCandidates: async function (query, city, licenseCode) {
-        let params = [];
+    searchCandidates: async function (query?: string, city?: string, licenseCode?: string) {
+        let params: string[] = [];
         if (query) params.push(`query=${encodeURIComponent(query)}`);
         if (city) params.push(`city=${encodeURIComponent(city)}`);
         if (licenseCode) params.push(`license_code=${encodeURIComponent(licenseCode)}`);

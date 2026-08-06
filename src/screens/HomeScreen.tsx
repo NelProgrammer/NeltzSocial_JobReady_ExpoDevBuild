@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { pickAndParseDocument, translateParsedTextToResume } from '../utils/FileParserHelper';
 import HeadlessParser from '../components/HeadlessParser';
 import { Storage } from '../utils/storage';
-import SyncIndicator from '../components/SyncIndicator';
+import { SyncIndicator } from '../components/SyncIndicator';
 import { useSyncQueue } from '../hooks/useSyncQueue';
 import { AuthContext } from '../context/AuthContext';
 

@@ -8,13 +8,14 @@ import { Storage } from '../utils/storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Vignette_PubRev from '../components/Vignette_PubRev';
 
-const PublishReviewScreen = ({ navigation }) => {
+const PublishReviewScreen = ({ navigation }: { navigation: any }) => {
     const { user } = useContext(AuthContext);
-    const { meta } = useContext(ResumeContext);
+    const resumeCtx = useContext(ResumeContext) as any;
+    const meta = resumeCtx?.meta || [];
     const insets = useSafeAreaInsets();
 
     const [viewMode, setViewMode] = useState('seeker'); // 'seeker' or 'reviewer'
-    const [submissions, setSubmissions] = useState([]);
+    const [submissions, setSubmissions] = useState<any[]>([]);
     
     // Seeker Form State
     const [selectedResumeId, setSelectedResumeId] = useState('');
@@ -22,12 +23,12 @@ const PublishReviewScreen = ({ navigation }) => {
     const [resumeSelectorVisible, setResumeSelectorVisible] = useState(false);
 
     // Reviewer Workbench State
-    const [activeSubmission, setActiveSubmission] = useState(null);
+    const [activeSubmission, setActiveSubmission] = useState<any>(null);
     const [feedbackText, setFeedbackText] = useState('');
     const [viewerVisible, setViewerVisible] = useState(false);
 
     // Feedback Detail State
-    const [selectedFeedback, setSelectedFeedback] = useState(null);
+    const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
 
     const reviewers = [
         { id: 'rev_1', name: 'Thandi Mokoena', role: 'HR Specialist', rating: 4.8, avatar: '👩‍💼' },
@@ -45,7 +46,7 @@ const PublishReviewScreen = ({ navigation }) => {
         setSubmissions(subs);
     };
 
-    const saveSubmissions = async (updatedSubs) => {
+    const saveSubmissions = async (updatedSubs: any[]) => {
         setSubmissions(updatedSubs);
         await Storage.set('jr_submissions', updatedSubs);
     };
@@ -56,7 +57,7 @@ const PublishReviewScreen = ({ navigation }) => {
             return;
         }
 
-        const selectedMeta = meta.find(m => m.id === selectedResumeId);
+        const selectedMeta = meta.find((m: any) => m.id === selectedResumeId);
         if (!selectedMeta) return;
 
         // Fetch resume data snapshot
@@ -153,7 +154,7 @@ const PublishReviewScreen = ({ navigation }) => {
                                 <TouchableOpacity style={styles.pickerTrigger} onPress={() => setResumeSelectorVisible(true)}>
                                     <Text style={styles.pickerText}>
                                         {selectedResumeId 
-                                            ? meta.find(m => m.id === selectedResumeId)?.name 
+                                            ? meta.find((m: any) => m.id === selectedResumeId)?.name 
                                             : "Select a Resume..."}
                                     </Text>
                                     <MaterialCommunityIcons name="chevron-down" size={24} color="#666" />
@@ -310,7 +311,7 @@ const PublishReviewScreen = ({ navigation }) => {
                             {meta.length === 0 ? (
                                 <Text>No resumes created yet.</Text>
                             ) : (
-                                meta.map(r => (
+                                meta.map((r: any) => (
                                     <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 8 }}>
                                         <RadioButton.Android value={r.id} color="#6200ee" />
                                         <Text style={{ marginLeft: 8, fontSize: 15 }}>{r.name}</Text>

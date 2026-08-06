@@ -13,12 +13,12 @@ import References from '../components/References';
 const Tab = createMaterialTopTabNavigator();
 
 type EditorScreenProps = {
-  route: { params: { resumeId?: string } };
-  navigation: any;
+  route?: { params?: { resumeId?: string } };
+  navigation?: any;
 };
 
 const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
-  const { resumeId } = route.params ?? {};
+  const { resumeId } = route?.params ?? {};
   const resumeCtx = useContext(ResumeContext) as any;
   const { resumeData, switchResume, updateResumeData, meta, renameResume, duplicateResume } = resumeCtx;
   const insets = useSafeAreaInsets();

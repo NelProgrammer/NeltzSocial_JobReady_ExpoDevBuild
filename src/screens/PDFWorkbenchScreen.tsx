@@ -1,6 +1,6 @@
-import React, { useState, useContext } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
-import { Appbar, Text, Button, Surface, ActivityIndicator } from 'react-native-paper';
+import React, { useState, useContext, useLayoutEffect } from 'react';
+import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { Appbar, Text, Button, Surface, ActivityIndicator, IconButton, Portal, Modal, RadioButton, Switch } from 'react-native-paper';
 import * as DocumentPicker from 'expo-document-picker';
 import { PDFDocument } from 'pdf-lib';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -14,16 +14,34 @@ import FileInventory from '../components/pdf/FileInventory';
 import PageSelector from '../components/pdf/PageSelector';
 import BuildList from '../components/pdf/BuildList';
 
-const PDFWorkbenchScreen = ({ navigation }) => {
+const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
     const insets = useSafeAreaInsets();
-    const [files, setFiles] = useState({});
-    const [selectedFileId, setSelectedFileId] = useState(null);
-    const [buildList, setBuildList] = useState([]);
-    const [previewBase64, setPreviewBase64] = useState(null);
+    const [files, setFiles] = useState<Record<string, any>>({});
+    const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
+    const [buildList, setBuildList] = useState<{ fileId: string; pageIndex: number }[]>([]);
+    const [previewBase64, setPreviewBase64] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [activeSide, setActiveSide] = useState('source'); // 'source' or 'target'
     const [pdfJsSource, setPdfJsSource] = useState('');
     const [pdfWorkerSource, setPdfWorkerSource] = useState('');
+
+    // Viewer settings
+    const [fitMode, setFitMode] = useState<'page' | 'a4' | 'width'>('page'); // 'page' (100% visible), 'a4' (A4 proportional), 'width' (Fill width)
+    const [enableScroll, setEnableScroll] = useState(false); // Single page / locked scroll is default
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    useLayoutEffect(() => {
+        navigation.setOptions({
+            headerRight: () => (
+                <IconButton
+                    icon="cog"
+                    iconColor="#fff"
+                    size={22}
+                    onPress={() => setIsSettingsOpen(true)}
+                />
+            )
+        });
+    }, [navigation]);
 
     React.useEffect(() => {
         const loadPdfJsAssets = async () => {
@@ -33,7 +51,7 @@ const PDFWorkbenchScreen = ({ navigation }) => {
 
                 await Promise.all([pdfJsAsset.downloadAsync(), pdfWorkerAsset.downloadAsync()]);
 
-                const getSource = async (asset) => {
+                const getSource = async (asset: any): Promise<string> => {
                     // In Dev mode, localUri might be an http URL (from Metro)
                     // FileSystem.readAsStringAsync only works on file:// URIs
                     if (asset.localUri && asset.localUri.startsWith('file')) {
@@ -45,7 +63,8 @@ const PDFWorkbenchScreen = ({ navigation }) => {
                         return new Promise((resolve, reject) => {
                             const reader = new FileReader();
                             reader.onloadend = () => {
-                                const base64 = reader.result.split(',')[1];
+                                const resultStr = typeof reader.result === 'string' ? reader.result : '';
+                                const base64 = resultStr.split(',')[1] || '';
                                 resolve(base64);
                             };
                             reader.onerror = reject;
@@ -92,7 +111,7 @@ const PDFWorkbenchScreen = ({ navigation }) => {
             if (isMounted) setIsGenerating(true);
             try {
                 const newPdfDoc = await PDFDocument.create();
-                const loadedDocs = {};
+                const loadedDocs: Record<string, PDFDocument> = {};
 
                 for (const item of buildList) {
                     const file = files[item.fileId];
@@ -166,22 +185,22 @@ const PDFWorkbenchScreen = ({ navigation }) => {
     };
 
     // 2. Select File Logic 
-    const handleSelectFile = (fileId) => {
+    const handleSelectFile = (fileId: string) => {
         setSelectedFileId(fileId);
         setActiveSide('source');
     };
 
     // 3. Page Selection Logic
-    const handleAddPage = (fileId, pageIndex) => {
+    const handleAddPage = (fileId: string, pageIndex: number) => {
         setBuildList(prev => [...prev, { fileId, pageIndex }]);
         setActiveSide('target');
     };
 
-    const handleAddAllPages = (fileId) => {
+    const handleAddAllPages = (fileId: string) => {
         const file = files[fileId];
         if (!file) return;
 
-        const newPages = [];
+        const newPages: { fileId: string; pageIndex: number }[] = [];
         for (let i = 0; i < file.pageCount; i++) {
             const isUsed = buildList.some(item => item.fileId === fileId && item.pageIndex === i);
             if (!isUsed) {
@@ -194,7 +213,7 @@ const PDFWorkbenchScreen = ({ navigation }) => {
     };
 
     // 4. Build List Management
-    const handleRemovePage = (indexToRemove) => {
+    const handleRemovePage = (indexToRemove: number) => {
         setBuildList(prev => {
             const newList = prev.filter((_, idx) => idx !== indexToRemove);
             if (newList.length === 0) setActiveSide('source');
@@ -202,7 +221,7 @@ const PDFWorkbenchScreen = ({ navigation }) => {
         });
     };
 
-    const handleMoveUp = (index) => {
+    const handleMoveUp = (index: number) => {
         if (index === 0) return;
         setBuildList(prev => {
             const arr = [...prev];
@@ -212,7 +231,7 @@ const PDFWorkbenchScreen = ({ navigation }) => {
         setActiveSide('target');
     };
 
-    const handleMoveDown = (index) => {
+    const handleMoveDown = (index: number) => {
         if (index === buildList.length - 1) return;
         setBuildList(prev => {
             const arr = [...prev];
@@ -228,7 +247,7 @@ const PDFWorkbenchScreen = ({ navigation }) => {
             Alert.alert("Processing", "Generating your combined PDF...");
 
             const newPdfDoc = await PDFDocument.create();
-            const loadedDocs = {};
+            const loadedDocs: Record<string, PDFDocument> = {};
 
             for (const item of buildList) {
                 const file = files[item.fileId];
@@ -286,7 +305,7 @@ const PDFWorkbenchScreen = ({ navigation }) => {
 
                 {/* Bottom Half: Build List (40%) & Live Preview (60%) */}
                 <View style={styles.bottomHalf}>
-                    <Surface style={[styles.buildListPane, activeSide === 'target' && styles.glowTarget]} elevation={2} onTouchEnd={() => { if (buildList.length > 0) setActiveSide('target') }}>
+                    <Surface style={[styles.buildListPane, activeSide === 'target' && styles.glowTarget]} elevation={2}>
                         <BuildList
                             files={files}
                             buildList={buildList}
@@ -297,27 +316,30 @@ const PDFWorkbenchScreen = ({ navigation }) => {
                     </Surface>
 
                     <Surface style={[styles.previewPane, activeSide === 'source' && styles.glowSource, activeSide === 'target' && styles.glowTarget]} elevation={2}>
-                        <Text variant="titleSmall" style={[styles.paneHeader, activeSide === 'source' ? { color: '#0288d1' } : { color: '#388e3c' }]}>
-                            {activeSide === 'source' ? 'Source Preview' : 'Draft Preview'}
-                        </Text>
-
-                        <View style={styles.previewBox}>
+                        <TouchableOpacity 
+                            style={styles.previewDirectContainer}
+                            activeOpacity={1}
+                            onLongPress={() => setIsSettingsOpen(true)}
+                            delayLongPress={500}
+                        >
                             {previewBase64 === null && !isGenerating ? (
-                                <>
+                                <View style={styles.emptyPreviewCenter}>
                                     <MaterialCommunityIcons name="file-pdf-box" size={64} color="#bdbdbd" />
                                     <Text variant="bodyMedium" style={{ marginTop: 8, color: '#757575' }}>
                                         {activeSide === 'source' ? 'No PDF Selected' : 'No Pages Added'}
                                     </Text>
-                                </>
+                                </View>
                             ) : (
                                 <SmartPreviewer
                                     mode="workbook"
                                     pdfUri={previewBase64 ? `data:application/pdf;base64,${previewBase64}` : null}
                                     isGenerating={isGenerating}
                                     buildList={buildList}
+                                    fitMode={fitMode}
+                                    enableScroll={enableScroll}
                                 />
                             )}
-                        </View>
+                        </TouchableOpacity>
 
                         <Button
                             mode="contained"
@@ -331,6 +353,39 @@ const PDFWorkbenchScreen = ({ navigation }) => {
                     </Surface>
                 </View>
             </View>
+
+            {/* Viewer Settings Modal Overlay */}
+            {isSettingsOpen && (
+                <View style={styles.overlayBackdrop}>
+                    <Surface style={styles.modalContent} elevation={5}>
+                        <View style={styles.modalHeaderRow}>
+                            <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>Viewer Settings</Text>
+                            <IconButton icon="close" size={20} onPress={() => setIsSettingsOpen(false)} />
+                        </View>
+
+                        <Text variant="labelLarge" style={styles.settingsLabel}>Scale Mode</Text>
+                        <RadioButton.Group onValueChange={(val: any) => setFitMode(val)} value={fitMode}>
+                            <TouchableOpacity style={styles.radioOption} onPress={() => setFitMode('page')}>
+                                <RadioButton value="page" />
+                                <Text variant="bodyMedium">Fit Page (100% Visible)</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.radioOption} onPress={() => setFitMode('a4')}>
+                                <RadioButton value="a4" />
+                                <Text variant="bodyMedium">A4 Proportional Fit (1 : 1.414)</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.radioOption} onPress={() => setFitMode('width')}>
+                                <RadioButton value="width" />
+                                <Text variant="bodyMedium">Fill Width (100% Width)</Text>
+                            </TouchableOpacity>
+                        </RadioButton.Group>
+
+                        <View style={styles.switchRow}>
+                            <Text variant="labelLarge" style={styles.settingsLabel}>Enable PDF Scrolling</Text>
+                            <Switch value={enableScroll} onValueChange={setEnableScroll} color="#6200ee" />
+                        </View>
+                    </Surface>
+                </View>
+            )}
         </View>
     );
 };
@@ -389,40 +444,76 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: 'transparent'
     },
-    paneHeader: {
-        fontWeight: 'bold',
-        color: '#333',
-        marginBottom: 8
-    },
-    pdfViewer: {
+    previewDirectContainer: {
         flex: 1,
         width: '100%',
         height: '100%',
-        backgroundColor: '#525659'
-    },
-    previewBox: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#e0e0e0',
+        backgroundColor: '#525659',
         borderRadius: 8,
         overflow: 'hidden',
         marginBottom: 8
     },
-    vignetteContainer: {
+    emptyPreviewCenter: {
         flex: 1,
-        width: '100%',
-        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff'
     },
     exportBtn: {
         borderRadius: 8,
         paddingVertical: 4
     },
     glowSource: {
-        borderColor: '#0288d1', // Light Blue 700
+        borderColor: '#7b1fa2', // Deep Purple
     },
     glowTarget: {
-        borderColor: '#388e3c', // Green 700
+        borderColor: '#0288d1', // Sky Blue
+    },
+    modalContent: {
+        backgroundColor: 'white',
+        padding: 20,
+        margin: 20,
+        borderRadius: 12
+    },
+    modalHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12
+    },
+    settingsLabel: {
+        fontWeight: 'bold',
+        marginTop: 8,
+        marginBottom: 6,
+        color: '#333'
+    },
+    radioOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 2
+    },
+    switchRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 16,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#eee'
+    },
+    floatingSettingsBtn: {
+        position: 'absolute',
+        top: 6,
+        right: 6,
+        zIndex: 20,
+        margin: 0
+    },
+    overlayBackdrop: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000
     }
 });
 

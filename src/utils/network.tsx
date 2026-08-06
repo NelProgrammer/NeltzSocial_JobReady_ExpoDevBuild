@@ -14,7 +14,7 @@ export const scanBackendUrl = async () => {
     }
     
     // Resolve host IP (essential for physical devices connecting to host machine)
-    const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.hostUri;
+    const hostUri = (Constants.expoConfig as any)?.hostUri || (Constants.manifest as any)?.hostUri;
     const ip = hostUri ? hostUri.split(':')[0] : (Platform.OS === 'android' ? '10.0.2.2' : 'localhost');
     
     const basePort = parseInt(PORT, 10);

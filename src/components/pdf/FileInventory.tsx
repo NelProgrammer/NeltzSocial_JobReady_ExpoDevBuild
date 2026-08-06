@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
-import { Button, Text, IconButton, Surface } from 'react-native-paper';
+import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { Text, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const FileInventory = ({ files, selectedFileId, onSelectFile, onUploadFile }) => {
@@ -9,10 +9,10 @@ const FileInventory = ({ files, selectedFileId, onSelectFile, onUploadFile }) =>
     const renderItem = ({ item }) => {
         const isSelected = selectedFileId === item.id;
         return (
-            <Surface
+            <TouchableOpacity
                 style={[styles.card, isSelected && styles.selectedCard]}
-                onTouchEnd={() => onSelectFile(item.id)}
-                elevation={isSelected ? 2 : 1}
+                onPress={() => onSelectFile(item.id)}
+                activeOpacity={0.7}
             >
                 <View style={styles.cardContent}>
                     <MaterialCommunityIcons
@@ -32,7 +32,7 @@ const FileInventory = ({ files, selectedFileId, onSelectFile, onUploadFile }) =>
                         <MaterialCommunityIcons name="check-circle" size={18} color="#6200ee" />
                     )}
                 </View>
-            </Surface>
+            </TouchableOpacity>
         );
     };
 

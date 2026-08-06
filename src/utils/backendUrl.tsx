@@ -31,7 +31,7 @@ export const getBackendUrl = () => {
   }
 
   // Resolve the host IP from Expo constants. `hostUri` looks like "192.168.1.42:19000".
-  const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.hostUri;
+  const hostUri = (Constants.expoConfig as any)?.hostUri || (Constants.manifest as any)?.hostUri;
   const ipFromHost = hostUri ? hostUri.split(':')[0] : null;
 
   // Determine a safe fallback when hostUri is unavailable.

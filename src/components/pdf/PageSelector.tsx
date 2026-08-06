@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Surface, IconButton } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { Text, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const PageSelector = ({ files, selectedFileId, buildList, onAddPage, onAddAllPages }) => {
@@ -29,18 +29,19 @@ const PageSelector = ({ files, selectedFileId, buildList, onAddPage, onAddAllPag
         for (let i = 0; i < pageCount; i++) {
             const used = isPageUsed(i);
             pages.push(
-                <Surface
+                <TouchableOpacity
                     key={i}
+                    disabled={used}
+                    onPress={() => onAddPage(selectedFileId, i)}
                     style={[styles.pageCard, used ? styles.usedCard : styles.activeCard]}
-                    onTouchEnd={used ? null : () => onAddPage(selectedFileId, i)}
-                    elevation={used ? 0 : 1}
+                    activeOpacity={0.7}
                 >
                     {used ? (
                         <MaterialCommunityIcons name="check-circle" size={16} color="#4caf50" />
                     ) : (
                         <Text variant="labelMedium" style={{ color: '#6200ee', fontWeight: 'bold' }}>{i + 1}</Text>
                     )}
-                </Surface>
+                </TouchableOpacity>
             );
         }
         return pages;

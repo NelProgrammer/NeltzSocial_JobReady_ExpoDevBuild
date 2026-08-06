@@ -1,9 +1,9 @@
-// @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Platform, StyleSheet, ActivityIndicator, Animated } from 'react-native';
 import { Text } from 'react-native-paper';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
+import { WebView } from 'react-native-webview';
 import NativeVignette_Preview from './NativeVignette_Preview';
 import WorkbookVignette from './WorkbookVignette';
 
@@ -18,8 +18,19 @@ if (Platform.OS !== 'web' && Constants.executionEnvironment !== ExecutionEnviron
     }
 }
 
-const SmartPreviewer = ({ data, layout, exportFormat, pdfUri, isGenerating, mode = 'resume', buildList = [] }) => {
-    const [engineState, setEngineState] = useState('evaluating'); // 'vignette', 'pdf', 'web_iframe'
+const SmartPreviewer = ({ 
+    data = null, 
+    layout = null, 
+    exportFormat = null, 
+    pdfUri = null, 
+    isGenerating = false, 
+    mode = 'resume', 
+    buildList = [],
+    fitMode = 'page', // 'page' (100% fit), 'a4' (A4 proportional), 'width' (Fill width)
+    enableScroll = true 
+}: any) => {
+    const [engineState, setEngineState] = useState('evaluating'); // 'vignette', 'pdf', 'pdf_webview', 'web_iframe'
+    const [pdfError, setPdfError] = useState(false);
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
@@ -38,9 +49,8 @@ const SmartPreviewer = ({ data, layout, exportFormat, pdfUri, isGenerating, mode
     
     useEffect(() => {
         const evaluateSystem = () => {
-            // 1. Web Fallback Check
             if (Platform.OS === 'web') {
-                if (exportFormat === 'pdf') {
+                if (pdfUri || exportFormat === 'pdf') {
                     setEngineState('web_iframe');
                 } else {
                     setEngineState('vignette');
@@ -48,40 +58,20 @@ const SmartPreviewer = ({ data, layout, exportFormat, pdfUri, isGenerating, mode
                 return;
             }
 
-            // 2. Execution Engine Check (Expo Go vs Dev Build)
-            if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
-                // Running inside standard Expo Go. Native modules unavailable.
-                setEngineState('vignette');
-                return;
-            }
-
-            // 3. Hardware Resource Check (South African Market Constraints)
-            const MIN_MEMORY_BYTES = 3221225472; // 3GB
-            const MIN_YEAR_CLASS = 2019;
-
-            const isLowMemory = Device.totalMemory && Device.totalMemory < MIN_MEMORY_BYTES;
-            const isOldProcessor = Device.deviceYearClass && Device.deviceYearClass < MIN_YEAR_CLASS;
-
-            if (isLowMemory || isOldProcessor || !PdfViewer) {
-                setEngineState('vignette');
-                return;
-            }
-
-            // 4. Native Engine Approved!
-            if (mode === 'workbook') {
-                setEngineState('pdf'); // Workbook natively renders its own PDFs automatically.
-            } else {
-                // `react-native-pdf` only renders proper PDF files. Request: Use NativeVignette for Word Layout.
-                if (exportFormat === 'pdf') {
-                   setEngineState('pdf');
+            if (pdfUri) {
+                if (PdfViewer && !pdfError) {
+                    setEngineState('pdf');
                 } else {
-                   setEngineState('vignette');
+                    setEngineState('pdf_webview');
                 }
+                return;
             }
+
+            setEngineState('vignette');
         };
 
         evaluateSystem();
-    }, [exportFormat]);
+    }, [exportFormat, pdfUri, mode, pdfError]);
 
     let content = null;
 
@@ -114,9 +104,16 @@ const SmartPreviewer = ({ data, layout, exportFormat, pdfUri, isGenerating, mode
                 />
             );
         }
-    } else if (engineState === 'pdf') {
-        content = (
-            <View style={styles.pdfContainer}>
+    } else if (engineState === 'pdf' || engineState === 'pdf_webview') {
+        const viewParam = fitMode === 'page' ? 'Fit' : fitMode === 'a4' ? 'Fit' : 'FitH';
+        const formattedUri = pdfUri && !pdfUri.includes('#') ? `${pdfUri}#toolbar=0&navpanes=0&scrollbar=0&view=${viewParam}` : pdfUri;
+        const htmlContent = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{width:100%;height:100%;overflow:hidden;background:#525659;display:flex;justify-content:center;align-items:center;}iframe,embed,object{width:100%;height:100%;flex:1;border:none;display:block;}</style></head><body><iframe src="${formattedUri}"></iframe></body></html>`;
+        
+        // Native PDF fit policy: 2 = Fit Both (100% visible), 0 = Fit Width, 1 = Fit Height
+        const pdfFitPolicy = fitMode === 'page' ? 2 : fitMode === 'a4' ? 2 : 0;
+
+        const pdfViewComponent = (
+            <View style={[styles.pdfContainer, fitMode === 'a4' && styles.a4Container]}>
                 {!pdfUri ? (
                     <View style={styles.centerAbsolute}>
                         <ActivityIndicator size="large" color="#6200ee" />
@@ -124,15 +121,39 @@ const SmartPreviewer = ({ data, layout, exportFormat, pdfUri, isGenerating, mode
                     </View>
                 ) : null}
                 
-                {pdfUri && PdfViewer && (
+                {pdfUri && engineState === 'pdf' && PdfViewer && !pdfError ? (
                     <PdfViewer
                         source={{ uri: pdfUri, cache: true }}
                         style={styles.pdfInner}
+                        fitPolicy={pdfFitPolicy}
+                        enablePaging={!enableScroll}
+                        enableRTL={false}
+                        enableAntialiasing={true}
+                        scale={1.0}
                         trustAllCerts={false}
-                        onError={(error) => console.log('PDF Renderer Error:', error)}
+                        onError={(error: any) => {
+                            console.log('PDF Renderer Error, switching to WebView fallback:', error);
+                            setPdfError(true);
+                        }}
                     />
-                )}
+                ) : pdfUri ? (
+                    <WebView 
+                        source={{ html: htmlContent }}
+                        style={styles.pdfInner}
+                        originWhitelist={['*']}
+                        scalesPageToFit={true}
+                        scrollEnabled={enableScroll}
+                    />
+                ) : null}
             </View>
+        );
+
+        content = fitMode === 'a4' ? (
+            <View style={styles.a4OuterWrapper}>
+                {pdfViewComponent}
+            </View>
+        ) : (
+            pdfViewComponent
         );
     }
 
@@ -170,17 +191,34 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         height: '100%',
-        backgroundColor: '#f5f5f5'
+        alignSelf: 'stretch',
+        backgroundColor: '#525659'
+    },
+    a4OuterWrapper: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#525659'
+    },
+    a4Container: {
+        width: '100%',
+        maxHeight: '100%',
+        aspectRatio: 1 / 1.414,
+        alignSelf: 'center'
     },
     pdfInner: {
         flex: 1,
         width: '100%',
         height: '100%',
+        alignSelf: 'stretch',
     },
     wrapper: {
         flex: 1,
         width: '100%',
         height: '100%',
+        alignSelf: 'stretch',
         borderRadius: 4,
         overflow: 'hidden',
         borderWidth: 2,
