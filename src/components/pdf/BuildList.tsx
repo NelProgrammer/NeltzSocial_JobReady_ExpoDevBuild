@@ -35,6 +35,12 @@ const BuildList: React.FC<BuildListProps> = ({
                 activeOpacity={0.8}
             >
                 <Surface style={[styles.card, isSelected && styles.selectedCard]} elevation={isSelected ? 3 : 1}>
+                    <MaterialCommunityIcons 
+                        name="drag-vertical" 
+                        size={18} 
+                        color={isSelected ? '#0288d1' : '#bdbdbd'} 
+                        style={{ marginRight: 2 }} 
+                    />
                     <View style={[styles.rankingCircle, isSelected && styles.selectedCircle]}>
                         <Text style={[styles.rankingText, isSelected && styles.selectedRankingText]}>{index + 1}</Text>
                     </View>

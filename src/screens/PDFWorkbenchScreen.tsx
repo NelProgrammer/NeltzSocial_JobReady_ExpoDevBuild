@@ -238,6 +238,12 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
             if (newList.length === 0) setActiveSide('source');
             return newList;
         });
+        setSelectedBuildIndex(prev => {
+            if (prev === null) return null;
+            if (prev === indexToRemove) return null;
+            if (prev > indexToRemove) return prev - 1;
+            return prev;
+        });
     };
 
     const handleMoveUp = (index: number) => {
@@ -247,6 +253,7 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
             [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
             return arr;
         });
+        setSelectedBuildIndex(index - 1);
         setActiveSide('target');
     };
 
@@ -257,6 +264,7 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
             [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
             return arr;
         });
+        setSelectedBuildIndex(index + 1);
         setActiveSide('target');
     };
 
