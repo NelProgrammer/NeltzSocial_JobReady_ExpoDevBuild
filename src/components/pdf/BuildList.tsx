@@ -1,6 +1,6 @@
 // @ts-nocheck
-import React from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useRef } from 'react';
+import { View, StyleSheet, FlatList, TouchableOpacity, PanResponder, Animated } from 'react-native';
 import { Text, IconButton, Surface } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -14,33 +14,56 @@ interface BuildListProps {
     onMoveDown: (index: number) => void;
 }
 
-const BuildList: React.FC<BuildListProps> = ({ 
-    files, 
-    buildList, 
-    selectedIndex = null, 
-    onSelectIndex, 
-    onRemovePage, 
-    onMoveUp, 
-    onMoveDown 
-}) => {
+const DraggableItem = ({ item, index, isSelected, fileName, totalCount, onSelectIndex, onRemovePage, onMoveUp, onMoveDown }) => {
+    const panY = useRef(new Animated.Value(0)).current;
+    const lastMovedOffset = useRef(0);
 
-    const renderItem = ({ item, index }) => {
-        const file = files[item.fileId];
-        const fileName = file ? file.name : 'Unknown';
-        const isSelected = selectedIndex === index;
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true,
+            onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
+            onPanResponderGrant: () => {
+                onSelectIndex(index);
+                lastMovedOffset.current = 0;
+            },
+            onPanResponderMove: (_, gestureState) => {
+                const dy = gestureState.dy - lastMovedOffset.current;
+                panY.setValue(gestureState.dy);
 
-        return (
+                if (dy < -20 && index > 0) {
+                    lastMovedOffset.current = gestureState.dy;
+                    onMoveUp(index);
+                } else if (dy > 20 && index < totalCount - 1) {
+                    lastMovedOffset.current = gestureState.dy;
+                    onMoveDown(index);
+                }
+            },
+            onPanResponderRelease: () => {
+                Animated.spring(panY, { toValue: 0, useNativeDriver: false }).start();
+                lastMovedOffset.current = 0;
+            },
+            onPanResponderTerminate: () => {
+                Animated.spring(panY, { toValue: 0, useNativeDriver: false }).start();
+                lastMovedOffset.current = 0;
+            }
+        })
+    ).current;
+
+    return (
+        <Animated.View style={{ transform: [{ translateY: panY }] }}>
             <TouchableOpacity
-                onPress={() => onSelectIndex && onSelectIndex(index)}
-                activeOpacity={0.8}
+                onPress={() => onSelectIndex(index)}
+                activeOpacity={0.9}
             >
                 <Surface style={[styles.card, isSelected && styles.selectedCard]} elevation={isSelected ? 3 : 1}>
-                    <MaterialCommunityIcons 
-                        name="drag-vertical" 
-                        size={18} 
-                        color={isSelected ? '#0288d1' : '#bdbdbd'} 
-                        style={{ marginRight: 2 }} 
-                    />
+                    <View {...panResponder.panHandlers} style={styles.dragHandleArea}>
+                        <MaterialCommunityIcons 
+                            name="drag-vertical" 
+                            size={20} 
+                            color={isSelected ? '#0288d1' : '#9e9e9e'} 
+                        />
+                    </View>
+                    
                     <View style={[styles.rankingCircle, isSelected && styles.selectedCircle]}>
                         <Text style={[styles.rankingText, isSelected && styles.selectedRankingText]}>{index + 1}</Text>
                     </View>
@@ -64,6 +87,37 @@ const BuildList: React.FC<BuildListProps> = ({
                     />
                 </Surface>
             </TouchableOpacity>
+        </Animated.View>
+    );
+};
+
+const BuildList: React.FC<BuildListProps> = ({ 
+    files, 
+    buildList, 
+    selectedIndex = null, 
+    onSelectIndex, 
+    onRemovePage, 
+    onMoveUp, 
+    onMoveDown 
+}) => {
+
+    const renderItem = ({ item, index }) => {
+        const file = files[item.fileId];
+        const fileName = file ? file.name : 'Unknown';
+        const isSelected = selectedIndex === index;
+
+        return (
+            <DraggableItem
+                item={item}
+                index={index}
+                isSelected={isSelected}
+                fileName={fileName}
+                totalCount={buildList.length}
+                onSelectIndex={onSelectIndex}
+                onRemovePage={onRemovePage}
+                onMoveUp={onMoveUp}
+                onMoveDown={onMoveDown}
+            />
         );
     };
 
@@ -149,6 +203,11 @@ const styles = StyleSheet.create({
         padding: 6,
         borderWidth: 1,
         borderColor: '#e0e0e0'
+    },
+    dragHandleArea: {
+        paddingRight: 4,
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     selectedCard: {
         borderColor: '#0288d1',

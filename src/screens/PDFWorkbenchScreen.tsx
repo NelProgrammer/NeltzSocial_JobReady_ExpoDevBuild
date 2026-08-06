@@ -369,7 +369,7 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
                     </Surface>
 
                     <Surface style={[styles.previewPane, isSourceGlowing && styles.glowSource, isTargetGlowing && styles.glowTarget]} elevation={2}>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             style={styles.previewDirectContainer}
                             activeOpacity={1}
                             onLongPress={() => setIsSettingsOpen(true)}
@@ -410,7 +410,7 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
             {/* Viewer Settings Modal Overlay (Draggable) */}
             {isSettingsOpen && (
                 <View style={styles.overlayBackdrop}>
-                    <Animated.View 
+                    <Animated.View
                         style={[
                             styles.modalContent,
                             pan.getLayout()
