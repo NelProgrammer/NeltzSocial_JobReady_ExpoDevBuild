@@ -26,7 +26,7 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
     const [pdfWorkerSource, setPdfWorkerSource] = useState('');
 
     // Viewer settings
-    const [fitMode, setFitMode] = useState<'page' | 'a4' | 'width'>('page'); // 'page' (100% visible), 'a4' (A4 proportional), 'width' (Fill width)
+    const [fitMode, setFitMode] = useState<'page' | 'a4' | 'width'>('a4'); // 'a4' (A4 proportional fit - 1:1.414) default
     const [enableScroll, setEnableScroll] = useState(false); // Single page / locked scroll is default
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
