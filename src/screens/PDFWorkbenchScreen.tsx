@@ -513,12 +513,17 @@ const styles = StyleSheet.create({
         backgroundColor: '#525659',
         borderRadius: 8,
         overflow: 'hidden',
-        marginBottom: 8
+        marginBottom: 8,
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start'
     },
     emptyPreviewCenter: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
+        padding: 16,
         backgroundColor: '#fff'
     },
     exportBtn: {

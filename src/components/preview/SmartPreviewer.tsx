@@ -192,7 +192,9 @@ const styles = StyleSheet.create({
         height: '100%',
         maxWidth: '100%',
         maxHeight: '100%',
-        alignSelf: 'stretch',
+        alignSelf: 'flex-start',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
         backgroundColor: '#525659'
     },
     a4OuterWrapper: {
@@ -216,13 +218,15 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         height: '100%',
-        alignSelf: 'stretch',
+        alignSelf: 'flex-start',
     },
     wrapper: {
         flex: 1,
         width: '100%',
         height: '100%',
-        alignSelf: 'stretch',
+        alignSelf: 'flex-start',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
         borderRadius: 4,
         overflow: 'hidden',
         borderWidth: 2,
