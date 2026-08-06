@@ -1,5 +1,5 @@
-import React, { useState, useContext, useLayoutEffect } from 'react';
-import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import React, { useState, useContext, useLayoutEffect, useRef } from 'react';
+import { View, StyleSheet, Alert, TouchableOpacity, PanResponder, Animated } from 'react-native';
 import { Appbar, Text, Button, Surface, ActivityIndicator, IconButton, Portal, Modal, RadioButton, Switch } from 'react-native-paper';
 import * as DocumentPicker from 'expo-document-picker';
 import { PDFDocument } from 'pdf-lib';
@@ -19,6 +19,7 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
     const [files, setFiles] = useState<Record<string, any>>({});
     const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
     const [buildList, setBuildList] = useState<{ fileId: string; pageIndex: number }[]>([]);
+    const [selectedBuildIndex, setSelectedBuildIndex] = useState<number | null>(null);
     const [previewBase64, setPreviewBase64] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [activeSide, setActiveSide] = useState('source'); // 'source' or 'target'
@@ -29,6 +30,24 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
     const [fitMode, setFitMode] = useState<'page' | 'a4' | 'width'>('a4'); // 'a4' (A4 proportional fit - 1:1.414) default
     const [enableScroll, setEnableScroll] = useState(false); // Single page / locked scroll is default
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    // Draggable modal gesture
+    const pan = useRef(new Animated.ValueXY()).current;
+    const panResponder = useRef(
+        PanResponder.create({
+            onMoveShouldSetPanResponder: () => true,
+            onPanResponderGrant: () => {
+                pan.setOffset({
+                    x: (pan.x as any)._value || 0,
+                    y: (pan.y as any)._value || 0
+                });
+            },
+            onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false }),
+            onPanResponderRelease: () => {
+                pan.flattenOffset();
+            }
+        })
+    ).current;
 
     useLayoutEffect(() => {
         navigation.setOptions({
@@ -241,6 +260,23 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
         setActiveSide('target');
     };
 
+    const handleRemoveFile = (fileIdToRemove: string) => {
+        setFiles(prev => {
+            const nextFiles = { ...prev };
+            delete nextFiles[fileIdToRemove];
+            return nextFiles;
+        });
+        setBuildList(prev => {
+            const newList = prev.filter(item => item.fileId !== fileIdToRemove);
+            if (newList.length === 0) setActiveSide('source');
+            return newList;
+        });
+        if (selectedFileId === fileIdToRemove) {
+            const remainingKeys = Object.keys(files).filter(id => id !== fileIdToRemove);
+            setSelectedFileId(remainingKeys.length > 0 ? remainingKeys[0] : null);
+        }
+    };
+
     // 5. Generation Logic
     const handleGeneratePDF = async () => {
         try {
@@ -279,20 +315,24 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
         }
     };
 
+    const isSourceGlowing = activeSide === 'source' && Object.keys(files).length > 0;
+    const isTargetGlowing = activeSide === 'target' && buildList.length > 0;
+
     return (
         <View style={styles.container}>
             <View style={[styles.gridContainer, { paddingBottom: Math.max(insets.bottom, 6) }]}>
                 {/* Top Half: Inventory (60%) & Pages (40%) */}
                 <View style={styles.topHalf}>
-                    <Surface style={[styles.inventoryPane, activeSide === 'source' && styles.glowSource]} elevation={2}>
+                    <Surface style={[styles.inventoryPane, isSourceGlowing && styles.glowSource]} elevation={2}>
                         <FileInventory
                             files={files}
                             selectedFileId={selectedFileId}
                             onSelectFile={handleSelectFile}
                             onUploadFile={handleUploadFile}
+                            onRemoveFile={handleRemoveFile}
                         />
                     </Surface>
-                    <Surface style={[styles.pagesPane, activeSide === 'source' && styles.glowSource]} elevation={2}>
+                    <Surface style={[styles.pagesPane, isSourceGlowing && styles.glowSource]} elevation={2}>
                         <PageSelector
                             files={files}
                             selectedFileId={selectedFileId}
@@ -303,19 +343,24 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
                     </Surface>
                 </View>
 
-                {/* Bottom Half: Build List (40%) & Live Preview (60%) */}
+                {/* Bottom Half: Build List (45%) & Live Preview (55%) */}
                 <View style={styles.bottomHalf}>
-                    <Surface style={[styles.buildListPane, activeSide === 'target' && styles.glowTarget]} elevation={2}>
+                    <Surface style={[styles.buildListPane, isTargetGlowing && styles.glowTarget]} elevation={2}>
                         <BuildList
                             files={files}
                             buildList={buildList}
+                            selectedIndex={selectedBuildIndex}
+                            onSelectIndex={(index: number) => {
+                                setSelectedBuildIndex(index);
+                                setActiveSide('target');
+                            }}
                             onRemovePage={handleRemovePage}
                             onMoveUp={handleMoveUp}
                             onMoveDown={handleMoveDown}
                         />
                     </Surface>
 
-                    <Surface style={[styles.previewPane, activeSide === 'source' && styles.glowSource, activeSide === 'target' && styles.glowTarget]} elevation={2}>
+                    <Surface style={[styles.previewPane, isSourceGlowing && styles.glowSource, isTargetGlowing && styles.glowTarget]} elevation={2}>
                         <TouchableOpacity 
                             style={styles.previewDirectContainer}
                             activeOpacity={1}
@@ -354,24 +399,33 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
                 </View>
             </View>
 
-            {/* Viewer Settings Modal Overlay */}
+            {/* Viewer Settings Modal Overlay (Draggable) */}
             {isSettingsOpen && (
                 <View style={styles.overlayBackdrop}>
-                    <Surface style={styles.modalContent} elevation={5}>
+                    <Animated.View 
+                        style={[
+                            styles.modalContent,
+                            pan.getLayout()
+                        ]}
+                        {...panResponder.panHandlers}
+                    >
                         <View style={styles.modalHeaderRow}>
-                            <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>Viewer Settings</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <MaterialCommunityIcons name="drag" size={20} color="#757575" style={{ marginRight: 4 }} />
+                                <Text variant="titleMedium" style={{ fontWeight: 'bold' }}>Viewer Settings</Text>
+                            </View>
                             <IconButton icon="close" size={20} onPress={() => setIsSettingsOpen(false)} />
                         </View>
 
                         <Text variant="labelLarge" style={styles.settingsLabel}>Scale Mode</Text>
                         <RadioButton.Group onValueChange={(val: any) => setFitMode(val)} value={fitMode}>
-                            <TouchableOpacity style={styles.radioOption} onPress={() => setFitMode('page')}>
-                                <RadioButton value="page" />
-                                <Text variant="bodyMedium">Fit Page (100% Visible)</Text>
-                            </TouchableOpacity>
                             <TouchableOpacity style={styles.radioOption} onPress={() => setFitMode('a4')}>
                                 <RadioButton value="a4" />
                                 <Text variant="bodyMedium">A4 Proportional Fit (1 : 1.414)</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.radioOption} onPress={() => setFitMode('page')}>
+                                <RadioButton value="page" />
+                                <Text variant="bodyMedium">Fit Page (100% Visible)</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.radioOption} onPress={() => setFitMode('width')}>
                                 <RadioButton value="width" />
@@ -383,7 +437,7 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
                             <Text variant="labelLarge" style={styles.settingsLabel}>Enable PDF Scrolling</Text>
                             <Switch value={enableScroll} onValueChange={setEnableScroll} color="#6200ee" />
                         </View>
-                    </Surface>
+                    </Animated.View>
                 </View>
             )}
         </View>
@@ -427,7 +481,7 @@ const styles = StyleSheet.create({
         borderColor: 'transparent'
     },
     buildListPane: {
-        flex: 4,
+        flex: 4.5,
         borderRadius: 8,
         overflow: 'hidden',
         backgroundColor: '#fff',
@@ -435,7 +489,7 @@ const styles = StyleSheet.create({
         borderColor: 'transparent'
     },
     previewPane: {
-        flex: 6,
+        flex: 5.5,
         borderRadius: 8,
         overflow: 'hidden',
         backgroundColor: '#fff',
@@ -465,15 +519,18 @@ const styles = StyleSheet.create({
     },
     glowSource: {
         borderColor: '#7b1fa2', // Deep Purple
+        borderWidth: 4,
     },
     glowTarget: {
         borderColor: '#0288d1', // Sky Blue
+        borderWidth: 4,
     },
     modalContent: {
         backgroundColor: 'white',
         padding: 20,
         margin: 20,
-        borderRadius: 12
+        borderRadius: 12,
+        width: '85%'
     },
     modalHeaderRow: {
         flexDirection: 'row',

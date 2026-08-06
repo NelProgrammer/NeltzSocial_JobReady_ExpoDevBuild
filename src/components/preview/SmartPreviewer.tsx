@@ -191,6 +191,8 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         height: '100%',
+        maxWidth: '100%',
+        maxHeight: '100%',
         alignSelf: 'stretch',
         backgroundColor: '#525659'
     },
@@ -200,10 +202,13 @@ const styles = StyleSheet.create({
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#525659'
+        backgroundColor: '#525659',
+        padding: 2
     },
     a4Container: {
         width: '100%',
+        height: '100%',
+        maxWidth: '100%',
         maxHeight: '100%',
         aspectRatio: 1 / 1.414,
         alignSelf: 'center'

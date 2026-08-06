@@ -4,7 +4,7 @@ import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { Text, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const FileInventory = ({ files, selectedFileId, onSelectFile, onUploadFile }) => {
+const FileInventory = ({ files, selectedFileId, onSelectFile, onUploadFile, onRemoveFile }) => {
 
     const renderItem = ({ item }) => {
         const isSelected = selectedFileId === item.id;
@@ -18,7 +18,7 @@ const FileInventory = ({ files, selectedFileId, onSelectFile, onUploadFile }) =>
                     <MaterialCommunityIcons
                         name="file-pdf-box"
                         size={24}
-                        color={isSelected ? '#6200ee' : '#757575'}
+                        color={isSelected ? '#7b1fa2' : '#757575'}
                     />
                     <View style={styles.textContainer}>
                         <Text variant="labelMedium" numberOfLines={1} style={isSelected ? styles.selectedText : null}>
@@ -28,8 +28,17 @@ const FileInventory = ({ files, selectedFileId, onSelectFile, onUploadFile }) =>
                             {item.pageCount} pgs
                         </Text>
                     </View>
-                    {isSelected && (
-                        <MaterialCommunityIcons name="check-circle" size={18} color="#6200ee" />
+                    {onRemoveFile && (
+                        <IconButton
+                            icon="close"
+                            size={16}
+                            iconColor="#d32f2f"
+                            onPress={(e) => {
+                                e?.stopPropagation?.();
+                                onRemoveFile(item.id);
+                            }}
+                            style={{ margin: 0 }}
+                        />
                     )}
                 </View>
             </TouchableOpacity>
