@@ -30,6 +30,7 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
     const [fitMode, setFitMode] = useState<'page' | 'a4' | 'width'>('a4'); // 'a4' (A4 proportional fit - 1:1.414) default
     const [enableScroll, setEnableScroll] = useState(false); // Single page / locked scroll is default
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
 
     // Draggable modal gesture
     const pan = useRef(new Animated.ValueXY()).current;
@@ -329,47 +330,72 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
     return (
         <View style={styles.container}>
             <View style={[styles.gridContainer, { paddingBottom: Math.max(insets.bottom, 6) }]}>
-                {/* Top Half: Inventory (60%) & Pages (40%) */}
-                <View style={styles.topHalf}>
-                    <Surface style={[styles.inventoryPane, isSourceGlowing && styles.glowSource]} elevation={2}>
-                        <FileInventory
-                            files={files}
-                            selectedFileId={selectedFileId}
-                            onSelectFile={handleSelectFile}
-                            onUploadFile={handleUploadFile}
-                            onRemoveFile={handleRemoveFile}
-                        />
-                    </Surface>
-                    <Surface style={[styles.pagesPane, isSourceGlowing && styles.glowSource]} elevation={2}>
-                        <PageSelector
-                            files={files}
-                            selectedFileId={selectedFileId}
-                            buildList={buildList}
-                            onAddPage={handleAddPage}
-                            onAddAllPages={handleAddAllPages}
-                        />
-                    </Surface>
-                </View>
+                {/* Top Half: Inventory & Pages (Hidden in Full Screen Preview Mode) */}
+                {!isFullScreenPreview && (
+                    <View style={styles.topHalf}>
+                        <Surface style={[styles.inventoryPane, isSourceGlowing && styles.glowSource]} elevation={2}>
+                            <FileInventory
+                                files={files}
+                                selectedFileId={selectedFileId}
+                                onSelectFile={handleSelectFile}
+                                onUploadFile={handleUploadFile}
+                                onRemoveFile={handleRemoveFile}
+                            />
+                        </Surface>
+                        <Surface style={[styles.pagesPane, isSourceGlowing && styles.glowSource]} elevation={2}>
+                            <PageSelector
+                                files={files}
+                                selectedFileId={selectedFileId}
+                                buildList={buildList}
+                                onAddPage={handleAddPage}
+                                onAddAllPages={handleAddAllPages}
+                            />
+                        </Surface>
+                    </View>
+                )}
 
-                {/* Bottom Half: Build List (45%) & Live Preview (55%) */}
-                <View style={styles.bottomHalf}>
-                    <Surface style={[styles.buildListPane, isTargetGlowing && styles.glowTarget]} elevation={2}>
-                        <BuildList
-                            files={files}
-                            buildList={buildList}
-                            selectedIndex={selectedBuildIndex}
-                            onSelectIndex={(index: number) => {
-                                setSelectedBuildIndex(index);
-                                setActiveSide('target');
-                            }}
-                            onRemovePage={handleRemovePage}
-                            onMoveUp={handleMoveUp}
-                            onMoveDown={handleMoveDown}
-                        />
-                    </Surface>
+                {/* Bottom Half: Build List & Live Preview */}
+                <View style={[styles.bottomHalf, isFullScreenPreview && { flex: 1 }]}>
+                    {!isFullScreenPreview && (
+                        <Surface style={[styles.buildListPane, isTargetGlowing && styles.glowTarget]} elevation={2}>
+                            <BuildList
+                                files={files}
+                                buildList={buildList}
+                                selectedIndex={selectedBuildIndex}
+                                onSelectIndex={(index: number) => {
+                                    setSelectedBuildIndex(index);
+                                    setActiveSide('target');
+                                }}
+                                onRemovePage={handleRemovePage}
+                                onMoveUp={handleMoveUp}
+                                onMoveDown={handleMoveDown}
+                            />
+                        </Surface>
+                    )}
 
-                    <Surface style={[styles.previewPane, isSourceGlowing && styles.glowSource, isTargetGlowing && styles.glowTarget]} elevation={2}>
-                        <TouchableOpacity
+                    <Surface 
+                        style={[
+                            styles.previewPane, 
+                            isFullScreenPreview && styles.fullScreenPreviewPane,
+                            isSourceGlowing && styles.glowSource, 
+                            isTargetGlowing && styles.glowTarget
+                        ]} 
+                        elevation={2}
+                    >
+                        <View style={styles.previewHeaderRow}>
+                            <Text variant="labelMedium" style={{ fontWeight: 'bold', color: '#555' }}>
+                                {isFullScreenPreview ? 'Full Screen Preview' : 'Preview'}
+                            </Text>
+                            <IconButton
+                                icon={isFullScreenPreview ? "fullscreen-exit" : "fullscreen"}
+                                size={18}
+                                iconColor="#0288d1"
+                                onPress={() => setIsFullScreenPreview(!isFullScreenPreview)}
+                                style={{ margin: 0 }}
+                            />
+                        </View>
+
+                        <TouchableOpacity 
                             style={styles.previewDirectContainer}
                             activeOpacity={1}
                             onLongPress={() => setIsSettingsOpen(true)}
@@ -410,7 +436,7 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
             {/* Viewer Settings Modal Overlay (Draggable) */}
             {isSettingsOpen && (
                 <View style={styles.overlayBackdrop}>
-                    <Animated.View
+                    <Animated.View 
                         style={[
                             styles.modalContent,
                             pan.getLayout()
@@ -444,6 +470,11 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
                         <View style={styles.switchRow}>
                             <Text variant="labelLarge" style={styles.settingsLabel}>Enable PDF Scrolling</Text>
                             <Switch value={enableScroll} onValueChange={setEnableScroll} color="#6200ee" />
+                        </View>
+
+                        <View style={styles.switchRow}>
+                            <Text variant="labelLarge" style={styles.settingsLabel}>Full Screen Preview Mode</Text>
+                            <Switch value={isFullScreenPreview} onValueChange={setIsFullScreenPreview} color="#0288d1" />
                         </View>
                     </Animated.View>
                 </View>
@@ -489,7 +520,7 @@ const styles = StyleSheet.create({
         borderColor: 'transparent'
     },
     buildListPane: {
-        flex: 4.5,
+        flex: 3.5,
         borderRadius: 8,
         overflow: 'hidden',
         backgroundColor: '#fff',
@@ -497,14 +528,25 @@ const styles = StyleSheet.create({
         borderColor: 'transparent'
     },
     previewPane: {
-        flex: 5.5,
+        flex: 6.5,
         borderRadius: 8,
         overflow: 'hidden',
         backgroundColor: '#fff',
-        padding: 8,
+        padding: 6,
         justifyContent: 'space-between',
         borderWidth: 2,
         borderColor: 'transparent'
+    },
+    fullScreenPreviewPane: {
+        flex: 1,
+        width: '100%',
+        height: '100%'
+    },
+    previewHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 2
     },
     previewDirectContainer: {
         flex: 1,
