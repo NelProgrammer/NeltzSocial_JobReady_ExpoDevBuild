@@ -107,7 +107,7 @@ const SmartPreviewer = ({
     } else if (engineState === 'pdf' || engineState === 'pdf_webview') {
         const viewParam = fitMode === 'page' ? 'Fit' : fitMode === 'a4' ? 'Fit' : 'FitH';
         const formattedUri = pdfUri && !pdfUri.includes('#') ? `${pdfUri}#toolbar=0&navpanes=0&scrollbar=0&view=${viewParam}` : pdfUri;
-        const htmlContent = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{width:100%;height:100%;overflow:hidden;background:#525659;display:flex;justify-content:center;align-items:center;}iframe,embed,object{width:100%;height:100%;flex:1;border:none;display:block;}</style></head><body><iframe src="${formattedUri}"></iframe></body></html>`;
+        const htmlContent = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><style>*{box-sizing:border-box;margin:0;padding:0;}html,body{width:100%;height:100%;overflow:hidden;background:#525659;display:flex;justify-content:flex-start;align-items:flex-start;}iframe,embed,object{width:100%;height:100%;flex:1;border:none;display:block;}</style></head><body><iframe src="${formattedUri}"></iframe></body></html>`;
         
         // Native PDF fit policy: 2 = Fit Both (100% visible), 0 = Fit Width, 1 = Fit Height
         const pdfFitPolicy = fitMode === 'page' ? 2 : fitMode === 'a4' ? 2 : 0;
@@ -184,8 +184,7 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         marginTop: 10,
-        color: '#666',
-        fontSize: 12
+        color: '#333'
     },
     pdfContainer: {
         flex: 1,
@@ -200,8 +199,8 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         height: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
         backgroundColor: '#525659',
         padding: 2
     },
@@ -211,7 +210,7 @@ const styles = StyleSheet.create({
         maxWidth: '100%',
         maxHeight: '100%',
         aspectRatio: 1 / 1.414,
-        alignSelf: 'center'
+        alignSelf: 'flex-start'
     },
     pdfInner: {
         flex: 1,
