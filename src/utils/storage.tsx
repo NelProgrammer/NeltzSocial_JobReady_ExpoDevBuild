@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
     UI_SETTINGS_PREFIX: 'neltz_jobready_ui_settings_',
     PROFILES: 'neltz_jobready_profiles',
     LAST_ACTIVE_ID: 'neltz_jobready_last_active_id',
+    BACKEND_URL: 'neltz_jobready_custom_backend_url',
 };
 
 export const Storage = {
@@ -88,4 +89,3 @@ export const Storage = {
         await Storage.remove(key);
     }
 };
-

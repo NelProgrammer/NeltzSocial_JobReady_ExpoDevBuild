@@ -15,6 +15,9 @@ export const AuthContext = createContext<AuthContextType>({
   deleteProfile: async () => {},
   quickStart: async () => {},
   backendUrl: '',
+  updateBackendUrl: async () => {},
+  testBackendConnection: async () => ({ success: false, message: '' }),
+  connectProfileToServer: async () => ({ success: false, message: '' }),
 });
 
 // Simple fetch wrapper; AbortController may be undefined in Jest
@@ -38,11 +41,36 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [backendUrl] = useState(() => getBackendUrl());
+  const [backendUrl, setBackendUrlState] = useState(() => getBackendUrl());
+
+  const updateBackendUrl = async (newUrl: string) => {
+    const trimmed = (newUrl || '').trim().replace(/\/+$/, '');
+    if (!trimmed) return;
+    await Storage.set(Storage.KEYS.BACKEND_URL, trimmed);
+    setBackendUrlState(trimmed);
+  };
+
+  const testBackendConnection = async (urlToTest?: string) => {
+    const target = (urlToTest || backendUrl).trim().replace(/\/+$/, '');
+    try {
+      const res = await fetchWithTimeout(`${target}/auth/profiles`, {}, 3000);
+      if (res.ok) {
+        return { success: true, message: `Connected to backend server at ${target}` };
+      }
+      return { success: false, message: `Server returned status code: ${res.status}` };
+    } catch (err: any) {
+      return { success: false, message: `Connection failed to ${target}: ${err.message || 'Network request error'}` };
+    }
+  };
 
   useEffect(() => {
     const initAuth = async () => {
       try {
+        // Load custom backend URL if previously saved
+        const savedUrl = await Storage.get(Storage.KEYS.BACKEND_URL);
+        const activeUrl = savedUrl || getBackendUrl();
+        setBackendUrlState(activeUrl);
+
         // 1. Load Local Profiles
         const storedProfiles = await Storage.get(Storage.KEYS.PROFILES) || [];
         let profilesArray = storedProfiles;
@@ -54,6 +82,7 @@ export const AuthProvider = ({ children }) => {
             name: 'Guest',
             email: '',
             isGuest: true,
+            isLocal: true,
             created: new Date().toISOString(),
             lastLogin: Date.now(),
           };
@@ -64,21 +93,22 @@ export const AuthProvider = ({ children }) => {
 
         // 2. Fetch & Sync with Server Profiles
         try {
-          const response = await fetchWithTimeout(`${backendUrl}/auth/profiles`, {}, 3000);
+          const response = await fetchWithTimeout(`${activeUrl}/auth/profiles`, {}, 3000);
           if (response.ok) {
             const serverProfiles = await response.json();
             const serverMap = new Map(serverProfiles.map(p => [p.profile_id, p]));
             const localMap = new Map(profilesArray.map(p => [p.id, p]));
             const mergedProfiles = [];
 
-            // Process server profiles (either update local or create fresh from DB)
+            // Process server profiles
             for (const s of serverProfiles) {
               const local = localMap.get(s.profile_id);
               if (local) {
                 mergedProfiles.push({
                   ...local,
                   email: s.email || local.email,
-                  name: s.name || local.name
+                  name: s.name || local.name,
+                  isLocal: false
                 });
               } else {
                 mergedProfiles.push({
@@ -86,18 +116,20 @@ export const AuthProvider = ({ children }) => {
                   name: s.name || 'Cloud User',
                   email: s.email || '',
                   accessToken: s.access_token || null,
+                  isLocal: false,
                   created: new Date().toISOString(),
                   lastLogin: Date.now()
                 });
               }
             }
 
-            // Keep local-only/offline profiles (ensuring we don't wipe active profiles if server database is reset)
+            // Keep local-only profiles
             for (const l of profilesArray) {
               if (!serverMap.has(l.id)) {
                 mergedProfiles.push({
                   ...l,
-                  accessToken: null // Remove access token so it behaves as local fallback
+                  isLocal: l.isLocal !== undefined ? l.isLocal : true,
+                  accessToken: l.accessToken || null
                 });
               }
             }
@@ -136,7 +168,6 @@ export const AuthProvider = ({ children }) => {
     try {
       const profile = (profiles || []).find(p => p.id === profileId);
       if (profile) {
-        // Update Last Login
         const updatedProfiles = profiles.map(p =>
           p.id === profileId ? { ...p, lastLogin: Date.now() } : p
         );
@@ -161,12 +192,50 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const connectProfileToServer = async (profileId: string) => {
+    try {
+      const targetProfile = (profiles || []).find(p => p.id === profileId);
+      if (!targetProfile) return { success: false, message: 'Profile not found' };
+
+      const mockToken = 'mock_' + targetProfile.name.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
+      const response = await fetchWithTimeout(`${backendUrl}/auth/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: 'google',
+          token: mockToken
+        })
+      }, 5000);
+
+      if (!response.ok) {
+        return { success: false, message: `Server returned status: ${response.status}` };
+      }
+
+      const result = await response.json();
+      const updatedProfile = {
+        ...targetProfile,
+        id: result.profile_id || targetProfile.id,
+        email: result.email || targetProfile.email,
+        accessToken: result.access_token || 'verified_token',
+        isLocal: false
+      };
+
+      const updatedProfiles = profiles.map(p => p.id === profileId ? updatedProfile : p);
+      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+      await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, updatedProfile.id);
+
+      setProfiles(updatedProfiles);
+      if (user?.id === profileId) setUser(updatedProfile);
+      return { success: true, message: 'Successfully connected profile to server!' };
+    } catch (e: any) {
+      return { success: false, message: `Connection failed: ${e.message || 'Server unreachable'}` };
+    }
+  };
+
   const createProfile = async (name, socialLinks = {}) => {
     try {
-      // Generate a unique mock token for local verification
       const mockToken = 'mock_' + name.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
 
-      // Attempt to register/login on the backend API
       const response = await fetchWithTimeout(`${backendUrl}/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -187,6 +256,7 @@ export const AuthProvider = ({ children }) => {
         name: result.name || name,
         email: result.email || '',
         accessToken: result.access_token,
+        isLocal: false,
         created: new Date().toISOString(),
         lastLogin: Date.now(),
         socialLinks: socialLinks
@@ -208,6 +278,7 @@ export const AuthProvider = ({ children }) => {
         id: localId,
         name: name,
         accessToken: null,
+        isLocal: true,
         created: new Date().toISOString(),
         lastLogin: Date.now(),
         socialLinks: socialLinks
@@ -225,7 +296,6 @@ export const AuthProvider = ({ children }) => {
 
   const deleteProfile = async (profileId) => {
     try {
-      // Delete locally first
       const updatedProfiles = profiles.filter(p => p.id !== profileId);
       await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
 
@@ -235,7 +305,6 @@ export const AuthProvider = ({ children }) => {
         await Storage.remove(Storage.KEYS.LAST_ACTIVE_ID);
       }
 
-      // Sync profile deletion to database
       try {
         await fetchWithTimeout(`${backendUrl}/auth/profiles/${profileId}`, {
           method: 'DELETE'
@@ -264,6 +333,9 @@ export const AuthProvider = ({ children }) => {
         deleteProfile,
         quickStart,
         backendUrl,
+        updateBackendUrl,
+        testBackendConnection,
+        connectProfileToServer,
       }}>
       {children}
     </AuthContext.Provider>
