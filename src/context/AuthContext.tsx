@@ -9,6 +9,7 @@ export const AuthContext = createContext<AuthContextType>({
   user: null,
   profiles: [],
   loading: true,
+  isOnline: false,
   login: async () => {},
   logout: async () => {},
   createProfile: async () => {},
@@ -18,6 +19,8 @@ export const AuthContext = createContext<AuthContextType>({
   updateBackendUrl: async () => {},
   testBackendConnection: async () => ({ success: false, message: '' }),
   connectProfileToServer: async () => ({ success: false, message: '' }),
+  toggleProfileServerOptIn: async () => ({ success: false, message: '' }),
+  checkServerStatus: async () => false,
 });
 
 // Simple fetch wrapper; AbortController may be undefined in Jest
@@ -42,12 +45,27 @@ export const AuthProvider = ({ children }) => {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [backendUrl, setBackendUrlState] = useState(() => getBackendUrl());
+  const [isOnline, setIsOnline] = useState(false);
+
+  const checkServerStatus = async (targetUrl?: string) => {
+    const url = (targetUrl || backendUrl).trim().replace(/\/+$/, '');
+    try {
+      const res = await fetchWithTimeout(`${url}/auth/profiles`, {}, 3000);
+      const online = res.ok;
+      setIsOnline(online);
+      return online;
+    } catch {
+      setIsOnline(false);
+      return false;
+    }
+  };
 
   const updateBackendUrl = async (newUrl: string) => {
     const trimmed = (newUrl || '').trim().replace(/\/+$/, '');
     if (!trimmed) return;
     await Storage.set(Storage.KEYS.BACKEND_URL, trimmed);
     setBackendUrlState(trimmed);
+    await checkServerStatus(trimmed);
   };
 
   const testBackendConnection = async (urlToTest?: string) => {
@@ -55,10 +73,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await fetchWithTimeout(`${target}/auth/profiles`, {}, 3000);
       if (res.ok) {
+        setIsOnline(true);
         return { success: true, message: `Connected to backend server at ${target}` };
       }
+      setIsOnline(false);
       return { success: false, message: `Server returned status code: ${res.status}` };
     } catch (err: any) {
+      setIsOnline(false);
       return { success: false, message: `Connection failed to ${target}: ${err.message || 'Network request error'}` };
     }
   };
@@ -70,6 +91,7 @@ export const AuthProvider = ({ children }) => {
         const savedUrl = await Storage.get(Storage.KEYS.BACKEND_URL);
         const activeUrl = savedUrl || getBackendUrl();
         setBackendUrlState(activeUrl);
+        await checkServerStatus(activeUrl);
 
         // 1. Load Local Profiles
         const storedProfiles = await Storage.get(Storage.KEYS.PROFILES) || [];
@@ -95,6 +117,7 @@ export const AuthProvider = ({ children }) => {
         try {
           const response = await fetchWithTimeout(`${activeUrl}/auth/profiles`, {}, 3000);
           if (response.ok) {
+            setIsOnline(true);
             const serverProfiles = await response.json();
             const serverMap = new Map(serverProfiles.map(p => [p.profile_id, p]));
             const localMap = new Map(profilesArray.map(p => [p.id, p]));
@@ -208,9 +231,11 @@ export const AuthProvider = ({ children }) => {
       }, 5000);
 
       if (!response.ok) {
+        setIsOnline(false);
         return { success: false, message: `Server returned status: ${response.status}` };
       }
 
+      setIsOnline(true);
       const result = await response.json();
       const updatedProfile = {
         ...targetProfile,
@@ -228,51 +253,101 @@ export const AuthProvider = ({ children }) => {
       if (user?.id === profileId) setUser(updatedProfile);
       return { success: true, message: 'Successfully connected profile to server!' };
     } catch (e: any) {
+      setIsOnline(false);
       return { success: false, message: `Connection failed: ${e.message || 'Server unreachable'}` };
     }
   };
 
-  const createProfile = async (name, socialLinks = {}) => {
-    try {
-      const mockToken = 'mock_' + name.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
+  const toggleProfileServerOptIn = async (profileId: string, optIn: boolean) => {
+    if (optIn) {
+      return await connectProfileToServer(profileId);
+    } else {
+      try {
+        const targetProfile = (profiles || []).find(p => p.id === profileId);
+        if (!targetProfile) return { success: false, message: 'Profile not found' };
 
-      const response = await fetchWithTimeout(`${backendUrl}/auth/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          provider: 'google',
-          token: mockToken
-        })
-      }, 5000);
+        const updatedProfile = {
+          ...targetProfile,
+          isLocal: true,
+          accessToken: null
+        };
 
-      if (!response.ok) {
-        throw new Error(`Server returned status code: ${response.status}`);
+        const updatedProfiles = profiles.map(p => p.id === profileId ? updatedProfile : p);
+        await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+        if (user?.id === profileId) setUser(updatedProfile);
+        setProfiles(updatedProfiles);
+
+        return { success: true, message: 'Switched profile to Local mode.' };
+      } catch (err: any) {
+        return { success: false, message: `Failed to switch profile: ${err.message}` };
       }
+    }
+  };
 
-      const result = await response.json();
+  const createProfile = async (name: string, socialLinks = {}, preferServer = true) => {
+    if (preferServer) {
+      try {
+        const mockToken = 'mock_' + name.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
 
-      const newProfile = {
-        id: result.profile_id,
-        name: result.name || name,
-        email: result.email || '',
-        accessToken: result.access_token,
-        isLocal: false,
-        created: new Date().toISOString(),
-        lastLogin: Date.now(),
-        socialLinks: socialLinks
-      };
+        const response = await fetchWithTimeout(`${backendUrl}/auth/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider: 'google',
+            token: mockToken
+          })
+        }, 5000);
 
-      const updatedProfiles = [...(profiles || []), newProfile];
-      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
-      await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfile.id);
+        if (!response.ok) {
+          throw new Error(`Server returned status code: ${response.status}`);
+        }
 
-      setProfiles(updatedProfiles);
-      setUser(newProfile);
-      return newProfile;
-    } catch (e) {
-      console.warn('[Auth] Backend profile registration skipped, falling back to local mode:', e.message);
+        setIsOnline(true);
+        const result = await response.json();
 
-      // Offline/Local Fallback
+        const newProfile = {
+          id: result.profile_id,
+          name: result.name || name,
+          email: result.email || '',
+          accessToken: result.access_token,
+          isLocal: false,
+          created: new Date().toISOString(),
+          lastLogin: Date.now(),
+          socialLinks: socialLinks
+        };
+
+        const updatedProfiles = [...(profiles || []), newProfile];
+        await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+        await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfile.id);
+
+        setProfiles(updatedProfiles);
+        setUser(newProfile);
+        return newProfile;
+      } catch (e) {
+        setIsOnline(false);
+        console.warn('[Auth] Backend profile registration skipped, falling back to local mode:', e.message);
+
+        const localId = 'prof_' + Date.now();
+        const newProfile = {
+          id: localId,
+          name: name,
+          accessToken: null,
+          isLocal: true,
+          created: new Date().toISOString(),
+          lastLogin: Date.now(),
+          socialLinks: socialLinks
+        };
+
+        const updatedProfiles = [...(profiles || []), newProfile];
+        await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+        await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfile.id);
+
+        setProfiles(updatedProfiles);
+        setUser(newProfile);
+        return newProfile;
+      }
+    } else {
+      // Explicit Local Profile Creation
       const localId = 'prof_' + Date.now();
       const newProfile = {
         id: localId,

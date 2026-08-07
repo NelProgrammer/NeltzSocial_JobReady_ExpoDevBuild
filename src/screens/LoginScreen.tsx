@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useContext, useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Alert, BackHandler, Modal } from 'react-native';
-import { Text, Button, Surface, TextInput, useTheme, Divider, IconButton, Avatar, ActivityIndicator } from 'react-native-paper';
+import { View, StyleSheet, Image, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Alert, BackHandler } from 'react-native';
+import { Text, Button, Surface, TextInput, useTheme, Divider, IconButton, Avatar, SegmentedButtons } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ type Profile = {
   id: string;
   name: string;
   isLocal?: boolean;
+  email?: string;
   socialLinks?: { google?: boolean };
   lastLogin?: number;
 };
@@ -21,6 +22,7 @@ const LoginScreen: React.FC = () => {
   const { 
     user, 
     profiles, 
+    isOnline,
     login, 
     createProfile, 
     deleteProfile, 
@@ -28,11 +30,14 @@ const LoginScreen: React.FC = () => {
     backendUrl, 
     updateBackendUrl, 
     testBackendConnection, 
-    connectProfileToServer 
+    toggleProfileServerOptIn,
+    checkServerStatus
   } = useContext(AuthContext) as any;
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+
   const [newName, setNewName] = useState<string>('');
+  const [creationMode, setCreationMode] = useState<'server' | 'local'>('server');
   const lastBackPress = useRef<number>(0);
 
   // Server Settings Modal State
@@ -40,7 +45,7 @@ const LoginScreen: React.FC = () => {
   const [serverUrlInput, setServerUrlInput] = useState(backendUrl || '');
   const [testResult, setTestResult] = useState<{ success?: boolean; message?: string } | null>(null);
   const [isTesting, setIsTesting] = useState(false);
-  const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (backendUrl) {
@@ -84,7 +89,7 @@ const LoginScreen: React.FC = () => {
 
   const handleCreateProfile = async () => {
     if (newName.trim()) {
-      await createProfile(newName.trim());
+      await createProfile(newName.trim(), {}, creationMode === 'server');
       setNewName('');
     }
   };
@@ -100,17 +105,21 @@ const LoginScreen: React.FC = () => {
   const handleSaveServerUrl = async () => {
     await updateBackendUrl(serverUrlInput);
     setIsServerModalOpen(false);
-    Alert.alert("Server Configured", `Backend server URL set to:\n${serverUrlInput}`);
+    Alert.alert("Server Configured", `Backend server URL updated to:\n${serverUrlInput}`);
   };
 
-  const handleSyncProfile = async (profileId: string) => {
-    setSyncingId(profileId);
-    const res = await connectProfileToServer(profileId);
-    setSyncingId(null);
+  const handleToggleOptIn = async (profile: Profile) => {
+    const currentIsLocal = profile.isLocal !== undefined ? profile.isLocal : true;
+    const targetOptIn = currentIsLocal; // If currently local, targetOptIn = true (opt-in to server).
+
+    setTogglingId(profile.id);
+    const res = await toggleProfileServerOptIn(profile.id, targetOptIn);
+    setTogglingId(null);
+
     if (res.success) {
-      Alert.alert("Profile Connected", res.message);
+      Alert.alert(targetOptIn ? "Opted In to Server" : "Switched to Local", res.message);
     } else {
-      Alert.alert("Sync Failed", `${res.message}\n\nPlease check your Server Settings.`);
+      Alert.alert("Opt-In Failed", `${res.message}\n\nPlease verify your Server Config.`);
     }
   };
 
@@ -118,17 +127,35 @@ const LoginScreen: React.FC = () => {
     <LinearGradient colors={['#0f172a', '#1e293b']} style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 20) }]}>
-          {/* Top Bar: Exit App (Left) & Server Config (Right) */}
+          
+          {/* Top Bar: Exit App (Left) & Live Server Status + Server Config (Right) */}
           <View style={styles.topHeaderRow}>
             <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
               <MaterialCommunityIcons name="power" size={16} color="#fff" />
               <Text style={styles.exitBtnTopLeftText}>Exit App</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.serverSettingsBtn} onPress={() => setIsServerModalOpen(true)}>
-              <MaterialCommunityIcons name="server-network" size={16} color="#38bdf8" />
-              <Text style={styles.serverSettingsBtnText}>Server Config</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {/* Online / Offline Status Badge */}
+              <TouchableOpacity 
+                style={[styles.statusBadge, isOnline ? styles.statusOnline : styles.statusOffline]} 
+                onPress={() => checkServerStatus()}
+              >
+                <MaterialCommunityIcons 
+                  name={isOnline ? "circle" : "circle-outline"} 
+                  size={10} 
+                  color={isOnline ? "#4ade80" : "#f87171"} 
+                />
+                <Text style={[styles.statusBadgeText, { color: isOnline ? "#4ade80" : "#f87171" }]}>
+                  {isOnline ? "ONLINE" : "OFFLINE"}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.serverSettingsBtn} onPress={() => setIsServerModalOpen(true)}>
+                <MaterialCommunityIcons name="server-network" size={16} color="#38bdf8" />
+                <Text style={styles.serverSettingsBtnText}>Server Config</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.logoContainer}>
@@ -145,7 +172,7 @@ const LoginScreen: React.FC = () => {
               <Button 
                 mode="contained" 
                 icon="google" 
-                onPress={() => createProfile('Google User', { provider: 'google' })} 
+                onPress={() => createProfile('Google User', { provider: 'google' }, true)} 
                 style={[styles.socialBtn, { backgroundColor: '#4285F4' }]} 
                 labelStyle={{ color: '#fff' }}
               >
@@ -154,7 +181,7 @@ const LoginScreen: React.FC = () => {
               <Button 
                 mode="contained" 
                 icon="linkedin" 
-                onPress={() => createProfile('LinkedIn User', { provider: 'linkedin' })} 
+                onPress={() => createProfile('LinkedIn User', { provider: 'linkedin' }, true)} 
                 style={[styles.socialBtn, { backgroundColor: '#0077B5' }]} 
                 labelStyle={{ color: '#fff' }}
               >
@@ -165,7 +192,7 @@ const LoginScreen: React.FC = () => {
               <Button 
                 mode="contained" 
                 icon="facebook" 
-                onPress={() => createProfile('Facebook User', { provider: 'facebook' })} 
+                onPress={() => createProfile('Facebook User', { provider: 'facebook' }, true)} 
                 style={[styles.socialBtn, { backgroundColor: '#1877F2' }]} 
                 labelStyle={{ color: '#fff' }}
               >
@@ -174,7 +201,7 @@ const LoginScreen: React.FC = () => {
               <Button 
                 mode="contained" 
                 icon="twitter" 
-                onPress={() => createProfile('Twitter User', { provider: 'twitter' })} 
+                onPress={() => createProfile('Twitter User', { provider: 'twitter' }, true)} 
                 style={[styles.socialBtn, { backgroundColor: '#000' }]} 
                 labelStyle={{ color: '#fff' }}
               >
@@ -188,52 +215,57 @@ const LoginScreen: React.FC = () => {
               <Divider style={styles.divider} />
             </View>
 
-            {/* 2. PROFILE LIST */}
+            {/* 2. PROFILE LIST WITH CLICKABLE OPT-IN BADGES */}
             <View style={styles.profileList}>
               {[...profiles].sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0)).slice(0, 5).map((p: Profile) => {
                 const isServerProfile = !p.isLocal;
+                const isLoadingThis = togglingId === p.id;
+
                 return (
-                  <View key={p.id} style={styles.profileItem}>
-                    <TouchableOpacity style={styles.profileInfo} onPress={() => login(p.id)}>
+                  <View key={p.id} style={styles.profileItemRow}>
+                    {/* Select / Login Profile Button */}
+                    <TouchableOpacity style={styles.profileSelectArea} onPress={() => login(p.id)}>
                       <Avatar.Icon 
                         size={36} 
                         icon={isServerProfile ? "cloud-check" : "account"} 
                         style={{ backgroundColor: isServerProfile ? "#0288d1" : "#6366f1" }} 
                       />
-                      <View style={{ marginLeft: 12, flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                          <Text style={styles.profileName}>{p.name}</Text>
-                          {isServerProfile ? (
-                            <View style={styles.serverBadge}>
-                              <MaterialCommunityIcons name="cloud" size={12} color="#38bdf8" />
-                              <Text style={styles.serverBadgeText}>Server Profile</Text>
-                            </View>
-                          ) : (
-                            <View style={styles.localBadge}>
-                              <MaterialCommunityIcons name="laptop" size={12} color="#94a3b8" />
-                              <Text style={styles.localBadgeText}>Local Profile</Text>
-                            </View>
-                          )}
-                        </View>
+                      <View style={{ marginLeft: 10, flex: 1 }}>
+                        <Text style={styles.profileName}>{p.name}</Text>
                         <Text style={styles.profileSub}>
                           {p.email ? p.email : (isServerProfile ? 'Verified Container Account' : 'Offline Device Storage')}
                         </Text>
                       </View>
                     </TouchableOpacity>
 
-                    {/* Sync to Server action for local profiles */}
-                    {!isServerProfile && (
-                      <IconButton 
-                        icon="cloud-upload" 
-                        iconColor="#38bdf8" 
-                        size={20} 
-                        loading={syncingId === p.id}
-                        onPress={() => handleSyncProfile(p.id)} 
-                        title="Connect to Server"
+                    {/* CLICKABLE OPT-IN / SERVER TOGGLE BADGE */}
+                    <TouchableOpacity 
+                      style={[
+                        styles.optInPillBtn, 
+                        isServerProfile ? styles.optInPillServer : styles.optInPillLocal
+                      ]}
+                      onPress={() => handleToggleOptIn(p)}
+                      disabled={isLoadingThis}
+                      activeOpacity={0.7}
+                    >
+                      <MaterialCommunityIcons 
+                        name={isServerProfile ? "cloud-check" : "cloud-upload"} 
+                        size={14} 
+                        color={isServerProfile ? "#38bdf8" : "#fbbf24"} 
                       />
-                    )}
+                      <Text style={[styles.optInPillText, { color: isServerProfile ? "#38bdf8" : "#fbbf24" }]}>
+                        {isLoadingThis ? "SYNCING..." : (isServerProfile ? "SERVER" : "OPT-IN SERVER")}
+                      </Text>
+                    </TouchableOpacity>
 
-                    <IconButton icon="trash-can-outline" iconColor="rgba(255,0,0,0.5)" size={20} onPress={() => deleteProfile(p.id)} />
+                    {/* Delete Profile Button */}
+                    <IconButton 
+                      icon="trash-can-outline" 
+                      iconColor="rgba(255,0,0,0.5)" 
+                      size={20} 
+                      onPress={() => deleteProfile(p.id)} 
+                      style={{ margin: 0 }}
+                    />
                   </View>
                 );
               })}
@@ -245,21 +277,44 @@ const LoginScreen: React.FC = () => {
               <Divider style={styles.divider} />
             </View>
 
-            {/* 3. CREATE PROFILE */}
-            <View style={styles.createContainer}>
-              <TextInput
-                placeholder="Enter Name..."
-                value={newName}
-                onChangeText={setNewName}
-                mode="outlined"
-                style={styles.input}
-                textColor="#fff"
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                dense
+            {/* 3. CREATE PROFILE WITH EXPLICIT SERVER / LOCAL OPT-IN SELECTOR */}
+            <View style={{ gap: 10 }}>
+              <SegmentedButtons
+                value={creationMode}
+                onValueChange={(val: any) => setCreationMode(val)}
+                buttons={[
+                  {
+                    value: 'server',
+                    label: 'Server Profile',
+                    icon: 'cloud',
+                    style: creationMode === 'server' ? { backgroundColor: 'rgba(56, 189, 248, 0.2)' } : {}
+                  },
+                  {
+                    value: 'local',
+                    label: 'Local Profile',
+                    icon: 'laptop',
+                    style: creationMode === 'local' ? { backgroundColor: 'rgba(148, 163, 184, 0.2)' } : {}
+                  },
+                ]}
+                density="small"
+                style={{ marginBottom: 4 }}
               />
-              <Button mode="contained" onPress={handleCreateProfile} style={styles.createBtn} buttonColor="#6366f1">
-                Create
-              </Button>
+
+              <View style={styles.createContainer}>
+                <TextInput
+                  placeholder="Enter Name..."
+                  value={newName}
+                  onChangeText={setNewName}
+                  mode="outlined"
+                  style={styles.input}
+                  textColor="#fff"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  dense
+                />
+                <Button mode="contained" onPress={handleCreateProfile} style={styles.createBtn} buttonColor="#6366f1">
+                  Create
+                </Button>
+              </View>
             </View>
 
             <Button mode="text" onPress={quickStart} style={{ marginTop: 16 }} labelStyle={{ color: 'rgba(255,255,255,0.4)' }}>
@@ -284,8 +339,20 @@ const LoginScreen: React.FC = () => {
             </View>
 
             <Text variant="bodySmall" style={styles.modalDesc}>
-              Specify the API URL for your containerized or remote backend service (e.g. Docker container, LAN IP, or cloud host).
+              Specify the API URL for your containerized backend service (e.g. Docker container, LAN IP, or cloud host).
             </Text>
+
+            {/* Live Connection Status Badge in Modal */}
+            <View style={[styles.statusBadgeModal, isOnline ? styles.statusOnline : styles.statusOffline]}>
+              <MaterialCommunityIcons 
+                name={isOnline ? "check-circle" : "alert-circle"} 
+                size={16} 
+                color={isOnline ? "#2e7d32" : "#c62828"} 
+              />
+              <Text style={{ fontSize: 12, fontWeight: 'bold', marginLeft: 6, color: isOnline ? "#2e7d32" : "#c62828" }}>
+                {isOnline ? `Server Online (${backendUrl})` : `Server Offline / Unreachable`}
+              </Text>
+            </View>
 
             <TextInput
               label="Backend Server API URL"
@@ -364,6 +431,28 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  statusOnline: {
+    backgroundColor: 'rgba(74, 222, 128, 0.12)',
+    borderColor: 'rgba(74, 222, 128, 0.3)',
+  },
+  statusOffline: {
+    backgroundColor: 'rgba(248, 113, 113, 0.12)',
+    borderColor: 'rgba(248, 113, 113, 0.3)',
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginLeft: 4,
+    letterSpacing: 0.5,
+  },
   serverSettingsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -382,7 +471,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  logoContainer: { alignItems: 'center', marginBottom: 28 },
+  logoContainer: { alignItems: 'center', marginBottom: 24 },
   logo: { width: 80, height: 80 },
   title: { color: '#fff', fontWeight: 'bold', marginTop: 12 },
   subtitle: { color: 'rgba(255, 255, 255, 0.6)' },
@@ -399,8 +488,8 @@ const styles = StyleSheet.create({
   dividerContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
   divider: { flex: 1, backgroundColor: 'rgba(255,255,255,0.1)' },
   dividerText: { marginHorizontal: 12, color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold' },
-  profileList: { gap: 12 },
-  profileItem: {
+  profileList: { gap: 10 },
+  profileItemRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.08)',
@@ -410,38 +499,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.08)',
   },
-  profileInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
+  profileSelectArea: { 
+    flex: 1, 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    paddingVertical: 4 
+  },
   profileName: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  profileSub: { color: 'rgba(255,255,255,0.5)', fontSize: 10, marginTop: 2 },
-  serverBadge: {
+  profileSub: { color: 'rgba(255,255,255,0.5)', fontSize: 10, marginTop: 1 },
+  optInPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(56, 189, 248, 0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginLeft: 8
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginRight: 4
   },
-  serverBadgeText: {
-    color: '#38bdf8',
+  optInPillServer: {
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    borderColor: 'rgba(56, 189, 248, 0.4)',
+  },
+  optInPillLocal: {
+    backgroundColor: 'rgba(251, 191, 36, 0.15)',
+    borderColor: 'rgba(251, 191, 36, 0.4)',
+  },
+  optInPillText: {
     fontSize: 9,
     fontWeight: 'bold',
-    marginLeft: 3
-  },
-  localBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(148, 163, 184, 0.2)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginLeft: 8
-  },
-  localBadgeText: {
-    color: '#94a3b8',
-    fontSize: 9,
-    fontWeight: 'bold',
-    marginLeft: 3
+    marginLeft: 4,
+    letterSpacing: 0.3
   },
   createContainer: { flexDirection: 'row', gap: 8 },
   input: { flex: 1, backgroundColor: 'transparent' },
@@ -469,7 +556,15 @@ const styles = StyleSheet.create({
   },
   modalDesc: {
     color: '#64748b',
-    marginBottom: 16
+    marginBottom: 12
+  },
+  statusBadgeModal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 12
   },
   testResultBox: {
     flexDirection: 'row',
