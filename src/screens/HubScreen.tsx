@@ -313,18 +313,19 @@ const HubScreen: React.FC = () => {
 
                 {/* Settings Panel: Collapsible Items to Display & Scroll Speed Settings */}
                 {showSettings && (
-                  <Surface style={{ padding: 10, borderRadius: 8, backgroundColor: '#0f172a', marginVertical: 8, borderWidth: 1, borderColor: '#334155' }} elevation={1}>
+                  <Surface style={{ padding: 10, borderRadius: 8, backgroundColor: '#0f172a', marginVertical: 8, borderWidth: 1, borderColor: '#334155', width: '100%', maxWidth: '100%', overflow: 'hidden' }} elevation={1}>
                     <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold', marginBottom: 4 }}>
-                      ⚙️ Display Settings (Visible Rows):
+                      ⚙️ Visible Rows (*7 = default):
                     </Text>
-                    <View style={{ width: '100%', marginBottom: 10 }}>
+                    <View style={{ width: '100%', overflow: 'hidden', marginBottom: 10 }}>
                       <SegmentedButtons
                         value={String(visibleCount)}
                         onValueChange={(val) => updateVisibleCount(Number(val))}
+                        density="high"
                         buttons={[
                           { label: '3', value: '3' },
                           { label: '5', value: '5' },
-                          { label: '7 (Default)', value: '7' },
+                          { label: '7*', value: '7' },
                           { label: '10', value: '10' },
                         ]}
                         style={{ width: '100%' }}
@@ -332,15 +333,16 @@ const HubScreen: React.FC = () => {
                     </View>
 
                     <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold', marginBottom: 4 }}>
-                      ⚡ Scroll Speed (Items per Step):
+                      ⚡ Scroll Speed (*2 = default):
                     </Text>
-                    <View style={{ width: '100%' }}>
+                    <View style={{ width: '100%', overflow: 'hidden' }}>
                       <SegmentedButtons
                         value={String(scrollSpeed)}
                         onValueChange={(val) => updateScrollSpeed(Number(val))}
+                        density="high"
                         buttons={[
                           { label: '1', value: '1' },
-                          { label: '2 (Default)', value: '2' },
+                          { label: '2*', value: '2' },
                           { label: '3', value: '3' },
                           { label: '5', value: '5' },
                         ]}
