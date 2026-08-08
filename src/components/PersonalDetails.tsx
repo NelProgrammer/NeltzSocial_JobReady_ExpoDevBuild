@@ -5,9 +5,11 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { TextInput, Headline, Switch, Text, Button, IconButton, List, Card, Divider, SegmentedButtons } from 'react-native-paper';
 import { Dropdown } from 'react-native-element-dropdown';
 import { ResumeContext } from '../context/ResumeContext';
+import { AuthContext } from '../context/AuthContext';
 
 const PersonalDetails = () => {
     const { resumeData, updateResumeData, uiSettings, updateUiSettings } = useContext(ResumeContext);
+    const { user, autoUpgradeGuestToLocal } = useContext(AuthContext);
     const [expandedSection, setExpandedSection] = useState(null);
     const toggleSection = (section) => setExpandedSection(expandedSection === section ? null : section);
     const [expandedAccordion, setExpandedAccordion] = React.useState('Names');
@@ -26,10 +28,6 @@ const PersonalDetails = () => {
     const [nationalities, setNationalities] = useState([]);
 
     React.useEffect(() => {
-        // Load nationalities from root assets/data/nationalities_dropdown.json
-        // Note: In Expo, we can't easily require local json dynamically from another folder 
-        // if it's not in the same project root. But we found it in the root assets.
-        // For simplicity, we'll use the one we saw.
         const nationalitiesData = require('../../assets/data/nationalities_dropdown.json');
         setNationalities(nationalitiesData.map(n => ({ label: n, value: n })));
     }, []);
@@ -41,11 +39,38 @@ const PersonalDetails = () => {
         }
     }, [languages]);
 
+    const checkAutoUpgradeTrigger = (updatedPd) => {
+        if (!user || !user.isGuest) return;
+        const fn = updatedPd.names?.firstName;
+        const mn = updatedPd.names?.MiddleName;
+        const sn = updatedPd.names?.Surname;
+        const idNum = updatedPd.identity?.idNumber;
+
+        if (fn && fn.trim() && sn && sn.trim() && idNum && idNum.trim()) {
+            const rawId = idNum.trim();
+            const dob = rawId.length >= 6 ? rawId.substring(0, 6) : '900101';
+            const yearPrefix = parseInt(dob.substring(0, 2), 10) > 30 ? '19' : '20';
+            const fullDob = `${yearPrefix}${dob}`;
+
+            autoUpgradeGuestToLocal({
+                firstName: fn,
+                middleName: mn,
+                surname: sn,
+                idNumber: rawId,
+                dob: fullDob
+            });
+        }
+    };
+
     const updateField = (section, key, value) => {
         const newData = { ...resumeData };
         if (!newData["personal details"][section]) newData["personal details"][section] = {};
         newData["personal details"][section][key] = value;
         updateResumeData(newData);
+
+        if (section === 'names' || section === 'identity') {
+            checkAutoUpgradeTrigger(newData["personal details"]);
+        }
     };
 
     const handleAddressChange = (text) => {

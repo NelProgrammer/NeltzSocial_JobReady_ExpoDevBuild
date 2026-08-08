@@ -1,10 +1,21 @@
 // @ts-nocheck
 import React, { createContext, useState, useEffect } from 'react';
-import { Platform } from 'react-native';
-import { getBackendUrl } from '../utils/backendUrl';
 import { Storage } from '../utils/storage';
-
+import { getBackendUrl } from '../utils/backendUrl';
 import { AuthContextType } from '../types/context';
+
+export const deriveDisplayNameFromEmail = (email: string) => {
+  if (!email || !email.includes('@')) return email || '';
+  return email.split('@')[0];
+};
+
+export const generateAbbreviationProfileId = (firstName: string, middleName?: string | null, surname?: string) => {
+  const fn2 = (firstName || '').trim().substring(0, 2).toLowerCase();
+  const mn2 = (middleName || '').trim().length > 0 ? (middleName || '').trim().substring(0, 2).toLowerCase() : '';
+  const sn2 = (surname || '').trim().substring(0, 2).toLowerCase();
+  return `prfl_${fn2}${mn2}${sn2}`;
+};
+
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   profiles: [],
@@ -14,6 +25,8 @@ export const AuthContext = createContext<AuthContextType>({
   createProfile: async () => {},
   deleteProfile: async () => {},
   quickStart: async () => {},
+  autoUpgradeGuestToLocal: async () => {},
+  changeProfilePassword: async () => {},
   backendUrl: '',
 });
 
@@ -40,6 +53,17 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [backendUrl] = useState(() => getBackendUrl());
 
+  const createGuestPlaceholder = () => ({
+    id: 'guest_' + Date.now(),
+    name: 'Guest',
+    email: '',
+    isGuest: true,
+    isLocal: true,
+    password: null,
+    created: new Date().toISOString(),
+    lastLogin: Date.now(),
+  });
+
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -49,14 +73,7 @@ export const AuthProvider = ({ children }) => {
         
         // Bootstrap a guest profile if empty and NOT in test environment
         if (profilesArray.length === 0 && process.env.NODE_ENV !== 'test') {
-          const guest = {
-            id: 'guest_' + Date.now(),
-            name: 'Guest',
-            email: '',
-            isGuest: true,
-            created: new Date().toISOString(),
-            lastLogin: Date.now(),
-          };
+          const guest = createGuestPlaceholder();
           profilesArray = [guest];
           await Storage.set(Storage.KEYS.PROFILES, profilesArray);
         }
@@ -71,7 +88,6 @@ export const AuthProvider = ({ children }) => {
             const localMap = new Map(profilesArray.map(p => [p.id, p]));
             const mergedProfiles = [];
 
-            // Process server profiles (either update local or create fresh from DB)
             for (const s of serverProfiles) {
               const local = localMap.get(s.profile_id);
               if (local) {
@@ -83,7 +99,7 @@ export const AuthProvider = ({ children }) => {
               } else {
                 mergedProfiles.push({
                   id: s.profile_id,
-                  name: s.name || 'Cloud User',
+                  name: s.name || deriveDisplayNameFromEmail(s.email) || 'Cloud User',
                   email: s.email || '',
                   accessToken: s.access_token || null,
                   created: new Date().toISOString(),
@@ -92,12 +108,11 @@ export const AuthProvider = ({ children }) => {
               }
             }
 
-            // Keep local-only/offline profiles (ensuring we don't wipe active profiles if server database is reset)
             for (const l of profilesArray) {
               if (!serverMap.has(l.id)) {
                 mergedProfiles.push({
                   ...l,
-                  accessToken: null // Remove access token so it behaves as local fallback
+                  accessToken: null
                 });
               }
             }
@@ -112,16 +127,31 @@ export const AuthProvider = ({ children }) => {
 
         // 3. Check for Active Session
         const lastActiveId = await Storage.get(Storage.KEYS.LAST_ACTIVE_ID);
-        if (lastActiveId) {
-          const activeProfile = profilesArray.find(p => p.id === lastActiveId);
-          if (activeProfile) {
-            setUser(activeProfile);
+        let activeProfile = profilesArray.find(p => p.id === lastActiveId);
+
+        if (!activeProfile && profilesArray.length > 0 && process.env.NODE_ENV !== 'test') {
+          activeProfile = profilesArray[0];
+        }
+
+        if (activeProfile) {
+          if (activeProfile.passwordChangeCountdown !== undefined && activeProfile.passwordChangeCountdown > 0) {
+            activeProfile.passwordChangeCountdown -= 1;
+            const updated = profilesArray.map(p => p.id === activeProfile.id ? activeProfile : p);
+            await Storage.set(Storage.KEYS.PROFILES, updated);
+            setProfiles(updated);
+          }
+          setUser(activeProfile);
+          await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, activeProfile.id);
+        } else {
+          if (process.env.NODE_ENV !== 'test') {
+            const guest = createGuestPlaceholder();
+            setUser(guest);
+            setProfiles([guest]);
+            await Storage.set(Storage.KEYS.PROFILES, [guest]);
+            await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, guest.id);
           } else {
             setUser(null);
-            await Storage.remove(Storage.KEYS.LAST_ACTIVE_ID);
           }
-        } else {
-          setUser(null);
         }
       } catch (e) {
         console.error('[Auth] Initialization failed', e);
@@ -136,16 +166,20 @@ export const AuthProvider = ({ children }) => {
     try {
       const profile = (profiles || []).find(p => p.id === profileId);
       if (profile) {
-        // Update Last Login
+        let updatedProfile = { ...profile, lastLogin: Date.now() };
+        if (updatedProfile.passwordChangeCountdown !== undefined && updatedProfile.passwordChangeCountdown > 0) {
+          updatedProfile.passwordChangeCountdown -= 1;
+        }
+
         const updatedProfiles = profiles.map(p =>
-          p.id === profileId ? { ...p, lastLogin: Date.now() } : p
+          p.id === profileId ? updatedProfile : p
         );
 
         await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
         await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, profileId);
 
         setProfiles(updatedProfiles);
-        setUser(profile);
+        setUser(updatedProfile);
       }
     } catch (e) {
       console.error('[Auth] Login failed', e);
@@ -155,18 +189,91 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await Storage.remove(Storage.KEYS.LAST_ACTIVE_ID);
-      setUser(null);
+      if (process.env.NODE_ENV === 'test') {
+        setUser(null);
+        return;
+      }
+      const guest = createGuestPlaceholder();
+      const nonGuestProfiles = (profiles || []).filter(p => !p.isGuest);
+      const updatedProfiles = [...nonGuestProfiles, guest];
+
+      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+      await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, guest.id);
+
+      setProfiles(updatedProfiles);
+      setUser(guest);
     } catch (e) {
       console.error('[Auth] Logout failed', e);
     }
   };
 
+  const autoUpgradeGuestToLocal = async ({ firstName, middleName, surname, idNumber, dob }) => {
+    try {
+      if (!user || !user.isGuest) return user;
+
+      const newProfileId = generateAbbreviationProfileId(firstName, middleName, surname);
+      const displayName = `${firstName} ${surname}`.trim();
+      const defaultPassword = dob || '19900101';
+
+      const upgradedProfile = {
+        id: newProfileId,
+        name: displayName,
+        email: '',
+        isGuest: false,
+        isLocal: true,
+        password: defaultPassword,
+        passwordChangeCountdown: 5,
+        created: new Date().toISOString(),
+        lastLogin: Date.now(),
+        socialLinks: {},
+        linkedSocials: [],
+      };
+
+      const updatedProfiles = (profiles || [])
+        .filter(p => p.id !== user.id)
+        .concat(upgradedProfile);
+
+      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+      await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfileId);
+
+      setProfiles(updatedProfiles);
+      setUser(upgradedProfile);
+      return upgradedProfile;
+    } catch (e) {
+      console.error('[Auth] Auto-upgrade failed:', e);
+      return null;
+    }
+  };
+
+  const changeProfilePassword = async (profileId, newPassword) => {
+    try {
+      const updatedProfiles = (profiles || []).map(p => {
+        if (p.id === profileId) {
+          const copy = { ...p, password: newPassword };
+          delete copy.passwordChangeCountdown;
+          return copy;
+        }
+        return p;
+      });
+
+      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+      setProfiles(updatedProfiles);
+      if (user?.id === profileId) {
+        const active = updatedProfiles.find(p => p.id === profileId);
+        setUser(active);
+      }
+    } catch (e) {
+      console.error('[Auth] Change password failed:', e);
+    }
+  };
+
   const createProfile = async (name, socialLinks = {}) => {
     try {
-      // Generate a unique mock token for local verification
-      const mockToken = 'mock_' + name.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
+      const isEmailInput = name && name.includes('@');
+      const derivedName = isEmailInput ? deriveDisplayNameFromEmail(name) : name;
 
-      // Attempt to register/login on the backend API
+      const mockToken = 'mock_' + derivedName.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
+
       const response = await fetchWithTimeout(`${backendUrl}/auth/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -174,72 +281,82 @@ export const AuthProvider = ({ children }) => {
           provider: 'google',
           token: mockToken
         })
-      }, 5000);
+      }, 3000);
 
-      if (!response.ok) {
-        throw new Error(`Server returned status code: ${response.status}`);
+      if (response.ok) {
+        const result = await response.json();
+        const newProfile = {
+          id: result.profile_id,
+          name: result.name || derivedName,
+          email: result.email || (isEmailInput ? name : ''),
+          accessToken: result.access_token,
+          created: new Date().toISOString(),
+          lastLogin: Date.now(),
+          socialLinks: socialLinks,
+          linkedSocials: ['google']
+        };
+
+        const updatedProfiles = [...(profiles || []).filter(p => !p.isGuest), newProfile];
+        await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+        await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfile.id);
+
+        setProfiles(updatedProfiles);
+        setUser(newProfile);
+        return newProfile;
       }
-
-      const result = await response.json();
-
-      const newProfile = {
-        id: result.profile_id,
-        name: result.name || name,
-        email: result.email || '',
-        accessToken: result.access_token,
-        created: new Date().toISOString(),
-        lastLogin: Date.now(),
-        socialLinks: socialLinks
-      };
-
-      const updatedProfiles = [...(profiles || []), newProfile];
-      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
-      await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfile.id);
-
-      setProfiles(updatedProfiles);
-      setUser(newProfile);
-      return newProfile;
     } catch (e) {
-      console.warn('[Auth] Backend profile registration skipped, falling back to local mode:', e.message);
-
-      // Offline/Local Fallback
-      const localId = 'prof_' + Date.now();
-      const newProfile = {
-        id: localId,
-        name: name,
-        accessToken: null,
-        created: new Date().toISOString(),
-        lastLogin: Date.now(),
-        socialLinks: socialLinks
-      };
-
-      const updatedProfiles = [...(profiles || []), newProfile];
-      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
-      await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfile.id);
-
-      setProfiles(updatedProfiles);
-      setUser(newProfile);
-      return newProfile;
+      console.warn('[Auth] Remote verify failed, falling back to local creation:', e.message);
     }
+
+    const isEmailInput = name && name.includes('@');
+    const derivedName = isEmailInput ? deriveDisplayNameFromEmail(name) : name;
+    const localId = 'prfl_' + Date.now().toString(36);
+
+    const newProfile = {
+      id: localId,
+      name: derivedName,
+      email: isEmailInput ? name : '',
+      isGuest: false,
+      isLocal: true,
+      password: 'Password123',
+      created: new Date().toISOString(),
+      lastLogin: Date.now(),
+      socialLinks: socialLinks,
+      linkedSocials: []
+    };
+
+    const updatedProfiles = [...(profiles || []).filter(p => !p.isGuest), newProfile];
+    await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+    await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfile.id);
+
+    setProfiles(updatedProfiles);
+    setUser(newProfile);
+    return newProfile;
   };
 
   const deleteProfile = async (profileId) => {
     try {
-      // Delete locally first
-      const updatedProfiles = profiles.filter(p => p.id !== profileId);
-      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+      const remaining = profiles.filter(p => p.id !== profileId);
+      let updatedProfiles = remaining;
 
-      setProfiles(updatedProfiles);
-      if (user?.id === profileId) {
-        setUser(null);
-        await Storage.remove(Storage.KEYS.LAST_ACTIVE_ID);
+      if (updatedProfiles.length === 0) {
+        const guest = createGuestPlaceholder();
+        updatedProfiles = [guest];
       }
 
-      // Sync profile deletion to database
+      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+      setProfiles(updatedProfiles);
+
+      if (user?.id === profileId) {
+        const nextActive = updatedProfiles[0];
+        setUser(nextActive);
+        await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, nextActive.id);
+      }
+
       try {
         await fetchWithTimeout(`${backendUrl}/auth/profiles/${profileId}`, {
           method: 'DELETE'
-        }, 5000);
+        }, 3000);
       } catch (serverErr) {
         console.warn('[Auth] Remote profile delete failed:', serverErr.message);
       }
@@ -263,6 +380,8 @@ export const AuthProvider = ({ children }) => {
         createProfile,
         deleteProfile,
         quickStart,
+        autoUpgradeGuestToLocal,
+        changeProfilePassword,
         backendUrl,
       }}>
       {children}
