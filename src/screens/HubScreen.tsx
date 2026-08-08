@@ -19,7 +19,7 @@ const HubScreen: React.FC = () => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const authCtx = useContext(AuthContext) as any;
-  const { user, logout, profiles, login, createProfile, changeProfilePassword } = authCtx;
+  const { user, logout, deleteProfile, profiles, login, createProfile, changeProfilePassword } = authCtx;
   const { meta } = useContext(ResumeContext) as any;
 
   // Profile Upgrade & Account Settings Modal State
@@ -371,6 +371,22 @@ const HubScreen: React.FC = () => {
                   </Button>
                 )}
 
+                {user && !user.isGuest && (
+                  <Button
+                    mode="outlined"
+                    textColor="#ef4444"
+                    style={{ borderColor: '#ef4444', marginBottom: 8 }}
+                    labelStyle={{ fontSize: 12 }}
+                    icon="logout"
+                    onPress={async () => {
+                      await logout();
+                      setModalVisible(false);
+                    }}
+                  >
+                    Logout Profile
+                  </Button>
+                )}
+
                 {/* Profile Switcher Header */}
                 <Text style={{ color: '#fff', fontWeight: 'bold', marginTop: 8, marginBottom: 4, fontSize: 12 }}>
                   Available Profiles ({profiles.length}):
@@ -401,12 +417,39 @@ const HubScreen: React.FC = () => {
                         setModalVisible(false);
                       }}
                     >
-                      <Text style={{ color: p.id === user?.id ? '#10b981' : '#fff', fontWeight: p.id === user?.id ? 'bold' : 'normal', fontSize: 12 }}>
-                        {p.name} {p.id === user?.id ? '(Active)' : ''}
-                      </Text>
-                      <Text style={{ color: '#94a3b8', fontSize: 10 }}>
-                        {p.isGuest ? 'GUEST' : p.isLocal ? 'LOCAL' : 'ONLINE'}
-                      </Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: p.id === user?.id ? '#10b981' : '#fff', fontWeight: p.id === user?.id ? 'bold' : 'normal', fontSize: 12 }}>
+                          {p.name} {p.id === user?.id ? '(Active)' : ''}
+                        </Text>
+                        <Text style={{ color: '#94a3b8', fontSize: 10 }}>
+                          {p.isGuest ? 'GUEST' : p.isLocal ? 'LOCAL' : 'ONLINE'}
+                        </Text>
+                      </View>
+
+                      {!p.isGuest && (
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            Alert.alert(
+                              'Delete Profile',
+                              `Are you sure you want to delete profile "${p.name}"? This action cannot be undone.`,
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                {
+                                  text: 'Delete',
+                                  style: 'destructive',
+                                  onPress: async () => {
+                                    await deleteProfile(p.id);
+                                  },
+                                },
+                              ]
+                            );
+                          }}
+                          style={{ padding: 4, marginLeft: 8 }}
+                        >
+                          <MaterialCommunityIcons name="trash-can-outline" size={18} color="#ef4444" />
+                        </TouchableOpacity>
+                      )}
                     </TouchableOpacity>
                   ))}
                 </ScrollView>

@@ -207,7 +207,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const autoUpgradeGuestToLocal = async ({ firstName, middleName, surname, idNumber, dob }) => {
+  const deleteProfile = async (targetId: string) => {
+    try {
+      const remaining = (profiles || []).filter(p => p.id !== targetId);
+      let updatedList = remaining;
+      let nextActiveUser = user;
+
+      // If active user is deleted, fallback to guest profile
+      if (user?.id === targetId) {
+        const guest = createGuestPlaceholder();
+        const nonGuestProfiles = remaining.filter(p => !p.isGuest);
+        updatedList = [...nonGuestProfiles, guest];
+        nextActiveUser = guest;
+        await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, guest.id);
+      }
+
+      await Storage.set(Storage.KEYS.PROFILES, updatedList);
+      setProfiles(updatedList);
+      setUser(nextActiveUser);
+    } catch (e) {
+      console.error('[Auth] Delete profile failed', e);
+    }
+  };
+
+  const autoUpgradeGuestToLocal = async ({ firstName, middleName, surname, idNumber, dob }: any) => {
     try {
       if (!user || !user.isGuest) return user;
 
@@ -354,37 +377,6 @@ export const AuthProvider = ({ children }) => {
     setProfiles(updatedProfiles);
     setUser(newProfile);
     return newProfile;
-  };
-
-  const deleteProfile = async (profileId) => {
-    try {
-      const remaining = profiles.filter(p => p.id !== profileId);
-      let updatedProfiles = remaining;
-
-      if (updatedProfiles.length === 0) {
-        const guest = createGuestPlaceholder();
-        updatedProfiles = [guest];
-      }
-
-      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
-      setProfiles(updatedProfiles);
-
-      if (user?.id === profileId) {
-        const nextActive = updatedProfiles[0];
-        setUser(nextActive);
-        await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, nextActive.id);
-      }
-
-      try {
-        await fetchWithTimeout(`${backendUrl}/auth/profiles/${profileId}`, {
-          method: 'DELETE'
-        }, 3000);
-      } catch (serverErr) {
-        console.warn('[Auth] Remote profile delete failed:', serverErr.message);
-      }
-    } catch (e) {
-      console.error('[Auth] Profile deletion failed', e);
-    }
   };
 
   const quickStart = async () => {

@@ -4,8 +4,8 @@ export interface AuthContextType {
   loading: boolean;
   login: (profileId: string) => Promise<void>;
   logout: () => Promise<void>;
-  createProfile: (name: string, socialLinks?: any) => Promise<any>;
   deleteProfile: (profileId: string) => Promise<void>;
+  createProfile: (name: string, socialLinks?: any) => Promise<any>;
   quickStart: () => Promise<any>;
   autoUpgradeGuestToLocal: (payload: {
     firstName: string;
