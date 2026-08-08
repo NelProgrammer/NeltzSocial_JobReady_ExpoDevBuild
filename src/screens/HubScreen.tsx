@@ -24,7 +24,7 @@ const HubScreen: React.FC = () => {
 
   // Profile Upgrade & Account Settings Modal State
   const [modalVisible, setModalVisible] = useState(false);
-  const [mode, setMode] = useState<'VIEW' | 'CREATE_LOCAL' | 'UPGRADE_ONLINE' | 'LINK_SOCIAL' | 'CHANGE_PASSWORD' | 'RENAME'>('VIEW');
+  const [mode, setMode] = useState<'VIEW' | 'CREATE_LOCAL' | 'UPGRADE_ONLINE' | 'LINK_SOCIAL' | 'CHANGE_PASSWORD' | 'RENAME' | 'SETTINGS'>('VIEW');
   const [inputName, setInputName] = useState('');
   const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
@@ -252,6 +252,7 @@ const HubScreen: React.FC = () => {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12 }}>
             <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold', flex: 1 }} numberOfLines={1}>
               {mode === 'VIEW' ? `Profile: ${user?.name || 'Guest'}` 
+               : mode === 'SETTINGS' ? 'Display & Scroll Settings'
                : mode === 'RENAME' ? 'Rename Display Name'
                : mode === 'CREATE_LOCAL' ? 'Create Permanent Local Profile' 
                : mode === 'UPGRADE_ONLINE' ? 'Upgrade to Online Remote Profile' 
@@ -265,19 +266,78 @@ const HubScreen: React.FC = () => {
                 size={20}
                 onPress={() => setIsExpanded(!isExpanded)}
               />
-              {mode === 'VIEW' && (
+              {(mode === 'VIEW' || mode === 'SETTINGS') && (
                 <IconButton
-                  icon={showSettings ? 'cog' : 'cog-outline'}
-                  iconColor={showSettings ? '#10b981' : '#94a3b8'}
+                  icon={mode === 'SETTINGS' ? 'cog' : 'cog-outline'}
+                  iconColor={mode === 'SETTINGS' ? '#10b981' : '#94a3b8'}
                   size={20}
-                  onPress={() => setShowSettings(!showSettings)}
+                  onPress={() => setMode(mode === 'SETTINGS' ? 'VIEW' : 'SETTINGS')}
                 />
               )}
             </View>
           </View>
 
           <Dialog.Content style={{ paddingTop: 8 }}>
-            {mode === 'VIEW' ? (
+            {mode === 'SETTINGS' ? (
+              <View style={{ paddingVertical: 4 }}>
+                <Text style={{ color: '#cbd5e1', fontSize: 12, marginBottom: 12 }}>
+                  Configure your dashboard list display preferences:
+                </Text>
+
+                {/* Compact Number Stepper Spinner: Visible Rows */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 6, backgroundColor: '#0f172a', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#334155' }}>
+                  <Text style={{ color: '#cbd5e1', fontSize: 12, fontWeight: 'bold' }}>Visible Rows (Default: 7)</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TouchableOpacity
+                      onPress={() => updateVisibleCount(Math.max(1, visibleCount - 1))}
+                      disabled={visibleCount <= 1}
+                      style={{ backgroundColor: '#1e293b', borderRadius: 6, padding: 6, opacity: visibleCount <= 1 ? 0.4 : 1 }}
+                    >
+                      <MaterialCommunityIcons name="minus" size={18} color="#10b981" />
+                    </TouchableOpacity>
+                    <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold', marginHorizontal: 12, minWidth: 20, textAlign: 'center' }}>{visibleCount}</Text>
+                    <TouchableOpacity
+                      onPress={() => updateVisibleCount(Math.min(20, visibleCount + 1))}
+                      disabled={visibleCount >= 20}
+                      style={{ backgroundColor: '#1e293b', borderRadius: 6, padding: 6, opacity: visibleCount >= 20 ? 0.4 : 1 }}
+                    >
+                      <MaterialCommunityIcons name="plus" size={18} color="#10b981" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Compact Number Stepper Spinner: Scroll Speed */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 6, backgroundColor: '#0f172a', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#334155' }}>
+                  <Text style={{ color: '#cbd5e1', fontSize: 12, fontWeight: 'bold' }}>Scroll Speed (Default: 2)</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TouchableOpacity
+                      onPress={() => updateScrollSpeed(Math.max(1, scrollSpeed - 1))}
+                      disabled={scrollSpeed <= 1}
+                      style={{ backgroundColor: '#1e293b', borderRadius: 6, padding: 6, opacity: scrollSpeed <= 1 ? 0.4 : 1 }}
+                    >
+                      <MaterialCommunityIcons name="minus" size={18} color="#10b981" />
+                    </TouchableOpacity>
+                    <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold', marginHorizontal: 12, minWidth: 20, textAlign: 'center' }}>{scrollSpeed}</Text>
+                    <TouchableOpacity
+                      onPress={() => updateScrollSpeed(Math.min(10, scrollSpeed + 1))}
+                      disabled={scrollSpeed >= 10}
+                      style={{ backgroundColor: '#1e293b', borderRadius: 6, padding: 6, opacity: scrollSpeed >= 10 ? 0.4 : 1 }}
+                    >
+                      <MaterialCommunityIcons name="plus" size={18} color="#10b981" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <Button
+                  mode="contained"
+                  buttonColor="#10b981"
+                  style={{ marginTop: 16 }}
+                  onPress={() => setMode('VIEW')}
+                >
+                  Done Settings
+                </Button>
+              </View>
+            ) : mode === 'VIEW' ? (
               <View>
                 <Text style={{ color: '#cbd5e1', marginBottom: 6, fontSize: 12 }}>
                   Current Stage: <Text style={{ color: stageInfo.color, fontWeight: 'bold' }}>{stageInfo.label}</Text>
@@ -309,47 +369,6 @@ const HubScreen: React.FC = () => {
                   <Button mode="outlined" textColor="#cbd5e1" style={{ marginBottom: 8 }} labelStyle={{ fontSize: 12 }} onPress={() => setMode('CHANGE_PASSWORD')}>
                     Change Password
                   </Button>
-                )}
-
-                {/* Settings Panel: Collapsible Items to Display & Scroll Speed Settings */}
-                {showSettings && (
-                  <Surface style={{ padding: 10, borderRadius: 8, backgroundColor: '#0f172a', marginVertical: 8, borderWidth: 1, borderColor: '#334155', width: '100%', maxWidth: '100%', overflow: 'hidden' }} elevation={1}>
-                    <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold', marginBottom: 4 }}>
-                      ⚙️ Visible Rows (*7 = default):
-                    </Text>
-                    <View style={{ width: '100%', overflow: 'hidden', marginBottom: 10 }}>
-                      <SegmentedButtons
-                        value={String(visibleCount)}
-                        onValueChange={(val) => updateVisibleCount(Number(val))}
-                        density="high"
-                        buttons={[
-                          { label: '3', value: '3' },
-                          { label: '5', value: '5' },
-                          { label: '7*', value: '7' },
-                          { label: '10', value: '10' },
-                        ]}
-                        style={{ width: '100%' }}
-                      />
-                    </View>
-
-                    <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold', marginBottom: 4 }}>
-                      ⚡ Scroll Speed (*2 = default):
-                    </Text>
-                    <View style={{ width: '100%', overflow: 'hidden' }}>
-                      <SegmentedButtons
-                        value={String(scrollSpeed)}
-                        onValueChange={(val) => updateScrollSpeed(Number(val))}
-                        density="high"
-                        buttons={[
-                          { label: '1', value: '1' },
-                          { label: '2*', value: '2' },
-                          { label: '3', value: '3' },
-                          { label: '5', value: '5' },
-                        ]}
-                        style={{ width: '100%' }}
-                      />
-                    </View>
-                  </Surface>
                 )}
 
                 {/* Profile Switcher Header */}
