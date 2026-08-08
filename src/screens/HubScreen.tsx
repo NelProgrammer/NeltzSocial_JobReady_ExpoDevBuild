@@ -23,7 +23,7 @@ const HubScreen: React.FC = () => {
 
   // Profile Upgrade & Account Settings Modal State
   const [modalVisible, setModalVisible] = useState(false);
-  const [mode, setMode] = useState<'VIEW' | 'CREATE_LOCAL' | 'UPGRADE_ONLINE' | 'LINK_SOCIAL' | 'CHANGE_PASSWORD'>('VIEW');
+  const [mode, setMode] = useState<'VIEW' | 'CREATE_LOCAL' | 'UPGRADE_ONLINE' | 'LINK_SOCIAL' | 'CHANGE_PASSWORD' | 'RENAME'>('VIEW');
   const [inputName, setInputName] = useState('');
   const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
@@ -69,7 +69,14 @@ const HubScreen: React.FC = () => {
 
   const handleActionSubmit = async () => {
     try {
-      if (mode === 'CREATE_LOCAL') {
+      if (mode === 'RENAME') {
+        if (!inputName.trim()) {
+          Alert.alert('Error', 'Please enter a valid display name');
+          return;
+        }
+        await authCtx.renameProfile(user.id, inputName.trim());
+        Alert.alert('Success', 'Profile name updated successfully!');
+      } else if (mode === 'CREATE_LOCAL') {
         if (!inputName.trim()) {
           Alert.alert('Error', 'Please enter a profile name or email');
           return;
@@ -183,6 +190,7 @@ const HubScreen: React.FC = () => {
         <Dialog visible={modalVisible} onDismiss={() => setModalVisible(false)} style={{ backgroundColor: '#1e293b' }}>
           <Dialog.Title style={{ color: '#fff' }}>
             {mode === 'VIEW' ? `Profile: ${user?.name || 'Guest'}` 
+             : mode === 'RENAME' ? 'Rename Display Name'
              : mode === 'CREATE_LOCAL' ? 'Create Permanent Local Profile' 
              : mode === 'UPGRADE_ONLINE' ? 'Upgrade to Online Remote Profile' 
              : mode === 'CHANGE_PASSWORD' ? 'Change Security Password'
@@ -198,10 +206,16 @@ const HubScreen: React.FC = () => {
                   Profile ID: {user?.id || 'guest_session'}
                 </Text>
 
-                {/* Upgrade Path Actions */}
+                {/* Upgrade & Management Actions */}
                 {user?.isGuest && (
-                  <Button mode="contained" buttonColor="#10b981" style={{ marginBottom: 10 }} onPress={() => setMode('CREATE_LOCAL')}>
+                  <Button mode="contained" buttonColor="#10b981" style={{ marginBottom: 10 }} onPress={() => { setInputName(user?.name || ''); setMode('CREATE_LOCAL'); }}>
                     Upgrade to Permanent Local Profile
+                  </Button>
+                )}
+
+                {user && !user.isGuest && (
+                  <Button mode="contained" buttonColor="#6366f1" style={{ marginBottom: 10 }} onPress={() => { setInputName(user?.name || ''); setMode('RENAME'); }}>
+                    Rename Display Name
                   </Button>
                 )}
 
@@ -236,6 +250,18 @@ const HubScreen: React.FC = () => {
                     </Text>
                   </TouchableOpacity>
                 ))}
+              </View>
+            ) : mode === 'RENAME' ? (
+              <View>
+                <TextInput
+                  label="New Display Name"
+                  placeholder="Enter new display name"
+                  value={inputName}
+                  onChangeText={setInputName}
+                  mode="outlined"
+                  style={{ marginBottom: 10, backgroundColor: '#0f172a' }}
+                  textColor="#fff"
+                />
               </View>
             ) : mode === 'CREATE_LOCAL' ? (
               <View>

@@ -267,6 +267,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const renameProfile = async (profileId, newName) => {
+    try {
+      if (!newName || !newName.trim()) return;
+      const cleanName = newName.trim();
+      const updatedProfiles = (profiles || []).map(p => {
+        if (p.id === profileId) {
+          return { ...p, name: cleanName };
+        }
+        return p;
+      });
+
+      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+      setProfiles(updatedProfiles);
+      if (user?.id === profileId) {
+        const active = updatedProfiles.find(p => p.id === profileId);
+        setUser(active);
+      }
+    } catch (e) {
+      console.error('[Auth] Rename profile failed:', e);
+    }
+  };
+
   const createProfile = async (name, socialLinks = {}) => {
     try {
       const isEmailInput = name && name.includes('@');
@@ -382,6 +404,7 @@ export const AuthProvider = ({ children }) => {
         quickStart,
         autoUpgradeGuestToLocal,
         changeProfilePassword,
+        renameProfile,
         backendUrl,
       }}>
       {children}

@@ -15,6 +15,7 @@ export interface AuthContextType {
     dob: string;
   }) => Promise<any>;
   changeProfilePassword: (profileId: string, newPassword: string) => Promise<void>;
+  renameProfile: (profileId: string, newName: string) => Promise<void>;
   backendUrl: string;
 }
 
