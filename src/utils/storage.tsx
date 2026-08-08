@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
     UI_SETTINGS_PREFIX: 'neltz_jobready_ui_settings_',
     PROFILES: 'neltz_jobready_profiles',
     LAST_ACTIVE_ID: 'neltz_jobready_last_active_id',
+    PROFILE_LIST_VISIBLE_COUNT: 'neltz_jobready_profile_list_visible_count',
 };
 
 export const Storage = {

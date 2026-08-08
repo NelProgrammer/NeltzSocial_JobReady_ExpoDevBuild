@@ -1,10 +1,11 @@
 // HubScreen.tsx – Landing Dashboard with Header Profile Badge & Upgrade Hierarchy
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Alert, BackHandler } from 'react-native';
-import { Text, useTheme, Avatar, Surface, IconButton, Portal, Dialog, TextInput, Button } from 'react-native-paper';
+import { Text, useTheme, Avatar, Surface, IconButton, Portal, Dialog, TextInput, Button, SegmentedButtons } from 'react-native-paper';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import { ResumeContext } from '../context/ResumeContext';
+import { Storage } from '../utils/storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -28,6 +29,20 @@ const HubScreen: React.FC = () => {
   const [inputEmail, setInputEmail] = useState('');
   const [inputPassword, setInputPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [visibleCount, setVisibleCount] = useState(7);
+
+  useEffect(() => {
+    const loadVisibleCount = async () => {
+      const saved = await Storage.get(Storage.KEYS.PROFILE_LIST_VISIBLE_COUNT);
+      if (saved) setVisibleCount(Number(saved));
+    };
+    loadVisibleCount();
+  }, []);
+
+  const updateVisibleCount = async (val: number) => {
+    setVisibleCount(val);
+    await Storage.set(Storage.KEYS.PROFILE_LIST_VISIBLE_COUNT, val);
+  };
 
   // Double‑tap back button to exit
   const lastBackPress = useRef(0);
@@ -187,8 +202,8 @@ const HubScreen: React.FC = () => {
 
       {/* Profile Upgrade & Account Settings Popup Modal */}
       <Portal>
-        <Dialog visible={modalVisible} onDismiss={() => setModalVisible(false)} style={{ backgroundColor: '#1e293b' }}>
-          <Dialog.Title style={{ color: '#fff' }}>
+        <Dialog visible={modalVisible} onDismiss={() => setModalVisible(false)} style={{ backgroundColor: '#1e293b', width: '70%', alignSelf: 'center', maxWidth: 420 }}>
+          <Dialog.Title style={{ color: '#fff', fontSize: 16 }}>
             {mode === 'VIEW' ? `Profile: ${user?.name || 'Guest'}` 
              : mode === 'RENAME' ? 'Rename Display Name'
              : mode === 'CREATE_LOCAL' ? 'Create Permanent Local Profile' 
@@ -199,57 +214,81 @@ const HubScreen: React.FC = () => {
           <Dialog.Content>
             {mode === 'VIEW' ? (
               <View>
-                <Text style={{ color: '#cbd5e1', marginBottom: 10 }}>
+                <Text style={{ color: '#cbd5e1', marginBottom: 6, fontSize: 12 }}>
                   Current Stage: <Text style={{ color: stageInfo.color, fontWeight: 'bold' }}>{stageInfo.label}</Text>
                 </Text>
-                <Text style={{ color: '#94a3b8', fontSize: 12, marginBottom: 15 }}>
+                <Text style={{ color: '#94a3b8', fontSize: 11, marginBottom: 12 }}>
                   Profile ID: {user?.id || 'guest_session'}
                 </Text>
 
                 {/* Upgrade & Management Actions */}
                 {user?.isGuest && (
-                  <Button mode="contained" buttonColor="#10b981" style={{ marginBottom: 10 }} onPress={() => { setInputName(user?.name || ''); setMode('CREATE_LOCAL'); }}>
+                  <Button mode="contained" buttonColor="#10b981" style={{ marginBottom: 8 }} labelStyle={{ fontSize: 12 }} onPress={() => { setInputName(user?.name || ''); setMode('CREATE_LOCAL'); }}>
                     Upgrade to Permanent Local Profile
                   </Button>
                 )}
 
                 {user && !user.isGuest && (
-                  <Button mode="contained" buttonColor="#6366f1" style={{ marginBottom: 10 }} onPress={() => { setInputName(user?.name || ''); setMode('RENAME'); }}>
+                  <Button mode="contained" buttonColor="#6366f1" style={{ marginBottom: 8 }} labelStyle={{ fontSize: 12 }} onPress={() => { setInputName(user?.name || ''); setMode('RENAME'); }}>
                     Rename Display Name
                   </Button>
                 )}
 
                 {user && !user.isGuest && user.isLocal && (
-                  <Button mode="contained" buttonColor="#3b82f6" style={{ marginBottom: 10 }} onPress={() => setMode('UPGRADE_ONLINE')}>
+                  <Button mode="contained" buttonColor="#3b82f6" style={{ marginBottom: 8 }} labelStyle={{ fontSize: 12 }} onPress={() => setMode('UPGRADE_ONLINE')}>
                     Upgrade to Online Remote Profile
                   </Button>
                 )}
 
                 {user && !user.isGuest && (
-                  <Button mode="outlined" textColor="#cbd5e1" style={{ marginBottom: 10 }} onPress={() => setMode('CHANGE_PASSWORD')}>
+                  <Button mode="outlined" textColor="#cbd5e1" style={{ marginBottom: 8 }} labelStyle={{ fontSize: 12 }} onPress={() => setMode('CHANGE_PASSWORD')}>
                     Change Password
                   </Button>
                 )}
 
-                {/* Profile Switcher List */}
-                <Text style={{ color: '#fff', fontWeight: 'bold', marginTop: 10, marginBottom: 8 }}>Available Profiles:</Text>
-                {profiles.map((p: any) => (
-                  <TouchableOpacity
-                    key={p.id}
-                    style={[styles.profileRow, p.id === user?.id && styles.activeProfileRow]}
-                    onPress={async () => {
-                      await login(p.id);
-                      setModalVisible(false);
-                    }}
-                  >
-                    <Text style={{ color: p.id === user?.id ? '#10b981' : '#fff', fontWeight: p.id === user?.id ? 'bold' : 'normal' }}>
-                      {p.name} {p.id === user?.id ? '(Active)' : ''}
-                    </Text>
-                    <Text style={{ color: '#94a3b8', fontSize: 10 }}>
-                      {p.isGuest ? 'GUEST' : p.isLocal ? 'LOCAL' : 'ONLINE'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {/* Profile List Items Display Setting */}
+                <View style={{ marginTop: 8, marginBottom: 6 }}>
+                  <Text style={{ color: '#94a3b8', fontSize: 10, marginBottom: 4 }}>Items to Display (Default: 7):</Text>
+                  <SegmentedButtons
+                    value={String(visibleCount)}
+                    onValueChange={(val) => updateVisibleCount(Number(val))}
+                    buttons={[
+                      { label: '3', value: '3' },
+                      { label: '5', value: '5' },
+                      { label: '7', value: '7' },
+                      { label: '10', value: '10' },
+                    ]}
+                    style={{ alignSelf: 'flex-start' }}
+                  />
+                </View>
+
+                {/* Profile Switcher List with Configurable Dynamic Scroll Height */}
+                <Text style={{ color: '#fff', fontWeight: 'bold', marginTop: 8, marginBottom: 6, fontSize: 12 }}>
+                  Available Profiles ({profiles.length}):
+                </Text>
+                <ScrollView
+                  style={{ maxHeight: Math.min(visibleCount * 46, 320), marginVertical: 4 }}
+                  showsVerticalScrollIndicator={true}
+                  nestedScrollEnabled={true}
+                >
+                  {profiles.map((p: any) => (
+                    <TouchableOpacity
+                      key={p.id}
+                      style={[styles.profileRow, p.id === user?.id && styles.activeProfileRow]}
+                      onPress={async () => {
+                        await login(p.id);
+                        setModalVisible(false);
+                      }}
+                    >
+                      <Text style={{ color: p.id === user?.id ? '#10b981' : '#fff', fontWeight: p.id === user?.id ? 'bold' : 'normal', fontSize: 12 }}>
+                        {p.name} {p.id === user?.id ? '(Active)' : ''}
+                      </Text>
+                      <Text style={{ color: '#94a3b8', fontSize: 10 }}>
+                        {p.isGuest ? 'GUEST' : p.isLocal ? 'LOCAL' : 'ONLINE'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
             ) : mode === 'RENAME' ? (
               <View>
