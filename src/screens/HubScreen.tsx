@@ -30,17 +30,23 @@ const HubScreen: React.FC = () => {
   const [inputPassword, setInputPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [visibleCount, setVisibleCount] = useState(7);
+  const [scrollSpeed, setScrollSpeed] = useState(2);
   const [showSettings, setShowSettings] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(true);
 
+  const currentScrollTop = useRef(0);
+  const profileListRef = useRef<ScrollView>(null);
+
   useEffect(() => {
-    const loadVisibleCount = async () => {
-      const saved = await Storage.get(Storage.KEYS.PROFILE_LIST_VISIBLE_COUNT);
-      if (saved) setVisibleCount(Number(saved));
+    const loadSettings = async () => {
+      const savedCount = await Storage.get(Storage.KEYS.PROFILE_LIST_VISIBLE_COUNT);
+      if (savedCount) setVisibleCount(Number(savedCount));
+      const savedSpeed = await Storage.get(Storage.KEYS.PROFILE_LIST_SCROLL_SPEED);
+      if (savedSpeed) setScrollSpeed(Number(savedSpeed));
     };
-    loadVisibleCount();
+    loadSettings();
   }, []);
 
   const updateVisibleCount = async (val: number) => {
@@ -48,11 +54,27 @@ const HubScreen: React.FC = () => {
     await Storage.set(Storage.KEYS.PROFILE_LIST_VISIBLE_COUNT, val);
   };
 
+  const updateScrollSpeed = async (val: number) => {
+    setScrollSpeed(val);
+    await Storage.set(Storage.KEYS.PROFILE_LIST_SCROLL_SPEED, val);
+  };
+
   const handleScroll = (event: any) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const scrollTop = contentOffset.y;
+    currentScrollTop.current = scrollTop;
     setCanScrollUp(scrollTop > 5);
     setCanScrollDown(scrollTop + layoutMeasurement.height < contentSize.height - 5);
+  };
+
+  const scrollUpByStep = () => {
+    const targetY = Math.max(0, currentScrollTop.current - scrollSpeed * 46);
+    profileListRef.current?.scrollTo({ y: targetY, animated: true });
+  };
+
+  const scrollDownByStep = () => {
+    const targetY = currentScrollTop.current + scrollSpeed * 46;
+    profileListRef.current?.scrollTo({ y: targetY, animated: true });
   };
 
   // Double‑tap back button to exit
@@ -221,6 +243,9 @@ const HubScreen: React.FC = () => {
             width: isExpanded ? '92%' : '70%',
             alignSelf: 'center',
             maxWidth: isExpanded ? 600 : 420,
+            borderWidth: 1.5,
+            borderColor: '#475569',
+            borderRadius: 16,
           }}
         >
           {/* Header Bar with Title, Expand Button & Gear Settings Toggle */}
@@ -286,13 +311,13 @@ const HubScreen: React.FC = () => {
                   </Button>
                 )}
 
-                {/* Settings Panel: Collapsible Items to Display Setting (Gear Icon Toggled) */}
+                {/* Settings Panel: Collapsible Items to Display & Scroll Speed Settings */}
                 {showSettings && (
-                  <Surface style={{ padding: 10, borderRadius: 8, backgroundColor: '#0f172a', marginVertical: 8 }} elevation={1}>
-                    <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold', marginBottom: 6 }}>
-                      ⚙️ Display Settings (Items visible before scroll):
+                  <Surface style={{ padding: 10, borderRadius: 8, backgroundColor: '#0f172a', marginVertical: 8, borderWidth: 1, borderColor: '#334155' }} elevation={1}>
+                    <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold', marginBottom: 4 }}>
+                      ⚙️ Display Settings (Visible Rows):
                     </Text>
-                    <View style={{ width: '100%' }}>
+                    <View style={{ width: '100%', marginBottom: 10 }}>
                       <SegmentedButtons
                         value={String(visibleCount)}
                         onValueChange={(val) => updateVisibleCount(Number(val))}
@@ -305,6 +330,23 @@ const HubScreen: React.FC = () => {
                         style={{ width: '100%' }}
                       />
                     </View>
+
+                    <Text style={{ color: '#10b981', fontSize: 11, fontWeight: 'bold', marginBottom: 4 }}>
+                      ⚡ Scroll Speed (Items per Step):
+                    </Text>
+                    <View style={{ width: '100%' }}>
+                      <SegmentedButtons
+                        value={String(scrollSpeed)}
+                        onValueChange={(val) => updateScrollSpeed(Number(val))}
+                        buttons={[
+                          { label: '1', value: '1' },
+                          { label: '2 (Default)', value: '2' },
+                          { label: '3', value: '3' },
+                          { label: '5', value: '5' },
+                        ]}
+                        style={{ width: '100%' }}
+                      />
+                    </View>
                   </Surface>
                 )}
 
@@ -313,15 +355,16 @@ const HubScreen: React.FC = () => {
                   Available Profiles ({profiles.length}):
                 </Text>
 
-                {/* Scroll Up Arrow Indicator */}
+                {/* Scroll Up Arrow Indicator with Tap Handler */}
                 {canScrollUp && (
-                  <View style={{ alignItems: 'center', marginVertical: -2 }}>
-                    <MaterialCommunityIcons name="chevron-up" size={20} color="#10b981" />
-                  </View>
+                  <TouchableOpacity onPress={scrollUpByStep} style={{ alignItems: 'center', marginVertical: -2, paddingVertical: 2 }}>
+                    <MaterialCommunityIcons name="chevron-up" size={22} color="#10b981" />
+                  </TouchableOpacity>
                 )}
 
-                {/* Profile Switcher List with Dynamic Height & Scroll Event Handler */}
+                {/* Profile Switcher List with Dynamic Height & Step Scroll Reference */}
                 <ScrollView
+                  ref={profileListRef}
                   style={{ maxHeight: Math.min(visibleCount * 46, 320), marginVertical: 4 }}
                   showsVerticalScrollIndicator={true}
                   nestedScrollEnabled={true}
@@ -347,11 +390,11 @@ const HubScreen: React.FC = () => {
                   ))}
                 </ScrollView>
 
-                {/* Scroll Down Arrow Indicator */}
+                {/* Scroll Down Arrow Indicator with Tap Handler */}
                 {canScrollDown && profiles.length > visibleCount && (
-                  <View style={{ alignItems: 'center', marginVertical: -2 }}>
-                    <MaterialCommunityIcons name="chevron-down" size={20} color="#10b981" />
-                  </View>
+                  <TouchableOpacity onPress={scrollDownByStep} style={{ alignItems: 'center', marginVertical: -2, paddingVertical: 2 }}>
+                    <MaterialCommunityIcons name="chevron-down" size={22} color="#10b981" />
+                  </TouchableOpacity>
                 )}
               </View>
             ) : mode === 'RENAME' ? (
