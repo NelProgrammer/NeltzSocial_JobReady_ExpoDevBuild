@@ -174,6 +174,47 @@ const HubScreen: React.FC = () => {
     </TouchableOpacity>
   );
 
+  const UpcomingAppCard = ({
+    title,
+    description,
+    icon,
+    color,
+    gistMessage,
+  }: {
+    title: string;
+    description: string;
+    icon: string;
+    color: string;
+    gistMessage: string;
+  }) => (
+    <TouchableOpacity
+      style={[styles.cardContainer, { opacity: 0.75 }]}
+      onPress={() => {
+        Alert.alert(
+          `${title} (Coming Soon)`,
+          gistMessage,
+          [{ text: 'Got It', style: 'default' }]
+        );
+      }}
+    >
+      <Surface style={[styles.appCard, { borderColor: '#475569', borderWidth: 1 }]} elevation={1}>
+        <LinearGradient colors={[`${color}88`, `${color}44`]} style={styles.iconContainer}>
+          <MaterialCommunityIcons name={icon} size={32} color="#cbd5e1" />
+        </LinearGradient>
+        <View style={styles.cardText}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text variant="titleMedium" style={[styles.cardTitle, { color: '#e2e8f0' }]}>{title}</Text>
+            <View style={{ backgroundColor: '#334155', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 8 }}>
+              <Text style={{ color: '#94a3b8', fontSize: 9, fontWeight: 'bold' }}>UPCOMING</Text>
+            </View>
+          </View>
+          <Text variant="bodySmall" style={[styles.cardDesc, { color: '#94a3b8' }]} numberOfLines={2}>{description}</Text>
+        </View>
+        <MaterialCommunityIcons name="information-outline" size={22} color="#94a3b8" />
+      </Surface>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}>
@@ -219,17 +260,37 @@ const HubScreen: React.FC = () => {
           )}
         </LinearGradient>
 
+        {/* Active Tools Suite */}
         <View style={styles.menuContainer}>
           <Text variant="titleLarge" style={styles.sectionTitle}>Success Suite</Text>
           <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color="#6366f1" onPress={() => navigation.navigate('ResumeHome')} />
           <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
-          <AppCard title="Review & Publish" description="Get feedback from experts and showcase your profile." icon="check-decagram" color="#10b981" onPress={() => navigation.navigate('PublishReview')} />
-          <AppCard title="Taxi 2 Interview" description="Plan your commute and stay safe." icon="car-connected" color="#3b82f6" onPress={() => navigation.navigate('Taxi')} />
         </View>
 
-        <View style={styles.footer}>
-          <IconButton icon="dots-horizontal" />
-          <Text style={styles.footerText}>More Tools Coming Soon</Text>
+        {/* Upcoming Tools Section */}
+        <View style={[styles.menuContainer, { marginTop: 16 }]}>
+          <Text variant="titleLarge" style={styles.sectionTitle}>Upcoming Tools (Coming Soon)</Text>
+          <UpcomingAppCard
+            title="Review & Publish"
+            description="Expert review by Supervisors, Hiring Managers & HR Professionals."
+            icon="check-decagram"
+            color="#10b981"
+            gistMessage="Resume review and evaluation conducted by experienced human industry professionals — Supervisors, Hiring Managers, and HR Experts in your target field."
+          />
+          <UpcomingAppCard
+            title="Taxi 2 Interview"
+            description="Plan your interview commute & route safety."
+            icon="car-connected"
+            color="#3b82f6"
+            gistMessage="Commute route planning, taxi fare calculations, and interview safety alerts."
+          />
+          <UpcomingAppCard
+            title="Publish 2 Agencies"
+            description="Anonymized human-reviewed talent pipeline."
+            icon="account-group"
+            color="#a855f7"
+            gistMessage="Allows recruitment agencies to request anonymized but human-reviewed and scored candidate qualifications and work experience data. Agencies can filter for expert-reviewed and rated candidate profiles, drastically reducing recruitment overhead while protecting deserving candidates from flawed ATS algorithm filters."
+          />
         </View>
       </ScrollView>
 
