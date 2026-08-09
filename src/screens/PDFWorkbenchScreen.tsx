@@ -477,9 +477,8 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
                     <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub', { openSettings: true })} activeOpacity={0.7}>
                         <MaterialCommunityIcons name="cog-outline" size={22} color={theme.accent} />
                     </TouchableOpacity>
+                </View>
             </View>
-        </View>
-    );
 
             {/* Viewer Settings Modal Overlay (Draggable) */}
             {isSettingsOpen && (
