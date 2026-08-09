@@ -658,7 +658,7 @@ const HubScreen: React.FC = () => {
           }}
         >
           {previewItem && (
-            <>
+            <View>
               <View style={{ alignItems: 'center', paddingTop: 20, paddingBottom: 6 }}>
                 <LinearGradient colors={[previewItem.color, `${previewItem.color}88`]} style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
                   <MaterialCommunityIcons name={previewItem.icon} size={30} color="#fff" />
@@ -705,7 +705,7 @@ const HubScreen: React.FC = () => {
                   Got It
                 </Button>
               </Dialog.Actions>
-            </>
+            </View>
           )}
         </Dialog>
       </Portal>
