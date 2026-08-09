@@ -162,7 +162,7 @@ const HubScreen: React.FC = () => {
 
   const AppCard = ({ title, description, icon, color, onPress }: { title: string; description: string; icon: string; color: string; onPress: () => void }) => (
     <TouchableOpacity style={styles.cardContainer} onPress={onPress} activeOpacity={0.7}>
-      <Surface style={styles.appCard} elevation={2} pointerEvents="none">
+      <Surface style={styles.appCard} elevation={2}>
         <LinearGradient colors={[color, `${color}99`]} style={styles.iconContainer}>
           <MaterialCommunityIcons name={icon} size={32} color="#fff" />
         </LinearGradient>
@@ -193,7 +193,7 @@ const HubScreen: React.FC = () => {
       onPress={onPress}
       activeOpacity={0.7}
     >
-      <Surface style={[styles.appCard, { borderColor: '#475569', borderWidth: 1 }]} elevation={1} pointerEvents="none">
+      <Surface style={[styles.appCard, { borderColor: '#475569', borderWidth: 1 }]} elevation={1}>
         <LinearGradient colors={[`${color}88`, `${color}44`]} style={styles.iconContainer}>
           <MaterialCommunityIcons name={icon} size={32} color="#cbd5e1" />
         </LinearGradient>
@@ -657,56 +657,59 @@ const HubScreen: React.FC = () => {
             borderRadius: 16,
           }}
         >
-          {previewItem && (
-            <View>
-              <View style={{ alignItems: 'center', paddingTop: 20, paddingBottom: 6 }}>
-                <LinearGradient colors={[previewItem.color, `${previewItem.color}88`]} style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                  <MaterialCommunityIcons name={previewItem.icon} size={30} color="#fff" />
-                </LinearGradient>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={{ color: '#fff', fontSize: 17, fontWeight: 'bold', textAlign: 'center' }}>
-                    {previewItem.title}
-                  </Text>
-                  <View style={{ backgroundColor: '#334155', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
-                    <Text style={{ color: '#94a3b8', fontSize: 9, fontWeight: 'bold' }}>COMING SOON</Text>
-                  </View>
-                </View>
-                <Text style={{ color: '#94a3b8', fontSize: 12, marginTop: 4, textAlign: 'center', paddingHorizontal: 16 }}>
-                  {previewItem.subtitle}
+          {previewItem && [
+            <View key="header" style={{ alignItems: 'center', paddingTop: 20, paddingBottom: 6 }}>
+              <LinearGradient colors={[previewItem.color, `${previewItem.color}88`]} style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                <MaterialCommunityIcons name={previewItem.icon} size={30} color="#fff" />
+              </LinearGradient>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={{ color: '#fff', fontSize: 17, fontWeight: 'bold', textAlign: 'center' }}>
+                  {previewItem.title}
                 </Text>
-              </View>
-
-              <Dialog.Content style={{ paddingTop: 10, paddingBottom: 12 }}>
-                <View style={{ backgroundColor: '#0f172a', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#334155' }}>
-                  {previewItem.gistParagraphs.map((para, idx) => (
-                    <Text
-                      key={idx}
-                      style={{
-                        color: '#cbd5e1',
-                        fontSize: 13,
-                        lineHeight: 20,
-                        marginBottom: idx === previewItem.gistParagraphs.length - 1 ? 0 : 10,
-                      }}
-                    >
-                      {para}
-                    </Text>
-                  ))}
+                <View style={{ backgroundColor: '#334155', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                  <Text style={{ color: '#94a3b8', fontSize: 9, fontWeight: 'bold' }}>COMING SOON</Text>
                 </View>
-              </Dialog.Content>
+              </View>
+              <Text style={{ color: '#94a3b8', fontSize: 12, marginTop: 4, textAlign: 'center', paddingHorizontal: 16 }}>
+                {previewItem.subtitle}
+              </Text>
+            </View>,
 
-              <Dialog.Actions style={{ paddingHorizontal: 16, paddingBottom: 14 }}>
-                <Button
-                  mode="contained"
-                  buttonColor={previewItem.color}
-                  textColor="#fff"
-                  style={{ borderRadius: 8, width: '100%' }}
-                  onPress={() => setPreviewItem(null)}
-                >
-                  Got It
-                </Button>
-              </Dialog.Actions>
-            </View>
-          )}
+            <Dialog.Content key="content" style={{ paddingTop: 10, paddingBottom: 12 }}>
+              <View style={{ backgroundColor: '#0f172a', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#334155' }}>
+                {previewItem.gistParagraphs.map((para, idx) => (
+                  <Text
+                    key={idx}
+                    style={{
+                      color: '#cbd5e1',
+                      fontSize: 13,
+                      lineHeight: 20,
+                      marginBottom: idx === previewItem.gistParagraphs.length - 1 ? 0 : 10,
+                    }}
+                  >
+                    {para}
+                  </Text>
+                ))}
+              </View>
+            </Dialog.Content>,
+
+            <Dialog.Actions key="actions" style={{ paddingHorizontal: 16, paddingBottom: 14 }}>
+              <TouchableOpacity
+                onPress={() => setPreviewItem(null)}
+                style={{
+                  backgroundColor: previewItem.color,
+                  borderRadius: 8,
+                  width: '100%',
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>Got It</Text>
+              </TouchableOpacity>
+            </Dialog.Actions>
+          ]}
         </Dialog>
       </Portal>
     </View>
