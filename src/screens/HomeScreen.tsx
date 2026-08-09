@@ -119,7 +119,7 @@ const HomeScreen = () => {
     );
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.bgDark }]}>
+        <View style={[styles.container, { backgroundColor: theme.bgDark, paddingTop: insets.top }]}>
             {/* Header Banner */}
             <View style={[styles.headerBanner, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <View style={styles.headerRow}>

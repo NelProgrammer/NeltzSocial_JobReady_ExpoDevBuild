@@ -330,7 +330,7 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
     const isTargetGlowing = activeSide === 'target' && buildList.length > 0;
 
     return (
-        <View style={[styles.container, { backgroundColor: theme.bgDark }]}>
+        <View style={[styles.container, { backgroundColor: theme.bgDark, paddingTop: insets.top }]}>
             {/* Header Banner */}
             {!isFullScreenPreview && (
                 <View style={[styles.headerBanner, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>

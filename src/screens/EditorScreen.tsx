@@ -10,6 +10,9 @@ import Education from '../components/Education';
 import Skills from '../components/Skills';
 import References from '../components/References';
 
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useThemeContext } from '../context/ThemeContext';
+
 const Tab = createMaterialTopTabNavigator();
 
 type EditorScreenProps = {
@@ -21,6 +24,7 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
   const { resumeId } = route?.params ?? {};
   const resumeCtx = useContext(ResumeContext) as any;
   const { resumeData, switchResume, updateResumeData, meta, renameResume, duplicateResume } = resumeCtx;
+  const { theme } = useThemeContext();
   const insets = useSafeAreaInsets();
 
   const [renameDialogVisible, setRenameDialogVisible] = useState<boolean>(false);
@@ -32,82 +36,63 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
     }
   }, [resumeId]);
 
-  useEffect(() => {
-    const activeMeta = (meta as any).find((m: any) => m.id === resumeId);
-    const resumeName = activeMeta ? activeMeta.name : 'Resume Editor';
-    navigation.setOptions({
-      title: resumeName,
-      headerRight: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <IconButton
-            icon="content-copy"
-            iconColor="#fff"
-            size={20}
-            style={{ margin: 0 }}
-            onPress={() => {
-              Alert.alert('Duplicate CV', 'Create a copy of this Resume?', [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Copy',
-                  onPress: async () => {
-                    const newId = await duplicateResume(resumeId);
-                    if (newId) {
-                      navigation.setParams({ resumeId: newId });
-                    }
-                  },
-                },
-              ]);
-            }}
-          />
-          <IconButton
-            icon="pencil"
-            iconColor="#fff"
-            size={20}
-            style={{ margin: 0 }}
-            onPress={() => {
-              setNewName(resumeName);
-              setRenameDialogVisible(true);
-            }}
-          />
-          <IconButton
-            icon="close"
-            iconColor="#fff"
-            size={22}
-            style={{ margin: 0 }}
-            onPress={() => navigation.goBack()}
-          />
-        </View>
-      ),
-    });
-  }, [navigation, meta, resumeId]);
-
-  const currentLayout = resumeData?.Layout || 'professional';
-
-  const changeLayout = (newLayout: string) => {
-    updateResumeData({ ...resumeData, Layout: newLayout });
-  };
+  const activeMeta = (meta as any)?.find((m: any) => m.id === resumeId);
+  const resumeName = activeMeta ? activeMeta.name : 'Resume Editor';
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
-      <Tab.Navigator
-        screenOptions={{
-          tabBarScrollEnabled: true,
-          tabBarLabelStyle: { fontSize: 12, fontWeight: 'bold', textTransform: 'none' },
-          tabBarItemStyle: { width: 'auto' },
-          tabBarIndicatorStyle: { backgroundColor: '#6200ee' },
-        }}
-      >
-        <Tab.Screen name="Personal" component={PersonalDetails} />
-        <Tab.Screen name="Experience" component={Experience} />
-        <Tab.Screen name="Education" component={Education} />
-        <Tab.Screen name="Skills" component={Skills} />
-        <Tab.Screen name="References" component={References} />
-      </Tab.Navigator>
+    <View style={[styles.container, { backgroundColor: theme.bgDark, paddingTop: insets.top }]}>
+      {/* Header Banner */}
+      <View style={[styles.headerBanner, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]} onPress={() => navigation.navigate('ResumeHome')} activeOpacity={0.7}>
+            <MaterialCommunityIcons name="arrow-left" size={20} color={theme.textPrimary} />
+          </TouchableOpacity>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>{resumeName}</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: 11 }}>Resume Builder & Edit Mode</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]} onPress={() => { setNewName(resumeName); setRenameDialogVisible(true); }}>
+              <MaterialCommunityIcons name="pencil" size={18} color={theme.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Text style={[styles.subtitleCentered, { color: theme.textSecondary }]}>Edit Personal, Experience, Education, Skills & References</Text>
+      </View>
 
-      <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 15) }]}>
-        <Button mode="contained" icon="eye" onPress={() => navigation.navigate('Preview', { resumeId })} style={styles.previewBtn} contentStyle={{ height: 50 }}>
-          Preview Resume
-        </Button>
+      {/* Body Card Container wrapping Tab.Navigator */}
+      <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+        <Tab.Navigator
+          screenOptions={{
+            tabBarScrollEnabled: true,
+            tabBarLabelStyle: { fontSize: 11, fontWeight: 'bold', textTransform: 'none', color: theme.textPrimary },
+            tabBarItemStyle: { width: 'auto', paddingHorizontal: 12 },
+            tabBarIndicatorStyle: { backgroundColor: theme.accent, height: 3 },
+            tabBarStyle: { backgroundColor: theme.bgDark, borderBottomWidth: 1, borderBottomColor: theme.border },
+          }}
+        >
+          <Tab.Screen name="Personal" component={PersonalDetails} />
+          <Tab.Screen name="Experience" component={Experience} />
+          <Tab.Screen name="Education" component={Education} />
+          <Tab.Screen name="Skills" component={Skills} />
+          <Tab.Screen name="References" component={References} />
+        </Tab.Navigator>
+      </View>
+
+      {/* Persistent Sticky Footer Card */}
+      <View style={[styles.footerCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+        <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub')} activeOpacity={0.7}>
+          <MaterialCommunityIcons name="home-outline" size={22} color={theme.textPrimary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.accent }]} onPress={() => navigation.navigate('Preview', { resumeId })} activeOpacity={0.8}>
+          <MaterialCommunityIcons name="eye" size={18} color="#fff" style={{ marginRight: 6 }} />
+          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13 }}>Preview CV</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub', { openSettings: true })} activeOpacity={0.7}>
+          <MaterialCommunityIcons name="cog-outline" size={22} color={theme.accent} />
+        </TouchableOpacity>
       </View>
 
       <Portal>
@@ -136,18 +121,71 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  bottomContainer: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderTopWidth: 1,
-    borderColor: '#eee',
-    elevation: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  container: {
+    flex: 1,
   },
-  previewBtn: { borderRadius: 8 },
+  headerBanner: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  navBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  subtitleCentered: {
+    textAlign: 'center',
+    fontSize: 11,
+    marginTop: 4,
+  },
+  bodyCard: {
+    flex: 1,
+    marginHorizontal: 8,
+    marginTop: 8,
+    marginBottom: 60,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  footerCard: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 56,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    borderTopWidth: 1.5,
+    zIndex: 100,
+    elevation: 10,
+  },
+  footerIconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
 });
 
 export default EditorScreen;

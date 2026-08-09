@@ -451,11 +451,82 @@ const PreviewScreen = ({ navigation }) => {
         }
     };
 
-    useEffect(() => {
-        navigation.setOptions({
-            headerRight: () => (
-                <Appbar.Action
-                    icon="share-variant"
+    return (
+        <View style={[styles.container, { backgroundColor: theme.bgDark, paddingTop: insets.top }]}>
+            {/* Header Banner */}
+            <View style={[styles.headerBanner, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+                        <MaterialCommunityIcons name="arrow-left" size={20} color={theme.textPrimary} />
+                    </TouchableOpacity>
+                    <View style={{ alignItems: 'center' }}>
+                        <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Resume Preview</Text>
+                        <Text style={{ color: theme.textSecondary, fontSize: 11 }}>Format Selector & Export Engine</Text>
+                    </View>
+                    <View style={[styles.themeBadge, { backgroundColor: theme.accent }]}>
+                        <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>Preview Mode</Text>
+                    </View>
+                </View>
+                <Text style={[styles.subtitleCentered, { color: theme.textSecondary }]}>Select template layout and export to PDF, Word or Google Docs</Text>
+            </View>
+
+            {/* Unified Body Card Container */}
+            <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+                <View style={styles.topContainer}>
+                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Select CV Format (Layout)</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.layoutScroll}>
+                        {['professional', 'modern', 'minimalist', 'chronological', 'functional'].map((l) => (
+                            <TouchableOpacity key={l} onPress={() => changeLayout(l)}>
+                                <Card style={[styles.layoutCard, { backgroundColor: theme.bgDark, borderColor: currentLayout === l ? theme.accent : theme.border }]}>
+                                    <Card.Content style={styles.cardContent}>
+                                        <Text style={[styles.layoutText, { color: currentLayout === l ? theme.accent : theme.textPrimary }]}>{l.toUpperCase()}</Text>
+                                    </Card.Content>
+                                </Card>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+
+                <View style={styles.previewArea}>
+                    <SmartPreviewer 
+                        data={resumeData} 
+                        layout={currentLayout} 
+                        exportFormat={exportFormat} 
+                        pdfUri={previewUri} 
+                        isGenerating={isGeneratingPdf} 
+                    />
+                </View>
+
+                <View style={styles.exportSection}>
+                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Select Export Format</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+                        {[
+                            { key: 'pdf', label: 'PDF' },
+                            { key: 'word_layout', label: 'Word (Layout)' },
+                            { key: 'word_text', label: 'Word (Text)' },
+                            { key: 'google_docs', label: 'Google Docs' },
+                        ].map((f) => (
+                            <TouchableOpacity key={f.key} onPress={() => setExportFormat(f.key)}>
+                                <Card style={[styles.layoutCard, { backgroundColor: theme.bgDark, borderColor: exportFormat === f.key ? theme.accent : theme.border }]}>
+                                    <Card.Content style={styles.cardContent}>
+                                        <Text style={[styles.layoutText, { color: exportFormat === f.key ? theme.accent : theme.textPrimary }]}>{f.label}</Text>
+                                    </Card.Content>
+                                </Card>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+            </View>
+
+            {/* Persistent Sticky Footer Card */}
+            <View style={[styles.footerCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub')} activeOpacity={0.7}>
+                    <MaterialCommunityIcons name="home-outline" size={22} color={theme.textPrimary} />
+                </TouchableOpacity>
+
+                <Button
+                    mode="contained"
+                    icon={exportFormat === 'pdf' ? "file-pdf-box" : "file-word-box"}
                     onPress={() => {
                         if (exportFormat === 'pdf') {
                             printToFile();
@@ -463,136 +534,38 @@ const PreviewScreen = ({ navigation }) => {
                             exportToWord(exportFormat === 'word_text' ? 'text' : 'layout');
                         }
                     }}
-                />
-            ),
-        });
-    }, [navigation, exportFormat, resumeData]);
-
-    return (
-        <View style={styles.container}>
-            <View style={styles.topContainer}>
-                <Text style={styles.sectionTitle}>Select CV Format (Layout) 👉 Swipe for more</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={true} style={styles.layoutScroll}>
-                    <TouchableOpacity onPress={() => changeLayout('professional')}>
-                        <Card style={[styles.layoutCard, currentLayout === 'professional' && styles.activeCard]}>
-                            <Card.Content style={styles.cardContent}>
-                                <Text style={[styles.layoutText, currentLayout === 'professional' && styles.activeText]}>Professional</Text>
-                            </Card.Content>
-                        </Card>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => changeLayout('modern')}>
-                        <Card style={[styles.layoutCard, currentLayout === 'modern' && styles.activeCard]}>
-                            <Card.Content style={styles.cardContent}>
-                                <Text style={[styles.layoutText, currentLayout === 'modern' && styles.activeText]}>Modern</Text>
-                            </Card.Content>
-                        </Card>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => changeLayout('minimalist')}>
-                        <Card style={[styles.layoutCard, currentLayout === 'minimalist' && styles.activeCard]}>
-                            <Card.Content style={styles.cardContent}>
-                                <Text style={[styles.layoutText, currentLayout === 'minimalist' && styles.activeText]}>Minimalist</Text>
-                            </Card.Content>
-                        </Card>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => changeLayout('chronological')}>
-                        <Card style={[styles.layoutCard, currentLayout === 'chronological' && styles.activeCard]}>
-                            <Card.Content style={styles.cardContent}>
-                                <Text style={[styles.layoutText, currentLayout === 'chronological' && styles.activeText]}>Chronological</Text>
-                            </Card.Content>
-                        </Card>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => changeLayout('functional')}>
-                        <Card style={[styles.layoutCard, currentLayout === 'functional' && styles.activeCard]}>
-                            <Card.Content style={styles.cardContent}>
-                                <Text style={[styles.layoutText, currentLayout === 'functional' && styles.activeText]}>Functional</Text>
-                            </Card.Content>
-                        </Card>
-                    </TouchableOpacity>
-                </ScrollView>
-            </View>
-
-            <View style={styles.previewArea}>
-                <SmartPreviewer 
-                    data={resumeData} 
-                    layout={currentLayout} 
-                    exportFormat={exportFormat} 
-                    pdfUri={previewUri} 
-                    isGenerating={isGeneratingPdf} 
-                />
-            </View>
-
-            <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 15) }]}>
-                <Text style={styles.sectionTitle}>Select Export Format 👉 Swipe for more</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={true} style={{ marginBottom: 15 }}>
-                    <TouchableOpacity onPress={() => setExportFormat('pdf')}>
-                        <Card style={[styles.layoutCard, exportFormat === 'pdf' && styles.activeCard]}>
-                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 15 }]}>
-                                <Text style={[styles.layoutText, exportFormat === 'pdf' && styles.activeText, { textAlign: 'center' }]}>PDF</Text>
-                            </Card.Content>
-                        </Card>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setExportFormat('word_layout')}>
-                        <Card style={[styles.layoutCard, exportFormat === 'word_layout' && styles.activeCard]}>
-                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 15 }]}>
-                                <Text style={[styles.layoutText, exportFormat === 'word_layout' && styles.activeText, { textAlign: 'center' }]}>Word (Layout)</Text>
-                            </Card.Content>
-                        </Card>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setExportFormat('word_text')}>
-                        <Card style={[styles.layoutCard, exportFormat === 'word_text' && styles.activeCard]}>
-                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 15 }]}>
-                                <Text style={[styles.layoutText, exportFormat === 'word_text' && styles.activeText, { textAlign: 'center' }]}>Word (Text)</Text>
-                            </Card.Content>
-                        </Card>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setExportFormat('google_docs')}>
-                        <Card style={[styles.layoutCard, exportFormat === 'google_docs' && styles.activeCard, { marginRight: 0 }]}>
-                            <Card.Content style={[styles.cardContent, { paddingHorizontal: 15 }]}>
-                                <Text style={[styles.layoutText, exportFormat === 'google_docs' && styles.activeText, { textAlign: 'center' }]}>Google Docs</Text>
-                            </Card.Content>
-                        </Card>
-                    </TouchableOpacity>
-                </ScrollView>
-                <Button
-                    mode="contained"
-                    icon={exportFormat === 'pdf' ? "file-pdf-box" : exportFormat === 'google_docs' ? "google-drive" : "file-word-box"}
-                    onPress={() => {
-                        if (exportFormat === 'pdf') {
-                            printToFile();
-                        } else {
-                            // Map exportFormat states to exportToWord types
-                            const typeMap = {
-                                'word_text': 'text',
-                                'word_layout': 'layout',
-                                'google_docs': 'google_docs'
-                            };
-                            exportToWord(typeMap[exportFormat]);
-                        }
-                    }}
-                    loading={loading && exportFormat === 'pdf'}
-                    style={styles.exportBtn}
-                    contentStyle={{ height: 50 }}
+                    loading={loading}
+                    style={{ borderRadius: 20, backgroundColor: theme.accent }}
                 >
-                    Generate File / Export
+                    Export File
                 </Button>
+
+                <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub', { openSettings: true })} activeOpacity={0.7}>
+                    <MaterialCommunityIcons name="cog-outline" size={22} color={theme.accent} />
+                </TouchableOpacity>
             </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    topContainer: { backgroundColor: '#fff', paddingHorizontal: 15, paddingTop: 5, paddingBottom: 10, borderBottomWidth: 1, borderColor: '#eee', elevation: 2 },
-    sectionTitle: { fontSize: 11, fontWeight: 'bold', marginBottom: 8, color: '#777', textTransform: 'uppercase' },
-    layoutScroll: { paddingBottom: 5 },
-    layoutCard: { marginRight: 10, backgroundColor: '#f9f9f9', borderWidth: 2, borderColor: 'transparent', borderRadius: 8 },
-    activeCard: { borderColor: '#6200ee', backgroundColor: '#efe9ff' },
-    cardContent: { paddingVertical: 10, paddingHorizontal: 15 },
-    layoutText: { fontWeight: 'bold', color: '#555' },
-    activeText: { color: '#6200ee' },
-    previewArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    bottomContainer: { backgroundColor: '#fff', padding: 15, borderTopWidth: 1, borderColor: '#eee', elevation: 15, shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-    exportBtn: { borderRadius: 8 }
+    container: { flex: 1 },
+    headerBanner: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10, borderBottomWidth: 1 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    navBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+    subtitleCentered: { textAlign: 'center', fontSize: 11, marginTop: 4 },
+    themeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+    bodyCard: { flex: 1, marginHorizontal: 8, marginTop: 8, marginBottom: 60, borderRadius: 16, borderWidth: 1, overflow: 'hidden', padding: 8 },
+    topContainer: { paddingHorizontal: 4, paddingTop: 4, paddingBottom: 8 },
+    sectionTitle: { fontSize: 11, fontWeight: 'bold', marginBottom: 6, textTransform: 'uppercase' },
+    layoutScroll: { paddingBottom: 4 },
+    layoutCard: { marginRight: 8, borderWidth: 1.5, borderRadius: 8 },
+    cardContent: { paddingVertical: 6, paddingHorizontal: 12 },
+    layoutText: { fontWeight: 'bold', fontSize: 12 },
+    previewArea: { flex: 1, justifyContent: 'center', alignItems: 'center', marginVertical: 4 },
+    exportSection: { paddingHorizontal: 4, paddingTop: 4, paddingBottom: 4 },
+    footerCard: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, borderTopWidth: 1.5, zIndex: 100, elevation: 10 },
+    footerIconBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' }
 });
 
 export default PreviewScreen;
