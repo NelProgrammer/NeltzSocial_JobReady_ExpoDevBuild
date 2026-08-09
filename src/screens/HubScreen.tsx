@@ -9,6 +9,7 @@ import { Storage } from '../utils/storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNetInfo } from '@react-native-community/netinfo';
 
 const { width } = Dimensions.get('window');
 
@@ -18,6 +19,8 @@ const HubScreen: React.FC = () => {
   const navigation = useNavigation<Navigation>();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const netInfo = useNetInfo();
+  const isConnected = netInfo.isConnected ?? true;
   const authCtx = useContext(AuthContext) as any;
   const { user, logout, deleteProfile, profiles, login, createProfile, changeProfilePassword } = authCtx;
   const { meta } = useContext(ResumeContext) as any;
@@ -214,30 +217,59 @@ const HubScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}>
-        <LinearGradient colors={['#0f172a', '#1e293b']} style={[styles.header, { paddingTop: insets.top + 12 }] }>
+        <LinearGradient colors={['#0f172a', '#1e293b']} style={[styles.header, { paddingTop: insets.top + 8 }] }>
           <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
             <MaterialCommunityIcons name="power" size={16} color="#fff" />
             <Text style={styles.exitBtnTopLeftText}>Exit App</Text>
           </TouchableOpacity>
-          <View style={styles.headerTop}>
-            <View style={styles.headerLeft}>
-              <Text variant="headlineMedium" style={styles.welcomeText}>Hello, {user?.name || 'Guest'}</Text>
-              <Text variant="bodyLarge" style={styles.subtitleText}>{user?.email || (user?.isGuest ? 'Guest Sandbox Session' : `ID: ${user?.id}`)}</Text>
-              <Text variant="bodySmall" style={styles.dashboardSubtitle}>Your career dashboard is ready.</Text>
-            </View>
 
-            {/* Interactive Header Profile Badge */}
-            <TouchableOpacity style={styles.badgeContainer} onPress={() => { setMode('VIEW'); setModalVisible(true); }}>
-              <View style={[styles.stagePill, { backgroundColor: stageInfo.color }]}>
-                <Text style={styles.stagePillText}>{stageInfo.label}</Text>
-              </View>
+          <View style={styles.headerTop}>
+            {/* Avatar + User Name & Email Column (Taps -> Profile Mgmt Modal) */}
+            <TouchableOpacity
+              style={styles.avatarUserColumn}
+              onPress={() => { setMode('VIEW'); setModalVisible(true); }}
+              activeOpacity={0.7}
+            >
               {user?.avatar ? (
-                <Avatar.Image size={42} source={{ uri: user.avatar }} />
+                <Avatar.Image size={46} source={{ uri: user.avatar }} />
               ) : (
-                <Avatar.Text size={42} label={getInitials(user?.name)} style={styles.avatarFallback} />
+                <Avatar.Text size={46} label={getInitials(user?.name)} style={styles.avatarFallback} />
               )}
+              <View style={styles.userInfoTextCol}>
+                <Text variant="headlineSmall" style={styles.userNameText}>{user?.name || 'Guest'}</Text>
+                <Text variant="bodyMedium" style={styles.userEmailText}>{user?.email || (user?.isGuest ? 'Guest Sandbox Session' : `ID: ${user?.id}`)}</Text>
+              </View>
             </TouchableOpacity>
+
+            {/* Right Controls: Upgrade Status Pill (Taps -> Upgrade Flow) + Connectivity Status Pill */}
+            <View style={styles.rightControlsCol}>
+              <TouchableOpacity
+                style={[styles.stagePill, { backgroundColor: stageInfo.color }]}
+                onPress={() => {
+                  if (user?.isGuest) {
+                    setInputName(user?.name || '');
+                    setMode('CREATE_LOCAL');
+                  } else {
+                    setMode('UPGRADE_ONLINE');
+                  }
+                  setModalVisible(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.stagePillText}>{stageInfo.label}</Text>
+              </TouchableOpacity>
+
+              <View style={styles.connPill}>
+                <View style={[styles.connDot, { backgroundColor: isConnected ? '#10b981' : '#ef4444' }]} />
+                <Text style={styles.connText}>{isConnected ? 'CONNECTED' : 'DISCONNECTED'}</Text>
+              </View>
+            </View>
           </View>
+
+          {/* Centered Dashboard Subtitle Banner */}
+          <Text style={styles.dashboardSubtitleCentered}>
+            Your career dashboard is ready.
+          </Text>
 
           {/* DOB Password Countdown Warning Banner */}
           {user && user.passwordChangeCountdown !== undefined && user.passwordChangeCountdown > 0 && (
@@ -256,66 +288,83 @@ const HubScreen: React.FC = () => {
           )}
         </LinearGradient>
 
-        {/* Success Suite Section */}
-        <View style={styles.menuContainer}>
-          <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
-          <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color="#6366f1" onPress={() => navigation.navigate('ResumeHome')} />
-          <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
-        </View>
+        {/* Unified Body Card Container */}
+        <Surface style={styles.bodyCardContainer} elevation={2}>
+          {/* Success Suite Section */}
+          <View style={styles.menuContainer}>
+            <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
+            <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color="#6366f1" onPress={() => navigation.navigate('ResumeHome')} />
+            <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
+          </View>
 
-        {/* Upcoming Tools Section */}
-        <View style={[styles.menuContainer, { marginTop: 16 }]}>
-          <Text variant="titleLarge" style={styles.sectionTitle}>Upcoming Tools (Coming Soon)</Text>
-          <UpcomingAppCard
-            title="Publish for Review"
-            description="Expert HR & Manager resume evaluation."
-            icon="check-decagram"
-            color="#10b981"
-            onPress={() => setPreviewItem({
-              title: "Publish for Review",
-              subtitle: "Expert HR & Manager resume evaluation.",
-              icon: "check-decagram",
-              color: "#10b981",
-              gistParagraphs: [
-                "Resume review and evaluation conducted by experienced human industry professionals — Supervisors, Hiring Managers, and HR Experts in your target field.",
-                "Receive actionable feedback, section ratings, and improvement suggestions before sharing your profile with prospective employers."
-              ]
-            })}
-          />
-          <UpcomingAppCard
-            title="Travel to Interview"
-            description="Commute route planning & taxi safety."
-            icon="car-connected"
-            color="#3b82f6"
-            onPress={() => setPreviewItem({
-              title: "Travel to Interview",
-              subtitle: "Commute route planning & taxi safety.",
-              icon: "car-connected",
-              color: "#3b82f6",
-              gistParagraphs: [
-                "Commute route planning, taxi fare calculations, and interview safety alerts.",
-                "Plan your travel schedule with real-time route estimates to ensure you arrive on time and stress-free for your interview."
-              ]
-            })}
-          />
-          <UpcomingAppCard
-            title="Publish to Reviewers"
-            description="Human-reviewed talent pool for recruiters."
-            icon="account-group"
-            color="#a855f7"
-            onPress={() => setPreviewItem({
-              title: "Publish to Reviewers",
-              subtitle: "Human-reviewed talent pool for recruiters.",
-              icon: "account-group",
-              color: "#a855f7",
-              gistParagraphs: [
-                "Allows recruitment agencies and vetted employers to request anonymized candidate qualifications and work experience data.",
-                "Recruiters can filter for expert-reviewed and rated candidate profiles, drastically reducing recruitment overhead while protecting deserving candidates from flawed ATS algorithm filters."
-              ]
-            })}
-          />
-        </View>
+          {/* Upcoming Tools Section */}
+          <View style={[styles.menuContainer, { marginTop: 16 }]}>
+            <Text variant="titleLarge" style={styles.sectionTitle}>Upcoming Tools (Coming Soon)</Text>
+            <UpcomingAppCard
+              title="Publish for Review"
+              description="Expert HR & Manager resume evaluation."
+              icon="check-decagram"
+              color="#10b981"
+              onPress={() => setPreviewItem({
+                title: "Publish for Review",
+                subtitle: "Expert HR & Manager resume evaluation.",
+                icon: "check-decagram",
+                color: "#10b981",
+                gistParagraphs: [
+                  "Resume review and evaluation conducted by experienced human industry professionals — Supervisors, Hiring Managers, and HR Experts in your target field.",
+                  "Receive actionable feedback, section ratings, and improvement suggestions before sharing your profile with prospective employers."
+                ]
+              })}
+            />
+            <UpcomingAppCard
+              title="Travel to Interview"
+              description="Commute route planning & taxi safety."
+              icon="car-connected"
+              color="#3b82f6"
+              onPress={() => setPreviewItem({
+                title: "Travel to Interview",
+                subtitle: "Commute route planning & taxi safety.",
+                icon: "car-connected",
+                color: "#3b82f6",
+                gistParagraphs: [
+                  "Commute route planning, taxi fare calculations, and interview safety alerts.",
+                  "Plan your travel schedule with real-time route estimates to ensure you arrive on time and stress-free for your interview."
+                ]
+              })}
+            />
+            <UpcomingAppCard
+              title="Publish to Reviewers"
+              description="Human-reviewed talent pool for recruiters."
+              icon="account-group"
+              color="#a855f7"
+              onPress={() => setPreviewItem({
+                title: "Publish to Reviewers",
+                subtitle: "Human-reviewed talent pool for recruiters.",
+                icon: "account-group",
+                color: "#a855f7",
+                gistParagraphs: [
+                  "Allows recruitment agencies and vetted employers to request anonymized candidate qualifications and work experience data.",
+                  "Recruiters can filter for expert-reviewed and rated candidate profiles, drastically reducing recruitment overhead while protecting deserving candidates from flawed ATS algorithm filters."
+                ]
+              })}
+            />
+          </View>
+        </Surface>
       </ScrollView>
+
+      {/* Persistent Sticky Footer Card */}
+      <Surface style={[styles.footerCard, { paddingBottom: Math.max(insets.bottom, 10) }]} elevation={5}>
+        <TouchableOpacity style={styles.burgerBtn} onPress={() => { setMode('VIEW'); setModalVisible(true); }} activeOpacity={0.7}>
+          <MaterialCommunityIcons name="menu" size={24} color="#fff" />
+        </TouchableOpacity>
+        <View style={styles.footerTitleCol}>
+          <Text style={styles.footerTitleText}>JobReady Hub</Text>
+          <Text style={styles.footerSubtitleText}>Career & Interview Suite</Text>
+        </View>
+        <TouchableOpacity style={styles.footerSettingsBtn} onPress={() => { setMode('SETTINGS'); setModalVisible(true); }} activeOpacity={0.7}>
+          <MaterialCommunityIcons name="cog-outline" size={22} color="#94a3b8" />
+        </TouchableOpacity>
+      </Surface>
 
       {/* Profile Upgrade & Account Settings Popup Modal */}
       <Portal>
@@ -720,17 +769,28 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
   scrollView: { flex: 1 },
   scrollContent: { paddingHorizontal: 16 },
-  header: { paddingBottom: 24, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, paddingHorizontal: 20 },
-  exitBtnTopLeft: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
+  header: { paddingBottom: 12, borderBottomLeftRadius: 20, borderBottomRightRadius: 20, paddingHorizontal: 16 },
+  exitBtnTopLeft: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)' },
   exitBtnTopLeftText: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: 'bold', marginLeft: 6, textTransform: 'uppercase', letterSpacing: 0.5 },
-  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  welcomeText: { color: '#fff', fontWeight: 'bold', fontSize: 22 },
-  subtitleText: { color: 'rgba(255,255,255,0.8)', marginTop: 2, fontSize: 13 },
-  dashboardSubtitle: { color: 'rgba(255,255,255,0.6)', marginTop: 2, fontSize: 11 },
-  headerLeft: { flex: 1 },
-  badgeContainer: { alignItems: 'center', justifyContent: 'center', marginLeft: 10 },
-  stagePill: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginBottom: 4 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  avatarUserColumn: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },
+  userInfoTextCol: { justifyContent: 'center', flex: 1 },
+  userNameText: { color: '#fff', fontWeight: 'bold', fontSize: 19 },
+  userEmailText: { color: '#94a3b8', fontSize: 12, marginTop: 1 },
+  rightControlsCol: { alignItems: 'flex-end', justifyContent: 'center', gap: 6, marginLeft: 10 },
+  stagePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   stagePillText: { color: '#fff', fontSize: 9, fontWeight: 'bold', letterSpacing: 0.5 },
+  connPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: '#334155', gap: 5 },
+  connDot: { width: 6, height: 6, borderRadius: 3 },
+  connText: { color: '#cbd5e1', fontSize: 9, fontWeight: 'bold', letterSpacing: 0.5 },
+  dashboardSubtitleCentered: { color: '#e2e8f0', textAlign: 'center', marginTop: 8, fontSize: 15, fontWeight: '600', letterSpacing: 0.3 },
+  bodyCardContainer: { backgroundColor: '#1e293b', borderRadius: 20, borderWidth: 1.5, borderColor: '#334155', padding: 16, marginTop: 12, marginBottom: 0 },
+  footerCard: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0f172a', borderTopWidth: 1.5, borderColor: '#334155', paddingTop: 10, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  burgerBtn: { backgroundColor: '#1e293b', padding: 8, borderRadius: 10, borderWidth: 1, borderColor: '#334155' },
+  footerTitleCol: { alignItems: 'center', justifyContent: 'center' },
+  footerTitleText: { color: '#fff', fontWeight: 'bold', fontSize: 14, letterSpacing: 0.5 },
+  footerSubtitleText: { color: '#94a3b8', fontSize: 10, marginTop: 1 },
+  footerSettingsBtn: { backgroundColor: '#1e293b', padding: 8, borderRadius: 10, borderWidth: 1, borderColor: '#334155' },
   avatarFallback: { backgroundColor: '#6366f1' },
   warningBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#334155', padding: 10, borderRadius: 12, marginTop: 10, borderWidth: 1, borderColor: '#f59e0b' },
   warningTitle: { color: '#f59e0b', fontSize: 11, fontWeight: 'bold' },
