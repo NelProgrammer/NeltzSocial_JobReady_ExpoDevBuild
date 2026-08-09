@@ -35,6 +35,7 @@ const HubScreen: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(true);
+  const [previewItem, setPreviewItem] = useState<{ title: string; subtitle: string; icon: string; color: string; gistMessage: string } | null>(null);
 
   const currentScrollTop = useRef(0);
   const profileListRef = useRef<ScrollView>(null);
@@ -160,8 +161,8 @@ const HubScreen: React.FC = () => {
   const stageInfo = getStageTag();
 
   const AppCard = ({ title, description, icon, color, onPress }: { title: string; description: string; icon: string; color: string; onPress: () => void }) => (
-    <TouchableOpacity style={styles.cardContainer} onPress={onPress}>
-      <Surface style={styles.appCard} elevation={2}>
+    <TouchableOpacity style={styles.cardContainer} onPress={onPress} activeOpacity={0.7}>
+      <Surface style={styles.appCard} elevation={2} pointerEvents="none">
         <LinearGradient colors={[color, `${color}99`]} style={styles.iconContainer}>
           <MaterialCommunityIcons name={icon} size={32} color="#fff" />
         </LinearGradient>
@@ -179,25 +180,20 @@ const HubScreen: React.FC = () => {
     description,
     icon,
     color,
-    gistMessage,
+    onPress,
   }: {
     title: string;
     description: string;
     icon: string;
     color: string;
-    gistMessage: string;
+    onPress: () => void;
   }) => (
     <TouchableOpacity
       style={[styles.cardContainer, { opacity: 0.75 }]}
-      onPress={() => {
-        Alert.alert(
-          `${title} (Coming Soon)`,
-          gistMessage,
-          [{ text: 'Got It', style: 'default' }]
-        );
-      }}
+      onPress={onPress}
+      activeOpacity={0.7}
     >
-      <Surface style={[styles.appCard, { borderColor: '#475569', borderWidth: 1 }]} elevation={1}>
+      <Surface style={[styles.appCard, { borderColor: '#475569', borderWidth: 1 }]} elevation={1} pointerEvents="none">
         <LinearGradient colors={[`${color}88`, `${color}44`]} style={styles.iconContainer}>
           <MaterialCommunityIcons name={icon} size={32} color="#cbd5e1" />
         </LinearGradient>
@@ -208,7 +204,7 @@ const HubScreen: React.FC = () => {
               <Text style={{ color: '#94a3b8', fontSize: 9, fontWeight: 'bold' }}>UPCOMING</Text>
             </View>
           </View>
-          <Text variant="bodySmall" style={[styles.cardDesc, { color: '#94a3b8' }]} numberOfLines={2}>{description}</Text>
+          <Text variant="bodySmall" style={[styles.cardDesc, { color: '#94a3b8' }]} numberOfLines={1}>{description}</Text>
         </View>
         <MaterialCommunityIcons name="information-outline" size={22} color="#94a3b8" />
       </Surface>
@@ -243,14 +239,14 @@ const HubScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {/* DOB 5-Login Countdown Warning Banner */}
-          {user && user.passwordChangeCountdown !== undefined && user.passwordChangeCountdown >= 0 && (
+          {/* DOB Password Countdown Warning Banner */}
+          {user && user.passwordChangeCountdown !== undefined && user.passwordChangeCountdown > 0 && (
             <Surface style={styles.warningBanner} elevation={3}>
-              <MaterialCommunityIcons name="shield-alert" size={20} color="#f59e0b" />
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.warningTitle}>Default Password Warning</Text>
+              <MaterialCommunityIcons name="clock-alert-outline" size={24} color="#f59e0b" style={{ marginRight: 10 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.warningTitle}>Security Warning: DOB Password</Text>
                 <Text style={styles.warningDesc}>
-                  Please change your default DOB password ({user.passwordChangeCountdown} logins remaining).
+                  Please change default password ({user.passwordChangeCountdown} logins remaining)
                 </Text>
               </View>
               <TouchableOpacity style={styles.changePassBtn} onPress={() => { setMode('CHANGE_PASSWORD'); setModalVisible(true); }}>
@@ -272,24 +268,42 @@ const HubScreen: React.FC = () => {
           <Text variant="titleLarge" style={styles.sectionTitle}>Upcoming Tools (Coming Soon)</Text>
           <UpcomingAppCard
             title="Review & Publish"
-            description="Expert review by Supervisors, Hiring Managers & HR Professionals."
+            description="Expert HR & Manager resume evaluation."
             icon="check-decagram"
             color="#10b981"
-            gistMessage="Resume review and evaluation conducted by experienced human industry professionals — Supervisors, Hiring Managers, and HR Experts in your target field."
+            onPress={() => setPreviewItem({
+              title: "Review & Publish",
+              subtitle: "Expert HR & Manager resume evaluation.",
+              icon: "check-decagram",
+              color: "#10b981",
+              gistMessage: "Resume review and evaluation conducted by experienced human industry professionals — Supervisors, Hiring Managers, and HR Experts in your target field."
+            })}
           />
           <UpcomingAppCard
             title="Taxi 2 Interview"
-            description="Plan your interview commute & route safety."
+            description="Commute route planning & taxi safety."
             icon="car-connected"
             color="#3b82f6"
-            gistMessage="Commute route planning, taxi fare calculations, and interview safety alerts."
+            onPress={() => setPreviewItem({
+              title: "Taxi 2 Interview",
+              subtitle: "Commute route planning & taxi safety.",
+              icon: "car-connected",
+              color: "#3b82f6",
+              gistMessage: "Commute route planning, taxi fare calculations, and interview safety alerts."
+            })}
           />
           <UpcomingAppCard
             title="Publish 2 Agencies"
-            description="Anonymized human-reviewed talent pipeline."
+            description="Human-reviewed talent pool for recruiters."
             icon="account-group"
             color="#a855f7"
-            gistMessage="Allows recruitment agencies to request anonymized but human-reviewed and scored candidate qualifications and work experience data. Agencies can filter for expert-reviewed and rated candidate profiles, drastically reducing recruitment overhead while protecting deserving candidates from flawed ATS algorithm filters."
+            onPress={() => setPreviewItem({
+              title: "Publish 2 Agencies",
+              subtitle: "Human-reviewed talent pool for recruiters.",
+              icon: "account-group",
+              color: "#a855f7",
+              gistMessage: "Allows recruitment agencies to request anonymized but human-reviewed and scored candidate qualifications and work experience data. Agencies can filter for expert-reviewed and rated candidate profiles, drastically reducing recruitment overhead while protecting deserving candidates from flawed ATS algorithm filters."
+            })}
           />
         </View>
       </ScrollView>
@@ -618,6 +632,62 @@ const HubScreen: React.FC = () => {
               </Button>
             )}
           </Dialog.Actions>
+        </Dialog>
+
+        {/* Custom Glassmorphic Gist Preview Modal for Upcoming Tools */}
+        <Dialog
+          visible={!!previewItem}
+          onDismiss={() => setPreviewItem(null)}
+          style={{
+            backgroundColor: '#1e293b',
+            width: '88%',
+            alignSelf: 'center',
+            maxWidth: 480,
+            borderWidth: 1.5,
+            borderColor: '#475569',
+            borderRadius: 16,
+          }}
+        >
+          {previewItem && (
+            <>
+              <View style={{ alignItems: 'center', paddingTop: 20, paddingBottom: 6 }}>
+                <LinearGradient colors={[previewItem.color, `${previewItem.color}88`]} style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                  <MaterialCommunityIcons name={previewItem.icon} size={30} color="#fff" />
+                </LinearGradient>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ color: '#fff', fontSize: 17, fontWeight: 'bold', textAlign: 'center' }}>
+                    {previewItem.title}
+                  </Text>
+                  <View style={{ backgroundColor: '#334155', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
+                    <Text style={{ color: '#94a3b8', fontSize: 9, fontWeight: 'bold' }}>COMING SOON</Text>
+                  </View>
+                </View>
+                <Text style={{ color: '#94a3b8', fontSize: 12, marginTop: 4, textAlign: 'center', paddingHorizontal: 16 }}>
+                  {previewItem.subtitle}
+                </Text>
+              </View>
+
+              <Dialog.Content style={{ paddingTop: 10, paddingBottom: 12 }}>
+                <View style={{ backgroundColor: '#0f172a', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#334155' }}>
+                  <Text style={{ color: '#cbd5e1', fontSize: 13, lineHeight: 20 }}>
+                    {previewItem.gistMessage}
+                  </Text>
+                </View>
+              </Dialog.Content>
+
+              <Dialog.Actions style={{ paddingHorizontal: 16, paddingBottom: 14 }}>
+                <Button
+                  mode="contained"
+                  buttonColor={previewItem.color}
+                  textColor="#fff"
+                  style={{ borderRadius: 8, width: '100%' }}
+                  onPress={() => setPreviewItem(null)}
+                >
+                  Got It
+                </Button>
+              </Dialog.Actions>
+            </>
+          )}
         </Dialog>
       </Portal>
     </View>
