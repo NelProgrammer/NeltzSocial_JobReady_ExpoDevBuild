@@ -73,12 +73,12 @@ function NavigationStack() {
       <Stack.Screen
         name="PublishReview"
         component={PublishReviewScreen}
-        options={{ title: 'NeltzSocial - JobReady: Publish & Review' }}
+        options={{ title: 'NeltzSocial - JobReady: Publish for Review' }}
       />
       <Stack.Screen
         name="Taxi"
         component={TaxiScreen}
-        options={{ title: 'NeltzSocial - JobReady: Taxi 2 Interview' }}
+        options={{ title: 'NeltzSocial - JobReady: Travel to Interview' }}
       />
     </Stack.Navigator>
   );

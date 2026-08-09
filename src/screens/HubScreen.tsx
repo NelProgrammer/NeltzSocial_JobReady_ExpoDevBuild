@@ -35,7 +35,7 @@ const HubScreen: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(true);
-  const [previewItem, setPreviewItem] = useState<{ title: string; subtitle: string; icon: string; color: string; gistMessage: string } | null>(null);
+  const [previewItem, setPreviewItem] = useState<{ title: string; subtitle: string; icon: string; color: string; gistParagraphs: string[] } | null>(null);
 
   const currentScrollTop = useRef(0);
   const profileListRef = useRef<ScrollView>(null);
@@ -256,9 +256,9 @@ const HubScreen: React.FC = () => {
           )}
         </LinearGradient>
 
-        {/* Active Tools Suite */}
+        {/* Success Suite Section */}
         <View style={styles.menuContainer}>
-          <Text variant="titleLarge" style={styles.sectionTitle}>Success Suite</Text>
+          <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
           <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color="#6366f1" onPress={() => navigation.navigate('ResumeHome')} />
           <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
         </View>
@@ -267,42 +267,51 @@ const HubScreen: React.FC = () => {
         <View style={[styles.menuContainer, { marginTop: 16 }]}>
           <Text variant="titleLarge" style={styles.sectionTitle}>Upcoming Tools (Coming Soon)</Text>
           <UpcomingAppCard
-            title="Review & Publish"
+            title="Publish for Review"
             description="Expert HR & Manager resume evaluation."
             icon="check-decagram"
             color="#10b981"
             onPress={() => setPreviewItem({
-              title: "Review & Publish",
+              title: "Publish for Review",
               subtitle: "Expert HR & Manager resume evaluation.",
               icon: "check-decagram",
               color: "#10b981",
-              gistMessage: "Resume review and evaluation conducted by experienced human industry professionals — Supervisors, Hiring Managers, and HR Experts in your target field."
+              gistParagraphs: [
+                "Resume review and evaluation conducted by experienced human industry professionals — Supervisors, Hiring Managers, and HR Experts in your target field.",
+                "Receive actionable feedback, section ratings, and improvement suggestions before sharing your profile with prospective employers."
+              ]
             })}
           />
           <UpcomingAppCard
-            title="Taxi 2 Interview"
+            title="Travel to Interview"
             description="Commute route planning & taxi safety."
             icon="car-connected"
             color="#3b82f6"
             onPress={() => setPreviewItem({
-              title: "Taxi 2 Interview",
+              title: "Travel to Interview",
               subtitle: "Commute route planning & taxi safety.",
               icon: "car-connected",
               color: "#3b82f6",
-              gistMessage: "Commute route planning, taxi fare calculations, and interview safety alerts."
+              gistParagraphs: [
+                "Commute route planning, taxi fare calculations, and interview safety alerts.",
+                "Plan your travel schedule with real-time route estimates to ensure you arrive on time and stress-free for your interview."
+              ]
             })}
           />
           <UpcomingAppCard
-            title="Publish 2 Agencies"
+            title="Publish to Reviewers"
             description="Human-reviewed talent pool for recruiters."
             icon="account-group"
             color="#a855f7"
             onPress={() => setPreviewItem({
-              title: "Publish 2 Agencies",
+              title: "Publish to Reviewers",
               subtitle: "Human-reviewed talent pool for recruiters.",
               icon: "account-group",
               color: "#a855f7",
-              gistMessage: "Allows recruitment agencies to request anonymized but human-reviewed and scored candidate qualifications and work experience data. Agencies can filter for expert-reviewed and rated candidate profiles, drastically reducing recruitment overhead while protecting deserving candidates from flawed ATS algorithm filters."
+              gistParagraphs: [
+                "Allows recruitment agencies and vetted employers to request anonymized candidate qualifications and work experience data.",
+                "Recruiters can filter for expert-reviewed and rated candidate profiles, drastically reducing recruitment overhead while protecting deserving candidates from flawed ATS algorithm filters."
+              ]
             })}
           />
         </View>
@@ -669,9 +678,19 @@ const HubScreen: React.FC = () => {
 
               <Dialog.Content style={{ paddingTop: 10, paddingBottom: 12 }}>
                 <View style={{ backgroundColor: '#0f172a', padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#334155' }}>
-                  <Text style={{ color: '#cbd5e1', fontSize: 13, lineHeight: 20 }}>
-                    {previewItem.gistMessage}
-                  </Text>
+                  {previewItem.gistParagraphs.map((para, idx) => (
+                    <Text
+                      key={idx}
+                      style={{
+                        color: '#cbd5e1',
+                        fontSize: 13,
+                        lineHeight: 20,
+                        marginBottom: idx === previewItem.gistParagraphs.length - 1 ? 0 : 10,
+                      }}
+                    >
+                      {para}
+                    </Text>
+                  ))}
                 </View>
               </Dialog.Content>
 
