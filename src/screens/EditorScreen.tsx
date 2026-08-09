@@ -40,7 +40,7 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
   const resumeName = activeMeta ? activeMeta.name : 'Resume Editor';
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bgDark, paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: theme.bgDark, paddingTop: Math.max(insets.top, 16) + 8 }]}>
       {/* Header Banner */}
       <View style={[styles.headerBanner, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
         <View style={styles.headerRow}>

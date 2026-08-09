@@ -227,7 +227,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
   return (
     <View style={[styles.container, { backgroundColor: activeTheme.bgDark }]}>
       <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]}>
-        <LinearGradient colors={activeTheme.headerGrad} style={[styles.header, { paddingTop: insets.top + 8 }] }>
+        <LinearGradient colors={activeTheme.headerGrad} style={[styles.header, { paddingTop: Math.max(insets.top, 16) + 12 }] }>
           <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
             <MaterialCommunityIcons name="power" size={16} color="#fff" />
             <Text style={styles.exitBtnTopLeftText}>Exit App</Text>
