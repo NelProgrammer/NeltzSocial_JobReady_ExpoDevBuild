@@ -5,9 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext } from '../context/AuthContext';
 import { Storage } from '../utils/storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useThemeContext } from '../context/ThemeContext';
 
 const TaxiScreen = ({ navigation }: { navigation: any }) => {
     const { user } = useContext(AuthContext);
+    const { theme } = useThemeContext();
     const insets = useSafeAreaInsets();
 
     const [activeTrip, setActiveTrip] = useState<any>(null);
@@ -270,220 +272,259 @@ const TaxiScreen = ({ navigation }: { navigation: any }) => {
     };
 
     return (
-        <View style={styles.container}>
-            <Appbar.Header style={{ backgroundColor: '#6200ee' }}>
-                <Appbar.BackAction color="#fff" onPress={() => navigation.goBack()} />
-                <Appbar.Content title="Taxi 2 Interview" color="#fff" />
-            </Appbar.Header>
-
-            {activeTrip ? (
-                // Active trip tracking view
-                <View style={styles.activeContainer}>
-                    <ScrollView contentContainerStyle={{ padding: 20, alignItems: 'center' }}>
-                        <Text style={styles.activeHeader}>COMMUTE SENTINEL RUNNING</Text>
-                        <Text variant="headlineSmall" style={styles.activeDest}>{activeTrip.destination}</Text>
-
-                        <Card style={styles.activeStatCard}>
-                            <Card.Content style={{ alignItems: 'center' }}>
-                                <Text style={styles.activeStatLabel}>Distance to Landmark stop</Text>
-                                <Text style={styles.activeStatValue}>{activeTrip.estimate.distance.toFixed(1)} km</Text>
-                                <Text style={{ color: activeTrip.estimate.distance <= 0.5 ? '#f59e0b' : '#10b981', fontWeight: 'bold', fontSize: 15 }}>
-                                    {activeTrip.estimate.distance <= 0.5 ? '⚠️ Approaching Stop!' : '🟢 Commute on Track'}
-                                </Text>
-                            </Card.Content>
-                        </Card>
-
-                        <View style={styles.panicGrid}>
-                            <TouchableOpacity style={[styles.panicBtn, { backgroundColor: '#10b981' }]} onPress={() => handleSendAlert('checkin')}>
-                                <MaterialCommunityIcons name="thumb-up" size={32} color="#fff" />
-                                <Text style={styles.panicBtnText}>CHECK IN OKAY</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity style={[styles.panicBtn, { backgroundColor: '#ef4444' }]} onPress={() => handleSendAlert('panic')}>
-                                <MaterialCommunityIcons name="alert-decagram" size={32} color="#fff" />
-                                <Text style={styles.panicBtnText}>PANIC ALERT</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <Button 
-                            mode="contained" 
-                            style={styles.endBtn} 
-                            contentStyle={{ height: 48 }}
-                            onPress={handleEndTrip}
-                        >
-                            🏁 Arrived & End Journey
-                        </Button>
-                    </ScrollView>
+        <View style={[styles.container, { backgroundColor: theme.bgDark }]}>
+            {/* Header Banner */}
+            <View style={[styles.headerBanner, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+                <View style={styles.headerRow}>
+                    <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub')} activeOpacity={0.7}>
+                        <MaterialCommunityIcons name="arrow-left" size={20} color={theme.textPrimary} />
+                    </TouchableOpacity>
+                    <View style={{ alignItems: 'center' }}>
+                        <Text style={{ color: '#fff', fontSize: 17, fontWeight: 'bold' }}>Travel to Interview</Text>
+                        <Text style={{ color: theme.textSecondary, fontSize: 11 }}>Commute Route & Taxi Safety</Text>
+                    </View>
+                    <View style={[styles.themeBadge, { backgroundColor: '#f59e0b' }]}>
+                        <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>UPCOMING</Text>
+                    </View>
                 </View>
-            ) : (
-                // Commute planner view
-                <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 20 }}>
-                    <Card style={styles.card}>
-                        <Card.Content>
-                            <Text style={styles.cardTitle}>Commute Calculator</Text>
+                <Text style={[styles.subtitleCentered, { color: theme.textSecondary }]}>Commute route planning, taxi fare calculations and trip monitoring</Text>
+            </View>
 
-                            <TextInput
-                                label="Origin Location"
-                                value={origin}
-                                onChangeText={setOrigin}
-                                mode="outlined"
-                                style={styles.input}
-                                placeholder="Township / Starting Station"
-                            />
+            {/* Unified Body Card Container */}
+            <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+                {activeTrip ? (
+                    // Active trip tracking view
+                    <View style={styles.activeContainer}>
+                        <ScrollView contentContainerStyle={{ padding: 16, alignItems: 'center' }}>
+                            <Text style={styles.activeHeader}>COMMUTE SENTINEL RUNNING</Text>
+                            <Text variant="headlineSmall" style={[styles.activeDest, { color: theme.textPrimary }]}>{activeTrip.destination}</Text>
 
-                            <TextInput
-                                label="Interview Destination Address"
-                                value={destination}
-                                onChangeText={runAddressVerification}
-                                mode="outlined"
-                                style={styles.input}
-                                placeholder="Corporate/Residential Address"
-                            />
-                            {renderVerificationBadge()}
+                            <Card style={[styles.activeStatCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                <Card.Content style={{ alignItems: 'center' }}>
+                                    <Text style={[styles.activeStatLabel, { color: theme.textSecondary }]}>Distance to Landmark stop</Text>
+                                    <Text style={[styles.activeStatValue, { color: theme.accent }]}>{activeTrip.estimate.distance.toFixed(1)} km</Text>
+                                    <Text style={{ color: activeTrip.estimate.distance <= 0.5 ? '#f59e0b' : '#10b981', fontWeight: 'bold', fontSize: 15 }}>
+                                        {activeTrip.estimate.distance <= 0.5 ? '⚠️ Approaching Stop!' : '🟢 Commute on Track'}
+                                    </Text>
+                                </Card.Content>
+                            </Card>
 
-                            <View style={{ marginTop: 10 }}>
-                                <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#777', textTransform: 'uppercase', marginBottom: 4 }}>Select Mode</Text>
-                                <Menu
-                                    visible={modeMenuVisible}
-                                    onDismiss={() => setModeMenuVisible(false)}
-                                    anchor={
-                                        <TouchableOpacity style={styles.menuAnchor} onPress={() => setModeMenuVisible(true)}>
-                                            <Text style={{ fontSize: 14 }}>
-                                                {mode === 'taxi' ? '🇿🇦 Minibus Taxi (Landmark-based)' : mode === 'uber' ? '📱 E-Hail (Uber/Bolt)' : '🚌 Public Bus'}
-                                            </Text>
-                                            <MaterialCommunityIcons name="chevron-down" size={20} color="#666" />
-                                        </TouchableOpacity>
-                                    }
-                                >
-                                    <Menu.Item onPress={() => { setMode('taxi'); setModeMenuVisible(false); }} title="Minibus Taxi" />
-                                    <Menu.Item onPress={() => { setMode('uber'); setModeMenuVisible(false); }} title="E-Hail (Uber/Bolt)" />
-                                    <Menu.Item onPress={() => { setMode('bus'); setModeMenuVisible(false); }} title="Public Bus" />
-                                </Menu>
+                            <View style={styles.panicGrid}>
+                                <TouchableOpacity style={[styles.panicBtn, { backgroundColor: '#10b981' }]} onPress={() => handleSendAlert('checkin')}>
+                                    <MaterialCommunityIcons name="thumb-up" size={32} color="#fff" />
+                                    <Text style={styles.panicBtnText}>CHECK IN OKAY</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={[styles.panicBtn, { backgroundColor: '#ef4444' }]} onPress={() => handleSendAlert('panic')}>
+                                    <MaterialCommunityIcons name="alert-decagram" size={32} color="#fff" />
+                                    <Text style={styles.panicBtnText}>PANIC ALERT</Text>
+                                </TouchableOpacity>
                             </View>
 
                             <Button 
                                 mode="contained" 
-                                style={styles.calculateBtn} 
+                                style={[styles.endBtn, { backgroundColor: theme.accent }]} 
                                 contentStyle={{ height: 48 }}
-                                onPress={handleCalculate}
+                                onPress={handleEndTrip}
                             >
-                                Calculate Fare & Route
+                                🏁 Arrived & End Journey
                             </Button>
+                        </ScrollView>
+                    </View>
+                ) : (
+                    // Commute planner view
+                    <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 60 }}>
+                        <Card style={[styles.card, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                            <Card.Content>
+                                <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>Commute Calculator</Text>
 
-                            {estimate && (
-                                <View style={styles.estimateContainer}>
-                                    <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#6200ee' }}>ESTIMATED FARE BUDGET</Text>
-                                    <Text style={styles.estimateValue}>R{estimate.min} - R{estimate.max}</Text>
-                                    <Text style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-                                        Distance: {estimate.distance} km • Est. Time: {estimate.duration} mins
-                                    </Text>
-                                    <Divider style={{ marginVertical: 10 }} />
-                                    <Text style={{ fontSize: 11, color: '#888' }}>
-                                        <strong>Transfers:</strong> {estimate.landmarks.join(' ➔ ')}
-                                    </Text>
-                                    <Button 
-                                        mode="contained" 
-                                        style={styles.saveBtn} 
-                                        onPress={handleSaveTrip}
-                                        labelStyle={{ fontSize: 12 }}
+                                <TextInput
+                                    label="Origin Location"
+                                    value={origin}
+                                    onChangeText={setOrigin}
+                                    mode="outlined"
+                                    style={[styles.input, { backgroundColor: theme.bgSurface }]}
+                                    textColor={theme.textPrimary}
+                                    placeholder="Township / Starting Station"
+                                />
+
+                                <TextInput
+                                    label="Interview Destination Address"
+                                    value={destination}
+                                    onChangeText={runAddressVerification}
+                                    mode="outlined"
+                                    style={[styles.input, { backgroundColor: theme.bgSurface }]}
+                                    textColor={theme.textPrimary}
+                                    placeholder="Corporate/Residential Address"
+                                />
+                                {renderVerificationBadge()}
+
+                                <View style={{ marginTop: 10 }}>
+                                    <Text style={{ fontSize: 11, fontWeight: 'bold', color: theme.textSecondary, textTransform: 'uppercase', marginBottom: 4 }}>Select Mode</Text>
+                                    <Menu
+                                        visible={modeMenuVisible}
+                                        onDismiss={() => setModeMenuVisible(false)}
+                                        anchor={
+                                            <TouchableOpacity style={[styles.menuAnchor, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => setModeMenuVisible(true)}>
+                                                <Text style={{ fontSize: 14, color: theme.textPrimary }}>
+                                                    {mode === 'taxi' ? '🇿🇦 Minibus Taxi (Landmark-based)' : mode === 'uber' ? '📱 E-Hail (Uber/Bolt)' : '🚌 Public Bus'}
+                                                </Text>
+                                                <MaterialCommunityIcons name="chevron-down" size={20} color={theme.textSecondary} />
+                                            </TouchableOpacity>
+                                        }
                                     >
-                                        Save Planned Route
-                                    </Button>
+                                        <Menu.Item onPress={() => { setMode('taxi'); setModeMenuVisible(false); }} title="Minibus Taxi" />
+                                        <Menu.Item onPress={() => { setMode('uber'); setModeMenuVisible(false); }} title="E-Hail (Uber/Bolt)" />
+                                        <Menu.Item onPress={() => { setMode('bus'); setModeMenuVisible(false); }} title="Public Bus" />
+                                    </Menu>
                                 </View>
-                            )}
-                        </Card.Content>
-                    </Card>
 
-                    {/* Saved Trips */}
-                    <Text style={styles.sectionHeader}>Saved Commutes</Text>
-                    {savedTrips.length === 0 ? (
-                        <Card style={styles.card}>
-                            <Card.Content style={{ alignItems: 'center', paddingVertical: 20 }}>
-                                <Text style={{ color: '#999', fontStyle: 'italic' }}>No saved interview commutes yet.</Text>
-                            </Card.Content>
-                        </Card>
-                    ) : (
-                        savedTrips.map((trip: any) => (
-                            <Card key={trip.id} style={styles.tripCard} elevation={1}>
-                                <Card.Content style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{ fontWeight: 'bold', fontSize: 15 }}>{trip.destination}</Text>
-                                        <Text style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-                                            From: {trip.origin} • {trip.mode.toUpperCase()}
+                                <Button 
+                                    mode="contained" 
+                                    style={[styles.calculateBtn, { backgroundColor: theme.accent }]} 
+                                    contentStyle={{ height: 48 }}
+                                    onPress={handleCalculate}
+                                >
+                                    Calculate Fare & Route
+                                </Button>
+
+                                {estimate && (
+                                    <View style={[styles.estimateContainer, { backgroundColor: theme.bgSurface, borderColor: theme.accent }]}>
+                                        <Text style={{ fontSize: 11, fontWeight: 'bold', color: theme.accent }}>ESTIMATED FARE BUDGET</Text>
+                                        <Text style={[styles.estimateValue, { color: theme.accent }]}>R{estimate.min} - R{estimate.max}</Text>
+                                        <Text style={{ fontSize: 12, color: theme.textSecondary, marginTop: 4 }}>
+                                            Distance: {estimate.distance} km • Est. Time: {estimate.duration} mins
                                         </Text>
-                                        <Text style={{ fontSize: 12, color: '#6200ee', fontWeight: 'bold', marginTop: 2 }}>
-                                            Est: R{trip.estimate.min} - R{trip.estimate.max}
+                                        <Divider style={{ marginVertical: 10 }} />
+                                        <Text style={{ fontSize: 11, color: theme.textSecondary }}>
+                                            Transfers: {estimate.landmarks.join(' ➔ ')}
                                         </Text>
-                                    </View>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <Button 
                                             mode="contained" 
-                                            onPress={() => handleStartTrip(trip.id)}
-                                            style={{ backgroundColor: '#10b981', marginRight: 6 }}
-                                            labelStyle={{ fontSize: 11 }}
+                                            style={[styles.saveBtn, { backgroundColor: theme.accent }]} 
+                                            onPress={handleSaveTrip}
+                                            labelStyle={{ fontSize: 12 }}
                                         >
-                                            GO
+                                            Save Planned Route
                                         </Button>
-                                        <IconButton 
-                                            icon="trash-can-outline" 
-                                            iconColor="#ef4444" 
-                                            size={20}
-                                            style={{ margin: 0 }}
-                                            onPress={() => handleDeleteSavedTrip(trip.id)} 
-                                        />
                                     </View>
+                                )}
+                            </Card.Content>
+                        </Card>
+
+                        {/* Saved Trips */}
+                        <Text style={[styles.sectionHeader, { color: theme.textSecondary }]}>Saved Commutes</Text>
+                        {savedTrips.length === 0 ? (
+                            <Card style={[styles.card, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                <Card.Content style={{ alignItems: 'center', paddingVertical: 20 }}>
+                                    <Text style={{ color: theme.textSecondary, fontStyle: 'italic' }}>No saved interview commutes yet.</Text>
                                 </Card.Content>
                             </Card>
-                        ))
-                    )}
+                        ) : (
+                            savedTrips.map((trip: any) => (
+                                <Card key={trip.id} style={[styles.tripCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]} elevation={1}>
+                                    <Card.Content style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={{ fontWeight: 'bold', fontSize: 15, color: theme.textPrimary }}>{trip.destination}</Text>
+                                            <Text style={{ fontSize: 12, color: theme.textSecondary, marginTop: 2 }}>
+                                                From: {trip.origin} • {trip.mode.toUpperCase()}
+                                            </Text>
+                                            <Text style={{ fontSize: 12, color: theme.accent, fontWeight: 'bold', marginTop: 2 }}>
+                                                Est: R{trip.estimate.min} - R{trip.estimate.max}
+                                            </Text>
+                                        </View>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                            <Button 
+                                                mode="contained" 
+                                                onPress={() => handleStartTrip(trip.id)}
+                                                style={{ backgroundColor: '#10b981', marginRight: 6 }}
+                                                labelStyle={{ fontSize: 11 }}
+                                            >
+                                                GO
+                                            </Button>
+                                            <IconButton 
+                                                icon="trash-can-outline" 
+                                                iconColor="#ef4444" 
+                                                size={20}
+                                                style={{ margin: 0 }}
+                                                onPress={() => handleDeleteSavedTrip(trip.id)} 
+                                            />
+                                        </View>
+                                    </Card.Content>
+                                </Card>
+                            ))
+                        )}
 
-                    {/* Safety Panel */}
-                    <Card style={[styles.card, { marginTop: 16 }]}>
-                        <Card.Content>
-                            <Text style={styles.cardTitle}>Commute Safety Sentinel</Text>
-                            <Text style={{ fontSize: 12, color: '#666', marginBottom: 12 }}>
-                                Trusted contacts who will receive your WhatsApp safety updates and panic alerts during the commute:
-                            </Text>
-                            {safetyContacts.map((c, i) => (
-                                <View key={i} style={styles.contactRow}>
-                                    <Text style={{ fontWeight: 'bold' }}>👤 {c.name}</Text>
-                                    <Text style={{ color: '#777' }}>{c.phone}</Text>
-                                </View>
-                            ))}
-                        </Card.Content>
-                    </Card>
-                </ScrollView>
-            )}
+                        {/* Safety Panel */}
+                        <Card style={[styles.card, { backgroundColor: theme.bgDark, borderColor: theme.border, marginTop: 16 }]}>
+                            <Card.Content>
+                                <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>Commute Safety Sentinel</Text>
+                                <Text style={{ fontSize: 12, color: theme.textSecondary, marginBottom: 12 }}>
+                                    Trusted contacts who will receive your WhatsApp safety updates and panic alerts during the commute:
+                                </Text>
+                                {safetyContacts.map((c, i) => (
+                                    <View key={i} style={[styles.contactRow, { borderColor: theme.border }]}>
+                                        <Text style={{ fontWeight: 'bold', color: theme.textPrimary }}>👤 {c.name}</Text>
+                                        <Text style={{ color: theme.textSecondary }}>{c.phone}</Text>
+                                    </View>
+                                ))}
+                            </Card.Content>
+                        </Card>
+                    </ScrollView>
+                )}
+            </View>
+
+            {/* Persistent Sticky Footer Card */}
+            <View style={[styles.footerCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub')} activeOpacity={0.7}>
+                    <MaterialCommunityIcons name="home-outline" size={22} color={theme.textPrimary} />
+                </TouchableOpacity>
+
+                <View style={{ alignItems: 'center' }}>
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13 }}>Travel to Interview</Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 10 }}>JobReady Hub</Text>
+                </View>
+
+                <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub', { openSettings: true })} activeOpacity={0.7}>
+                    <MaterialCommunityIcons name="cog-outline" size={22} color={theme.accent} />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    card: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 16 },
-    cardTitle: { fontSize: 14, fontWeight: 'bold', color: '#333', textTransform: 'uppercase', marginBottom: 16, letterSpacing: 0.5 },
-    input: { marginBottom: 12, backgroundColor: '#fff' },
+    container: { flex: 1 },
+    headerBanner: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1 },
+    headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    navBtn: { padding: 8, borderRadius: 10, borderWidth: 1 },
+    themeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+    subtitleCentered: { textAlign: 'center', fontSize: 12, marginTop: 6, fontWeight: '500' },
+    bodyCard: { flex: 1, marginHorizontal: 8, marginTop: 8, marginBottom: 60, borderRadius: 20, borderWidth: 1.5, overflow: 'hidden' },
+    card: { borderRadius: 12, marginBottom: 16, borderWidth: 1 },
+    cardTitle: { fontSize: 14, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: 16, letterSpacing: 0.5 },
+    input: { marginBottom: 12 },
     badgeContainer: { borderWidth: 1, borderRadius: 8, padding: 10, marginVertical: 6 },
-    menuAnchor: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, backgroundColor: '#fafafa' },
-    calculateBtn: { marginTop: 16, backgroundColor: '#6200ee', borderRadius: 8 },
-    estimateContainer: { marginTop: 20, padding: 16, borderWidth: 1, borderColor: '#6200ee', borderRadius: 8, backgroundColor: '#f5f0ff' },
-    estimateValue: { fontSize: 24, fontWeight: '800', color: '#6200ee', marginVertical: 4 },
-    saveBtn: { marginTop: 12, backgroundColor: '#6200ee', borderRadius: 6 },
-    sectionHeader: { fontSize: 13, fontWeight: 'bold', color: '#666', textTransform: 'uppercase', marginVertical: 12 },
-    tripCard: { backgroundColor: '#fff', borderRadius: 8, marginBottom: 8 },
-    contactRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderColor: '#eee' },
-    
-    // Active View Styles
+    menuAnchor: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderRadius: 8, padding: 12 },
+    calculateBtn: { marginTop: 16, borderRadius: 8 },
+    estimateContainer: { marginTop: 20, padding: 16, borderWidth: 1, borderRadius: 8 },
+    estimateValue: { fontSize: 24, fontWeight: '800', marginVertical: 4 },
+    saveBtn: { marginTop: 12, borderRadius: 6 },
+    sectionHeader: { fontSize: 13, fontWeight: 'bold', textTransform: 'uppercase', marginVertical: 12 },
+    tripCard: { borderRadius: 8, marginBottom: 8, borderWidth: 1 },
+    contactRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1 },
     activeContainer: { flex: 1 },
     activeHeader: { fontSize: 11, fontWeight: 'bold', color: '#fbbf24', letterSpacing: 2, marginVertical: 8 },
-    activeDest: { fontWeight: 'bold', textAlign: 'center', marginHorizontal: 20, marginBottom: 24 },
-    activeStatCard: { width: '100%', padding: 16, borderRadius: 16, backgroundColor: '#fff', marginBottom: 32 },
-    activeStatLabel: { fontSize: 12, color: '#666', textTransform: 'uppercase' },
-    activeStatValue: { fontSize: 48, fontWeight: '900', color: '#6200ee', marginVertical: 8 },
-    panicGrid: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 32 },
-    panicBtn: { flex: 0.48, padding: 24, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-    panicBtnText: { color: '#fff', fontWeight: 'bold', marginTop: 8, fontSize: 13 },
-    endBtn: { width: '100%', borderRadius: 8, backgroundColor: '#6200ee' }
+    activeDest: { fontWeight: 'bold', textAlign: 'center', marginBottom: 16 },
+    activeStatCard: { width: '100%', borderRadius: 12, borderWidth: 1, marginBottom: 20 },
+    activeStatLabel: { fontSize: 12, textTransform: 'uppercase', marginBottom: 4 },
+    activeStatValue: { fontSize: 36, fontWeight: 'bold', marginBottom: 8 },
+    panicGrid: { flexDirection: 'row', gap: 12, width: '100%', marginBottom: 20 },
+    panicBtn: { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    panicBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 12, marginTop: 6 },
+    endBtn: { width: '100%', borderRadius: 8 },
+    footerCard: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1.5, zIndex: 100, elevation: 10 },
+    footerIconBtn: { padding: 8, borderRadius: 10, borderWidth: 1 },
 });
 
 export default TaxiScreen;

@@ -16,17 +16,19 @@ import TaxiScreen from './src/screens/TaxiScreen';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 
+import { ThemeProvider, useThemeContext } from './src/context/ThemeContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const Stack = createNativeStackNavigator();
 
 function NavigationStack() {
   const { user, loading } = useContext(AuthContext);
+  const { theme } = useThemeContext();
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-        <ActivityIndicator size="large" color="#6200ee" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.bgDark }}>
+        <ActivityIndicator size="large" color={theme.accent} />
       </View>
     );
   }
@@ -35,8 +37,8 @@ function NavigationStack() {
     <Stack.Navigator 
       initialRouteName="Hub"
       screenOptions={{
-        headerStyle: { backgroundColor: '#6200ee' },
-        headerTintColor: '#fff',
+        headerStyle: { backgroundColor: theme.bgSurface },
+        headerTintColor: theme.textPrimary,
         headerTitleStyle: { fontWeight: 'bold' },
       }}
     >
@@ -53,7 +55,7 @@ function NavigationStack() {
       <Stack.Screen
         name="ResumeHome"
         component={HomeScreen}
-        options={{ title: 'NeltzSocial - JobReady: Resume Builder' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Editor"
@@ -68,17 +70,17 @@ function NavigationStack() {
       <Stack.Screen
         name="PDFWorkbench"
         component={PDFWorkbenchScreen}
-        options={{ title: 'NeltzSocial - JobReady: PDF Workbench' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="PublishReview"
         component={PublishReviewScreen}
-        options={{ title: 'NeltzSocial - JobReady: Publish for Review' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Taxi"
         component={TaxiScreen}
-        options={{ title: 'NeltzSocial - JobReady: Travel to Interview' }}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   );
@@ -87,16 +89,18 @@ function NavigationStack() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <ResumeProvider>
-          <PaperProvider>
-            <NavigationContainer>
-              <NavigationStack />
-              <StatusBar style="auto" />
-            </NavigationContainer>
-          </PaperProvider>
-        </ResumeProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <ResumeProvider>
+            <PaperProvider>
+              <NavigationContainer>
+                <NavigationStack />
+                <StatusBar style="light" />
+              </NavigationContainer>
+            </PaperProvider>
+          </ResumeProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

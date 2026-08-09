@@ -10,14 +10,16 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetInfo } from '@react-native-community/netinfo';
+import { useThemeContext } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 type Navigation = NavigationProp<any>;
 
-const HubScreen: React.FC = () => {
+const HubScreen: React.FC<any> = ({ route }: any) => {
   const navigation = useNavigation<Navigation>();
   const theme = useTheme();
+  const { theme: activeTheme, themeId, setThemeId, themes } = useThemeContext();
   const insets = useSafeAreaInsets();
   const netInfo = useNetInfo();
   const isConnected = netInfo.isConnected ?? true;
@@ -43,6 +45,7 @@ const HubScreen: React.FC = () => {
   const currentScrollTop = useRef(0);
   const profileListRef = useRef<ScrollView>(null);
 
+  // Settings & Storage Sync
   useEffect(() => {
     const loadSettings = async () => {
       const savedCount = await Storage.get(Storage.KEYS.PROFILE_LIST_VISIBLE_COUNT);
@@ -51,6 +54,32 @@ const HubScreen: React.FC = () => {
       if (savedSpeed) setScrollSpeed(Number(savedSpeed));
     };
     loadSettings();
+  }, []);
+
+  useEffect(() => {
+    if (route?.params?.openSettings) {
+      setMode('SETTINGS');
+      setModalVisible(true);
+    }
+  }, [route?.params?.openSettings]);
+
+  // Double‑tap back button to exit
+  const lastBackPress = useRef(0);
+  useEffect(() => {
+    const backAction = () => {
+      const now = Date.now();
+      if (now - lastBackPress.current < 2000) {
+        Alert.alert('Exit App', 'Are you sure you want to close JobReady?', [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Exit', style: 'destructive', onPress: () => BackHandler.exitApp() },
+        ]);
+      } else {
+        lastBackPress.current = now;
+      }
+      return true;
+    };
+    const subscription = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => subscription.remove();
   }, []);
 
   const updateVisibleCount = async (val: number) => {
@@ -80,25 +109,6 @@ const HubScreen: React.FC = () => {
     const targetY = currentScrollTop.current + scrollSpeed * 46;
     profileListRef.current?.scrollTo({ y: targetY, animated: true });
   };
-
-  // Double‑tap back button to exit
-  const lastBackPress = useRef(0);
-  useEffect(() => {
-    const backAction = () => {
-      const now = Date.now();
-      if (now - lastBackPress.current < 2000) {
-        Alert.alert('Exit App', 'Are you sure you want to close JobReady?', [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Exit', style: 'destructive', onPress: () => BackHandler.exitApp() },
-        ]);
-      } else {
-        lastBackPress.current = now;
-      }
-      return true;
-    };
-    const subscription = BackHandler.addEventListener('hardwareBackPress', backAction);
-    return () => subscription.remove();
-  }, []);
 
   const showExitConfirmation = () => {
     Alert.alert('Exit App', 'Are you sure you want to close JobReady?', [
@@ -215,9 +225,9 @@ const HubScreen: React.FC = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 20 }]}>
-        <LinearGradient colors={['#0f172a', '#1e293b']} style={[styles.header, { paddingTop: insets.top + 8 }] }>
+    <View style={[styles.container, { backgroundColor: activeTheme.bgDark }]}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 + insets.bottom }]}>
+        <LinearGradient colors={activeTheme.headerGrad} style={[styles.header, { paddingTop: insets.top + 8 }] }>
           <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
             <MaterialCommunityIcons name="power" size={16} color="#fff" />
             <Text style={styles.exitBtnTopLeftText}>Exit App</Text>
@@ -233,7 +243,7 @@ const HubScreen: React.FC = () => {
               {user?.avatar ? (
                 <Avatar.Image size={46} source={{ uri: user.avatar }} />
               ) : (
-                <Avatar.Text size={46} label={getInitials(user?.name)} style={styles.avatarFallback} />
+                <Avatar.Text size={46} label={getInitials(user?.name)} style={[styles.avatarFallback, { backgroundColor: activeTheme.accent }]} />
               )}
               <View style={styles.userInfoTextCol}>
                 <Text variant="headlineSmall" style={styles.userNameText}>{user?.name || 'Guest'}</Text>
@@ -259,7 +269,7 @@ const HubScreen: React.FC = () => {
                 <Text style={styles.stagePillText}>{stageInfo.label}</Text>
               </TouchableOpacity>
 
-              <View style={styles.connPill}>
+              <View style={[styles.connPill, { backgroundColor: activeTheme.bgDark, borderColor: activeTheme.border }]}>
                 <View style={[styles.connDot, { backgroundColor: isConnected ? '#10b981' : '#ef4444' }]} />
                 <Text style={styles.connText}>{isConnected ? 'CONNECTED' : 'DISCONNECTED'}</Text>
               </View>
@@ -289,11 +299,11 @@ const HubScreen: React.FC = () => {
         </LinearGradient>
 
         {/* Unified Body Card Container */}
-        <Surface style={styles.bodyCardContainer} elevation={2}>
+        <Surface style={[styles.bodyCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} elevation={2}>
           {/* Success Suite Section */}
           <View style={styles.menuContainer}>
             <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
-            <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color="#6366f1" onPress={() => navigation.navigate('ResumeHome')} />
+            <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color={activeTheme.accent} onPress={() => navigation.navigate('ResumeHome')} />
             <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
           </View>
 
@@ -305,32 +315,14 @@ const HubScreen: React.FC = () => {
               description="Expert HR & Manager resume evaluation."
               icon="check-decagram"
               color="#10b981"
-              onPress={() => setPreviewItem({
-                title: "Publish for Review",
-                subtitle: "Expert HR & Manager resume evaluation.",
-                icon: "check-decagram",
-                color: "#10b981",
-                gistParagraphs: [
-                  "Resume review and evaluation conducted by experienced human industry professionals — Supervisors, Hiring Managers, and HR Experts in your target field.",
-                  "Receive actionable feedback, section ratings, and improvement suggestions before sharing your profile with prospective employers."
-                ]
-              })}
+              onPress={() => navigation.navigate('PublishReview')}
             />
             <UpcomingAppCard
               title="Travel to Interview"
               description="Commute route planning & taxi safety."
-              icon="car-connected"
+              icon="taxi"
               color="#3b82f6"
-              onPress={() => setPreviewItem({
-                title: "Travel to Interview",
-                subtitle: "Commute route planning & taxi safety.",
-                icon: "car-connected",
-                color: "#3b82f6",
-                gistParagraphs: [
-                  "Commute route planning, taxi fare calculations, and interview safety alerts.",
-                  "Plan your travel schedule with real-time route estimates to ensure you arrive on time and stress-free for your interview."
-                ]
-              })}
+              onPress={() => navigation.navigate('Taxi')}
             />
             <UpcomingAppCard
               title="Publish to Reviewers"
@@ -353,15 +345,15 @@ const HubScreen: React.FC = () => {
       </ScrollView>
 
       {/* Persistent Sticky Footer Card */}
-      <Surface style={[styles.footerCard, { paddingBottom: Math.max(insets.bottom, 10) }]} elevation={5}>
-        <TouchableOpacity style={styles.burgerBtn} onPress={() => { setMode('VIEW'); setModalVisible(true); }} activeOpacity={0.7}>
+      <Surface style={[styles.footerCard, { backgroundColor: activeTheme.bgDark, borderColor: activeTheme.border, paddingBottom: Math.max(insets.bottom, 10) }]} elevation={5}>
+        <TouchableOpacity style={[styles.burgerBtn, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} onPress={() => { setMode('VIEW'); setModalVisible(true); }} activeOpacity={0.7}>
           <MaterialCommunityIcons name="menu" size={24} color="#fff" />
         </TouchableOpacity>
         <View style={styles.footerTitleCol}>
           <Text style={styles.footerTitleText}>JobReady Hub</Text>
           <Text style={styles.footerSubtitleText}>Career & Interview Suite</Text>
         </View>
-        <TouchableOpacity style={styles.footerSettingsBtn} onPress={() => { setMode('SETTINGS'); setModalVisible(true); }} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.footerSettingsBtn, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} onPress={() => { setMode('SETTINGS'); setModalVisible(true); }} activeOpacity={0.7}>
           <MaterialCommunityIcons name="cog-outline" size={22} color="#94a3b8" />
         </TouchableOpacity>
       </Surface>
@@ -372,12 +364,12 @@ const HubScreen: React.FC = () => {
           visible={modalVisible}
           onDismiss={() => setModalVisible(false)}
           style={{
-            backgroundColor: '#1e293b',
+            backgroundColor: activeTheme.bgSurface,
             width: isExpanded ? '92%' : '70%',
             alignSelf: 'center',
             maxWidth: isExpanded ? 600 : 420,
             borderWidth: 1.5,
-            borderColor: '#475569',
+            borderColor: activeTheme.border,
             borderRadius: 16,
           }}
         >
@@ -385,7 +377,7 @@ const HubScreen: React.FC = () => {
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12 }}>
             <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold', flex: 1 }} numberOfLines={1}>
               {mode === 'VIEW' ? `Profile: ${user?.name || 'Guest'}` 
-               : mode === 'SETTINGS' ? 'Display & Scroll Settings'
+               : mode === 'SETTINGS' ? 'App Settings & Themes'
                : mode === 'RENAME' ? 'Rename Display Name'
                : mode === 'CREATE_LOCAL' ? 'Create Permanent Local Profile' 
                : mode === 'UPGRADE_ONLINE' ? 'Upgrade to Online Remote Profile' 
@@ -402,7 +394,7 @@ const HubScreen: React.FC = () => {
               {(mode === 'VIEW' || mode === 'SETTINGS') && (
                 <IconButton
                   icon={mode === 'SETTINGS' ? 'cog' : 'cog-outline'}
-                  iconColor={mode === 'SETTINGS' ? '#10b981' : '#94a3b8'}
+                  iconColor={mode === 'SETTINGS' ? activeTheme.accent : '#94a3b8'}
                   size={20}
                   onPress={() => setMode(mode === 'SETTINGS' ? 'VIEW' : 'SETTINGS')}
                 />
@@ -412,72 +404,116 @@ const HubScreen: React.FC = () => {
 
           <Dialog.Content style={{ paddingTop: 8 }}>
             {mode === 'SETTINGS' ? (
-              <View style={{ paddingVertical: 4 }}>
-                <Text style={{ color: '#cbd5e1', fontSize: 12, marginBottom: 12 }}>
+              <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={true}>
+                <Text style={{ color: '#cbd5e1', fontSize: 12, marginBottom: 10 }}>
                   Configure your dashboard list display preferences:
                 </Text>
 
                 {/* Compact Number Stepper Spinner: Visible Rows */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 6, backgroundColor: '#0f172a', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#334155' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 4, backgroundColor: activeTheme.bgDark, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: activeTheme.border }}>
                   <Text style={{ color: '#cbd5e1', fontSize: 12, fontWeight: 'bold' }}>Visible Rows (Default: 7)</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity
                       onPress={() => updateVisibleCount(Math.max(1, visibleCount - 1))}
                       disabled={visibleCount <= 1}
-                      style={{ backgroundColor: '#1e293b', borderRadius: 6, padding: 6, opacity: visibleCount <= 1 ? 0.4 : 1 }}
+                      style={{ backgroundColor: activeTheme.bgSurface, borderRadius: 6, padding: 6, opacity: visibleCount <= 1 ? 0.4 : 1 }}
                     >
-                      <MaterialCommunityIcons name="minus" size={18} color="#10b981" />
+                      <MaterialCommunityIcons name="minus" size={18} color={activeTheme.accent} />
                     </TouchableOpacity>
                     <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold', marginHorizontal: 12, minWidth: 20, textAlign: 'center' }}>{visibleCount}</Text>
                     <TouchableOpacity
                       onPress={() => updateVisibleCount(Math.min(20, visibleCount + 1))}
                       disabled={visibleCount >= 20}
-                      style={{ backgroundColor: '#1e293b', borderRadius: 6, padding: 6, opacity: visibleCount >= 20 ? 0.4 : 1 }}
+                      style={{ backgroundColor: activeTheme.bgSurface, borderRadius: 6, padding: 6, opacity: visibleCount >= 20 ? 0.4 : 1 }}
                     >
-                      <MaterialCommunityIcons name="plus" size={18} color="#10b981" />
+                      <MaterialCommunityIcons name="plus" size={18} color={activeTheme.accent} />
                     </TouchableOpacity>
                   </View>
                 </View>
 
                 {/* Compact Number Stepper Spinner: Scroll Speed */}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 6, backgroundColor: '#0f172a', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#334155' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 4, backgroundColor: activeTheme.bgDark, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: activeTheme.border }}>
                   <Text style={{ color: '#cbd5e1', fontSize: 12, fontWeight: 'bold' }}>Scroll Speed (Default: 2)</Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <TouchableOpacity
                       onPress={() => updateScrollSpeed(Math.max(1, scrollSpeed - 1))}
                       disabled={scrollSpeed <= 1}
-                      style={{ backgroundColor: '#1e293b', borderRadius: 6, padding: 6, opacity: scrollSpeed <= 1 ? 0.4 : 1 }}
+                      style={{ backgroundColor: activeTheme.bgSurface, borderRadius: 6, padding: 6, opacity: scrollSpeed <= 1 ? 0.4 : 1 }}
                     >
-                      <MaterialCommunityIcons name="minus" size={18} color="#10b981" />
+                      <MaterialCommunityIcons name="minus" size={18} color={activeTheme.accent} />
                     </TouchableOpacity>
                     <Text style={{ color: '#fff', fontSize: 14, fontWeight: 'bold', marginHorizontal: 12, minWidth: 20, textAlign: 'center' }}>{scrollSpeed}</Text>
                     <TouchableOpacity
                       onPress={() => updateScrollSpeed(Math.min(10, scrollSpeed + 1))}
                       disabled={scrollSpeed >= 10}
-                      style={{ backgroundColor: '#1e293b', borderRadius: 6, padding: 6, opacity: scrollSpeed >= 10 ? 0.4 : 1 }}
+                      style={{ backgroundColor: activeTheme.bgSurface, borderRadius: 6, padding: 6, opacity: scrollSpeed >= 10 ? 0.4 : 1 }}
                     >
-                      <MaterialCommunityIcons name="plus" size={18} color="#10b981" />
+                      <MaterialCommunityIcons name="plus" size={18} color={activeTheme.accent} />
                     </TouchableOpacity>
                   </View>
                 </View>
 
+                {/* 6 Preset Named Color Themes Picker */}
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13, marginTop: 14, marginBottom: 8 }}>
+                  Preset Color Themes (6):
+                </Text>
+                <View style={{ gap: 6 }}>
+                  {themes.map((t) => (
+                    <TouchableOpacity
+                      key={t.id}
+                      onPress={() => setThemeId(t.id)}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        backgroundColor: t.bgDark,
+                        borderColor: themeId === t.id ? t.accent : activeTheme.border,
+                        borderWidth: themeId === t.id ? 2 : 1,
+                        paddingHorizontal: 12,
+                        paddingVertical: 8,
+                        borderRadius: 8,
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                        {/* Swatch Color Preview */}
+                        <View style={{ flexDirection: 'row', width: 28, height: 16, borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}>
+                          <View style={{ flex: 1, backgroundColor: t.bgDark }} />
+                          <View style={{ flex: 1, backgroundColor: t.accent }} />
+                        </View>
+                        <Text style={{ color: '#fff', fontWeight: themeId === t.id ? 'bold' : '500', fontSize: 12 }}>
+                          {t.name}
+                        </Text>
+                      </View>
+                      {themeId === t.id && (
+                        <MaterialCommunityIcons name="check-circle" size={18} color={t.accent} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
                 <Button
                   mode="contained"
-                  buttonColor="#10b981"
-                  style={{ marginTop: 16 }}
+                  buttonColor={activeTheme.accent}
+                  style={{ marginTop: 16, marginBottom: 8 }}
                   onPress={() => setMode('VIEW')}
                 >
                   Done Settings
                 </Button>
-              </View>
+              </ScrollView>
             ) : mode === 'VIEW' ? (
               <View>
                 <Text style={{ color: '#cbd5e1', marginBottom: 6, fontSize: 12 }}>
                   Current Stage: <Text style={{ color: stageInfo.color, fontWeight: 'bold' }}>{stageInfo.label}</Text>
                 </Text>
-                <Text style={{ color: '#94a3b8', fontSize: 11, marginBottom: 12 }}>
+                <Text style={{ color: '#94a3b8', fontSize: 11, marginBottom: 10 }}>
                   Profile ID: {user?.id || 'guest_session'}
                 </Text>
+
+                {/* 1-Tap Theme & Settings Button */}
+                <Button mode="outlined" textColor={activeTheme.accent} style={{ marginBottom: 10, borderColor: activeTheme.border, backgroundColor: activeTheme.bgDark }} labelStyle={{ fontSize: 12, fontWeight: 'bold' }} icon="palette" onPress={() => setMode('SETTINGS')}>
+                  🎨 Preset Color Themes & Settings
+                </Button>
 
                 {/* Upgrade & Management Actions */}
                 {user?.isGuest && (
@@ -785,7 +821,7 @@ const styles = StyleSheet.create({
   connText: { color: '#cbd5e1', fontSize: 9, fontWeight: 'bold', letterSpacing: 0.5 },
   dashboardSubtitleCentered: { color: '#e2e8f0', textAlign: 'center', marginTop: 8, fontSize: 15, fontWeight: '600', letterSpacing: 0.3 },
   bodyCardContainer: { backgroundColor: '#1e293b', borderRadius: 20, borderWidth: 1.5, borderColor: '#334155', padding: 16, marginTop: 12, marginBottom: 0 },
-  footerCard: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0f172a', borderTopWidth: 1.5, borderColor: '#334155', paddingTop: 10, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  footerCard: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0f172a', borderTopWidth: 1.5, borderColor: '#334155', paddingTop: 10, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, elevation: 10 },
   burgerBtn: { backgroundColor: '#1e293b', padding: 8, borderRadius: 10, borderWidth: 1, borderColor: '#334155' },
   footerTitleCol: { alignItems: 'center', justifyContent: 'center' },
   footerTitleText: { color: '#fff', fontWeight: 'bold', fontSize: 14, letterSpacing: 0.5 },

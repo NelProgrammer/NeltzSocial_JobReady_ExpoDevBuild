@@ -9,6 +9,7 @@ const STORAGE_KEYS = {
     LAST_ACTIVE_ID: 'neltz_jobready_last_active_id',
     PROFILE_LIST_VISIBLE_COUNT: 'neltz_jobready_profile_list_visible_count',
     PROFILE_LIST_SCROLL_SPEED: 'neltz_jobready_profile_list_scroll_speed',
+    APP_COLOR_THEME: 'neltz_jobready_app_color_theme',
 };
 
 export const Storage = {

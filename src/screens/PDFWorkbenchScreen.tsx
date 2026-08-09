@@ -13,9 +13,11 @@ import SmartPreviewer from '../components/preview/SmartPreviewer';
 import FileInventory from '../components/pdf/FileInventory';
 import PageSelector from '../components/pdf/PageSelector';
 import BuildList from '../components/pdf/BuildList';
+import { useThemeContext } from '../context/ThemeContext';
 
 const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
     const insets = useSafeAreaInsets();
+    const { theme } = useThemeContext();
     const [files, setFiles] = useState<Record<string, any>>({});
     const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
     const [buildList, setBuildList] = useState<{ fileId: string; pageIndex: number }[]>([]);
@@ -328,110 +330,156 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
     const isTargetGlowing = activeSide === 'target' && buildList.length > 0;
 
     return (
-        <View style={styles.container}>
-            <View style={[styles.gridContainer, { paddingBottom: Math.max(insets.bottom, 6) }]}>
-                {/* Top Half: Inventory & Pages (Hidden in Full Screen Preview Mode) */}
-                {!isFullScreenPreview && (
-                    <View style={styles.topHalf}>
-                        <Surface style={[styles.inventoryPane, isSourceGlowing && styles.glowSource]} elevation={2}>
-                            <FileInventory
-                                files={files}
-                                selectedFileId={selectedFileId}
-                                onSelectFile={handleSelectFile}
-                                onUploadFile={handleUploadFile}
-                                onRemoveFile={handleRemoveFile}
-                            />
-                        </Surface>
-                        <Surface style={[styles.pagesPane, isSourceGlowing && styles.glowSource]} elevation={2}>
-                            <PageSelector
-                                files={files}
-                                selectedFileId={selectedFileId}
-                                buildList={buildList}
-                                onAddPage={handleAddPage}
-                                onAddAllPages={handleAddAllPages}
-                            />
-                        </Surface>
+        <View style={[styles.container, { backgroundColor: theme.bgDark }]}>
+            {/* Header Banner */}
+            {!isFullScreenPreview && (
+                <View style={[styles.headerBanner, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+                    <View style={styles.headerRow}>
+                        <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub')} activeOpacity={0.7}>
+                            <MaterialCommunityIcons name="arrow-left" size={20} color={theme.textPrimary} />
+                        </TouchableOpacity>
+                        <View style={{ alignItems: 'center' }}>
+                            <Text style={{ color: '#fff', fontSize: 17, fontWeight: 'bold' }}>PDF Workbench</Text>
+                            <Text style={{ color: theme.textSecondary, fontSize: 11 }}>Client-Side Offline Processing</Text>
+                        </View>
+                        <View style={[styles.themeBadge, { backgroundColor: '#10b981' }]}>
+                            <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>100% Offline</Text>
+                        </View>
                     </View>
-                )}
+                    <Text style={[styles.subtitleCentered, { color: theme.textSecondary }]}>Merge documents, split pages, and reorder files</Text>
+                </View>
+            )}
 
-                {/* Bottom Half: Build List & Live Preview */}
-                <View style={[styles.bottomHalf, isFullScreenPreview && { flex: 1 }]}>
+            {/* Body Card Container */}
+            <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border }, isFullScreenPreview && { marginHorizontal: 4, marginTop: 4, marginBottom: 60 }]}>
+                <View style={[styles.gridContainer, { paddingBottom: 0 }]}>
+                    {/* Top Half: Inventory & Pages (Hidden in Full Screen Preview Mode) */}
                     {!isFullScreenPreview && (
-                        <Surface style={[styles.buildListPane, isTargetGlowing && styles.glowTarget]} elevation={2}>
-                            <BuildList
-                                files={files}
-                                buildList={buildList}
-                                selectedIndex={selectedBuildIndex}
-                                onSelectIndex={(index: number) => {
-                                    setSelectedBuildIndex(index);
-                                    setActiveSide('target');
-                                }}
-                                onRemovePage={handleRemovePage}
-                                onMoveUp={handleMoveUp}
-                                onMoveDown={handleMoveDown}
-                            />
-                        </Surface>
+                        <View style={styles.topHalf}>
+                            <Surface style={[styles.inventoryPane, { backgroundColor: theme.bgDark, borderColor: theme.border }, isSourceGlowing && styles.glowSource]} elevation={2}>
+                                <FileInventory
+                                    files={files}
+                                    selectedFileId={selectedFileId}
+                                    onSelectFile={handleSelectFile}
+                                    onUploadFile={handleUploadFile}
+                                    onRemoveFile={handleRemoveFile}
+                                />
+                            </Surface>
+                            <Surface style={[styles.pagesPane, { backgroundColor: theme.bgDark, borderColor: theme.border }, isSourceGlowing && styles.glowSource]} elevation={2}>
+                                <PageSelector
+                                    files={files}
+                                    selectedFileId={selectedFileId}
+                                    buildList={buildList}
+                                    onAddPage={handleAddPage}
+                                    onAddAllPages={handleAddAllPages}
+                                />
+                            </Surface>
+                        </View>
                     )}
 
-                    <Surface 
-                        style={[
-                            styles.previewPane, 
-                            isFullScreenPreview && styles.fullScreenPreviewPane,
-                            isSourceGlowing && styles.glowSource, 
-                            isTargetGlowing && styles.glowTarget
-                        ]} 
-                        elevation={2}
-                    >
-                        <View style={styles.previewHeaderRow}>
-                            <Text variant="labelMedium" style={{ fontWeight: 'bold', color: '#555' }}>
-                                {isFullScreenPreview ? 'Full Screen Preview' : 'Preview'}
-                            </Text>
-                            <IconButton
-                                icon={isFullScreenPreview ? "fullscreen-exit" : "fullscreen"}
-                                size={18}
-                                iconColor="#0288d1"
-                                onPress={() => setIsFullScreenPreview(!isFullScreenPreview)}
-                                style={{ margin: 0 }}
-                            />
-                        </View>
-
-                        <TouchableOpacity 
-                            style={styles.previewDirectContainer}
-                            activeOpacity={1}
-                            onLongPress={() => setIsSettingsOpen(true)}
-                            delayLongPress={500}
-                        >
-                            {previewBase64 === null && !isGenerating ? (
-                                <View style={styles.emptyPreviewCenter}>
-                                    <MaterialCommunityIcons name="file-pdf-box" size={64} color="#bdbdbd" />
-                                    <Text variant="bodyMedium" style={{ marginTop: 8, color: '#757575' }}>
-                                        {activeSide === 'source' ? 'No PDF Selected' : 'No Pages Added'}
-                                    </Text>
-                                </View>
-                            ) : (
-                                <SmartPreviewer
-                                    mode="workbook"
-                                    pdfUri={previewBase64 ? `data:application/pdf;base64,${previewBase64}` : null}
-                                    isGenerating={isGenerating}
+                    {/* Bottom Half: Build List & Live Preview */}
+                    <View style={[styles.bottomHalf, isFullScreenPreview && { flex: 1 }]}>
+                        {!isFullScreenPreview && (
+                            <Surface style={[styles.buildListPane, { backgroundColor: theme.bgDark, borderColor: theme.border }, isTargetGlowing && styles.glowTarget]} elevation={2}>
+                                <BuildList
+                                    files={files}
                                     buildList={buildList}
-                                    fitMode={fitMode}
-                                    enableScroll={enableScroll}
+                                    selectedIndex={selectedBuildIndex}
+                                    onSelectIndex={(index: number) => {
+                                        setSelectedBuildIndex(index);
+                                        setActiveSide('target');
+                                    }}
+                                    onRemovePage={handleRemovePage}
+                                    onMoveUp={handleMoveUp}
+                                    onMoveDown={handleMoveDown}
                                 />
-                            )}
-                        </TouchableOpacity>
+                            </Surface>
+                        )}
 
-                        <Button
-                            mode="contained"
-                            icon="export"
-                            onPress={handleGeneratePDF}
-                            disabled={buildList.length === 0}
-                            style={styles.exportBtn}
+                        <Surface 
+                            style={[
+                                styles.previewPane, 
+                                { backgroundColor: theme.bgDark, borderColor: theme.border },
+                                isFullScreenPreview && styles.fullScreenPreviewPane,
+                                isSourceGlowing && styles.glowSource, 
+                                isTargetGlowing && styles.glowTarget
+                            ]} 
+                            elevation={2}
                         >
-                            Export PDF
-                        </Button>
-                    </Surface>
+                            <View style={styles.previewHeaderRow}>
+                                <Text variant="labelMedium" style={{ fontWeight: 'bold', color: theme.textPrimary }}>
+                                    {isFullScreenPreview ? 'Full Screen Preview' : 'Preview'}
+                                </Text>
+                                <IconButton
+                                    icon={isFullScreenPreview ? "fullscreen-exit" : "fullscreen"}
+                                    size={18}
+                                    iconColor={theme.accent}
+                                    onPress={() => setIsFullScreenPreview(!isFullScreenPreview)}
+                                    style={{ margin: 0 }}
+                                />
+                            </View>
+
+                            <TouchableOpacity 
+                                style={styles.previewDirectContainer}
+                                activeOpacity={1}
+                                onLongPress={() => setIsSettingsOpen(true)}
+                                delayLongPress={500}
+                            >
+                                {previewBase64 === null && !isGenerating ? (
+                                    <View style={styles.emptyPreviewCenter}>
+                                        <MaterialCommunityIcons name="file-pdf-box" size={64} color="#757575" />
+                                        <Text variant="bodyMedium" style={{ marginTop: 8, color: '#757575' }}>
+                                            {activeSide === 'source' ? 'No PDF Selected' : 'No Pages Added'}
+                                        </Text>
+                                    </View>
+                                ) : (
+                                    <SmartPreviewer
+                                        mode="workbook"
+                                        pdfUri={previewBase64 ? `data:application/pdf;base64,${previewBase64}` : null}
+                                        isGenerating={isGenerating}
+                                        buildList={buildList}
+                                        fitMode={fitMode}
+                                        enableScroll={enableScroll}
+                                    />
+                                )}
+                            </TouchableOpacity>
+
+                            <Button
+                                mode="contained"
+                                icon="export"
+                                onPress={handleGeneratePDF}
+                                disabled={buildList.length === 0}
+                                style={{ marginHorizontal: 8, marginBottom: 8, borderRadius: 8, backgroundColor: theme.accent }}
+                            >
+                                Export PDF
+                            </Button>
+                        </Surface>
+                    </View>
                 </View>
             </View>
+
+            {/* Persistent Sticky Footer Card */}
+            <View style={[styles.footerCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub')} activeOpacity={0.7}>
+                    <MaterialCommunityIcons name="home-outline" size={22} color={theme.textPrimary} />
+                </TouchableOpacity>
+
+                <View style={{ alignItems: 'center' }}>
+                    <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13 }}>PDF Workbench Suite</Text>
+                    <Text style={{ color: theme.textSecondary, fontSize: 10 }}>JobReady Hub</Text>
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => setIsFullScreenPreview(!isFullScreenPreview)} activeOpacity={0.7}>
+                        <MaterialCommunityIcons name={isFullScreenPreview ? "fullscreen-exit" : "crop-free"} size={22} color={theme.accent} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub', { openSettings: true })} activeOpacity={0.7}>
+                        <MaterialCommunityIcons name="cog-outline" size={22} color={theme.accent} />
+                    </TouchableOpacity>
+            </View>
+        </View>
+    );
 
             {/* Viewer Settings Modal Overlay (Draggable) */}
             {isSettingsOpen && (
@@ -486,7 +534,62 @@ const PDFWorkbenchScreen = ({ navigation }: { navigation: any }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#e0e0e0', // acts as grid gap color
+    },
+    headerBanner: {
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    navBtn: {
+        padding: 8,
+        borderRadius: 10,
+        borderWidth: 1,
+    },
+    themeBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    subtitleCentered: {
+        textAlign: 'center',
+        fontSize: 12,
+        marginTop: 6,
+        fontWeight: '500',
+    },
+    bodyCard: {
+        flex: 1,
+        marginHorizontal: 8,
+        marginTop: 8,
+        marginBottom: 60,
+        borderRadius: 20,
+        borderWidth: 1.5,
+        padding: 8,
+        overflow: 'hidden',
+    },
+    footerCard: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 56,
+        paddingHorizontal: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderTopWidth: 1.5,
+        zIndex: 100,
+        elevation: 10,
+    },
+    footerIconBtn: {
+        padding: 8,
+        borderRadius: 10,
+        borderWidth: 1,
     },
     gridContainer: {
         flex: 1,
