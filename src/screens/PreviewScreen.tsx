@@ -471,7 +471,7 @@ const PreviewScreen = ({ navigation }) => {
             </View>
 
             {/* Unified Body Card Container */}
-            <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+            <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border, marginBottom: 60 + Math.max(insets.bottom, 0) }]}>
                 <View style={styles.topContainer}>
                     <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Select CV Format (Layout)</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.layoutScroll}>
@@ -519,7 +519,7 @@ const PreviewScreen = ({ navigation }) => {
             </View>
 
             {/* Persistent Sticky Footer Card */}
-            <View style={[styles.footerCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+            <View style={[styles.footerCard, { backgroundColor: theme.bgDark, borderColor: theme.border, height: 56 + Math.max(insets.bottom, 0), paddingBottom: Math.max(insets.bottom, 4) }]}>
                 <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub')} activeOpacity={0.7}>
                     <MaterialCommunityIcons name="home-outline" size={22} color={theme.textPrimary} />
                 </TouchableOpacity>

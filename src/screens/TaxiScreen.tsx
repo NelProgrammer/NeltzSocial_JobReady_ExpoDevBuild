@@ -291,7 +291,7 @@ const TaxiScreen = ({ navigation }: { navigation: any }) => {
             </View>
 
             {/* Unified Body Card Container */}
-            <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+            <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border, marginBottom: 60 + Math.max(insets.bottom, 0) }]}>
                 {activeTrip ? (
                     // Active trip tracking view
                     <View style={styles.activeContainer}>
@@ -475,7 +475,7 @@ const TaxiScreen = ({ navigation }: { navigation: any }) => {
             </View>
 
             {/* Persistent Sticky Footer Card */}
-            <View style={[styles.footerCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+            <View style={[styles.footerCard, { backgroundColor: theme.bgDark, borderColor: theme.border, height: 56 + Math.max(insets.bottom, 0), paddingBottom: Math.max(insets.bottom, 4) }]}>
                 <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub')} activeOpacity={0.7}>
                     <MaterialCommunityIcons name="home-outline" size={22} color={theme.textPrimary} />
                 </TouchableOpacity>
