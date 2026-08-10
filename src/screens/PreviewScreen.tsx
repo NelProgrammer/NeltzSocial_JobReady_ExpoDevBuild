@@ -21,7 +21,7 @@ const PreviewScreen = ({ navigation }) => {
     const { resumeData, updateResumeData, uiSettings, updateUiSettings } = useContext(ResumeContext);
     const { theme } = useThemeContext();
     const [loading, setLoading] = useState(false);
-    const [exportFormat, setExportFormat] = useState('word_layout');
+    const [exportFormat, setExportFormat] = useState('pdf');
     const [previewUri, setPreviewUri] = useState(null);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
