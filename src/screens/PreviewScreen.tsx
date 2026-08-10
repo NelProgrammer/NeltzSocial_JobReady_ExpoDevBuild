@@ -509,39 +509,6 @@ const PreviewScreen = ({ navigation }) => {
                     </View>
                 )}
 
-                {/* Preview Toolbar Controls */}
-                <View style={[styles.toolbarRow, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-                    <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: 'bold' }}>
-                        {isFullScreenPreview ? 'FULL SCREEN PREVIEW' : 'CANVAS PREVIEW'}
-                    </Text>
-
-                    <View style={styles.toolbarControls}>
-                        {['a4', 'page', 'width'].map((mode) => (
-                            <TouchableOpacity 
-                                key={mode} 
-                                style={[styles.fitPill, { backgroundColor: fitMode === mode ? theme.accent : theme.bgSurface, borderColor: theme.border }]} 
-                                onPress={() => setFitMode(mode)}
-                            >
-                                <Text style={[styles.fitPillText, { color: fitMode === mode ? '#fff' : theme.textPrimary }]}>{mode.toUpperCase()}</Text>
-                            </TouchableOpacity>
-                        ))}
-
-                        <TouchableOpacity 
-                            style={[styles.toolbarIconBtn, { backgroundColor: isFullScreenPreview ? theme.accent : theme.bgSurface, borderColor: theme.border }]} 
-                            onPress={() => setIsFullScreenPreview(!isFullScreenPreview)}
-                        >
-                            <MaterialCommunityIcons name={isFullScreenPreview ? "fullscreen-exit" : "fullscreen"} size={18} color={isFullScreenPreview ? "#fff" : theme.accent} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity 
-                            style={[styles.toolbarIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} 
-                            onPress={() => setIsSettingsOpen(true)}
-                        >
-                            <MaterialCommunityIcons name="cog-outline" size={18} color={theme.textPrimary} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
                 <View style={[styles.previewArea, isFullScreenPreview && { flex: 1 }]}>
                     <SmartPreviewer 
                         data={resumeData} 
@@ -583,23 +550,33 @@ const PreviewScreen = ({ navigation }) => {
                     <MaterialCommunityIcons name="home-outline" size={22} color={theme.textPrimary} />
                 </TouchableOpacity>
 
-                <Button
-                    mode="contained"
-                    icon={exportFormat === 'pdf' ? "file-pdf-box" : "file-word-box"}
-                    onPress={() => {
-                        if (exportFormat === 'pdf') {
-                            printToFile();
-                        } else {
-                            exportToWord(exportFormat === 'word_text' ? 'text' : 'layout');
-                        }
-                    }}
-                    loading={loading}
-                    style={{ borderRadius: 20, backgroundColor: theme.accent }}
-                >
-                    Export File
-                </Button>
+                <View style={styles.footerCenterGroup}>
+                    <TouchableOpacity 
+                        style={[styles.footerIconBtn, { backgroundColor: isFullScreenPreview ? theme.accent : theme.bgSurface, borderColor: theme.border, marginRight: 8 }]} 
+                        onPress={() => setIsFullScreenPreview(!isFullScreenPreview)} 
+                        activeOpacity={0.7}
+                    >
+                        <MaterialCommunityIcons name={isFullScreenPreview ? "fullscreen-exit" : "crop-free"} size={20} color={isFullScreenPreview ? "#fff" : theme.accent} />
+                    </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub', { openSettings: true })} activeOpacity={0.7}>
+                    <Button
+                        mode="contained"
+                        icon={exportFormat === 'pdf' ? "file-pdf-box" : "file-word-box"}
+                        onPress={() => {
+                            if (exportFormat === 'pdf') {
+                                printToFile();
+                            } else {
+                                exportToWord(exportFormat === 'word_text' ? 'text' : 'layout');
+                            }
+                        }}
+                        loading={loading}
+                        style={{ borderRadius: 20, backgroundColor: theme.accent }}
+                    >
+                        Export File
+                    </Button>
+                </View>
+
+                <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => setIsSettingsOpen(true)} activeOpacity={0.7}>
                     <MaterialCommunityIcons name="cog-outline" size={22} color={theme.accent} />
                 </TouchableOpacity>
             </View>
@@ -607,26 +584,36 @@ const PreviewScreen = ({ navigation }) => {
             {/* Viewer Settings Modal */}
             <Portal>
                 <Modal visible={isSettingsOpen} onDismiss={() => setIsSettingsOpen(false)} contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.textPrimary, marginBottom: 12 }}>Viewer Settings</Text>
+                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.textPrimary, marginBottom: 4 }}>Viewer Configuration</Text>
+                    <Text style={{ fontSize: 11, color: theme.textSecondary, marginBottom: 16 }}>Configure document preview scale & scroll locks</Text>
 
                     <View style={styles.modalRow}>
-                        <Text style={{ color: theme.textPrimary, fontSize: 13 }}>Fit Mode</Text>
-                        <View style={{ flexDirection: 'row', gap: 4 }}>
-                            {['a4', 'page', 'width'].map((m) => (
-                                <TouchableOpacity key={m} onPress={() => setFitMode(m)} style={[styles.fitPill, { backgroundColor: fitMode === m ? theme.accent : theme.bgDark, borderColor: theme.border }]}>
-                                    <Text style={{ color: fitMode === m ? '#fff' : theme.textPrimary, fontSize: 10, fontWeight: 'bold' }}>{m.toUpperCase()}</Text>
+                        <Text style={{ color: theme.textPrimary, fontSize: 13, fontWeight: '600' }}>Fit Mode</Text>
+                        <View style={{ flexDirection: 'row', gap: 6 }}>
+                            {[
+                                { mode: 'a4', label: 'A4' },
+                                { mode: 'page', label: '1-PAGE' },
+                                { mode: 'width', label: 'WIDTH' },
+                            ].map((m) => (
+                                <TouchableOpacity key={m.mode} onPress={() => setFitMode(m.mode)} style={[styles.modalFitPill, { backgroundColor: fitMode === m.mode ? theme.accent : theme.bgDark, borderColor: theme.border }]}>
+                                    <Text style={{ color: fitMode === m.mode ? '#fff' : theme.textPrimary, fontSize: 10, fontWeight: 'bold' }}>{m.label}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
                     </View>
 
-                    <View style={[styles.modalRow, { marginTop: 12 }]}>
-                        <Text style={{ color: theme.textPrimary, fontSize: 13 }}>Enable Page Scrolling</Text>
+                    <View style={[styles.modalRow, { marginTop: 14 }]}>
+                        <Text style={{ color: theme.textPrimary, fontSize: 13, fontWeight: '600' }}>Full Canvas Mode</Text>
+                        <Switch value={isFullScreenPreview} onValueChange={(val) => setIsFullScreenPreview(val)} color={theme.accent} />
+                    </View>
+
+                    <View style={[styles.modalRow, { marginTop: 14 }]}>
+                        <Text style={{ color: theme.textPrimary, fontSize: 13, fontWeight: '600' }}>Enable Page Scrolling</Text>
                         <Switch value={enableScroll} onValueChange={(val) => setEnableScroll(val)} color={theme.accent} />
                     </View>
 
-                    <Button mode="contained" onPress={() => setIsSettingsOpen(false)} style={{ marginTop: 16, backgroundColor: theme.accent, borderRadius: 16 }}>
-                        Done
+                    <Button mode="contained" onPress={() => setIsSettingsOpen(false)} style={{ marginTop: 20, backgroundColor: theme.accent, borderRadius: 16 }}>
+                        Close Settings
                     </Button>
                 </Modal>
             </Portal>
@@ -653,12 +640,14 @@ const styles = StyleSheet.create({
     fitPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1 },
     fitPillText: { fontSize: 10, fontWeight: 'bold' },
     toolbarIconBtn: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-    previewArea: { flex: 1, justifyContent: 'center', alignItems: 'center', marginVertical: 4 },
+    previewArea: { flex: 1, justifyContent: 'center', alignItems: 'center', marginVertical: 4, backgroundColor: '#1b1d22', borderRadius: 8, overflow: 'hidden' },
     exportSection: { paddingHorizontal: 4, paddingTop: 4, paddingBottom: 4 },
     footerCard: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, borderTopWidth: 1.5, zIndex: 100, elevation: 10 },
+    footerCenterGroup: { flexDirection: 'row', alignItems: 'center' },
     footerIconBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
     modalContainer: { padding: 20, margin: 20, borderRadius: 16, borderWidth: 1 },
-    modalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }
+    modalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    modalFitPill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1 }
 });
 
 export default PreviewScreen;

@@ -11,9 +11,21 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
     const { width: windowWidth, height: windowHeight } = useWindowDimensions();
     if (!data) return null;
 
-    // Dynamic responsive dimensions
-    const pageWidth = Math.min(windowWidth - (VIGNETTE_PADDING * 2), 794);
-    const pageHeight = fitMode === 'page' ? (windowHeight - 220) : (pageWidth * A4_RATIO);
+    // Dual-axis responsive dimensions for 100% paper edge visibility
+    const availableWidth = Math.max(windowWidth - 24, 280);
+    const availableHeight = Math.max(windowHeight - 200, 360);
+
+    let scale = 1;
+    if (fitMode === 'a4' || fitMode === 'page') {
+        const scaleX = availableWidth / 794;
+        const scaleY = availableHeight / (794 * A4_RATIO);
+        scale = Math.min(scaleX, scaleY) * 0.94; // 0.94 guarantees 100% sheet & shadow visibility with breathing margin
+    } else {
+        scale = (availableWidth - 16) / 794;
+    }
+
+    const pageWidth = Math.max(794 * scale, 260);
+    const pageHeight = fitMode === 'page' ? Math.min(availableHeight * 0.94, pageWidth * A4_RATIO) : (pageWidth * A4_RATIO);
 
     // Glow setup
     const getGlowColor = () => {
@@ -289,15 +301,20 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
 };
 
 const styles = StyleSheet.create({
-    scrollContent: { padding: VIGNETTE_PADDING, alignItems: 'center' },
+    scrollContent: { padding: VIGNETTE_PADDING, alignItems: 'center', justifyContent: 'center' },
     glowWrapper: {
         borderRadius: 4,
-        overflow: 'hidden',
+        overflow: 'visible',
     },
     page: {
-        backgroundColor: 'white',
+        backgroundColor: '#ffffff',
         borderRadius: 4,
-        overflow: 'hidden'
+        overflow: 'hidden',
+        elevation: 8,
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 10,
     },
     // Plain Text Settings
     plainTextHeader: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
