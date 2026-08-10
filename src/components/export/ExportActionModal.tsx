@@ -4,7 +4,7 @@ import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Portal, Modal, Text, Button, ActivityIndicator, Snackbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeContext } from '../../context/ThemeContext';
-import { saveToDeviceDirectory, saveToCloudProvider, copyContentToClipboard } from '../../services/ExportEngineService';
+import { saveToDeviceDirectory, copyContentToClipboard } from '../../services/ExportEngineService';
 import { shareAsync } from 'expo-sharing';
 
 interface ExportActionModalProps {
@@ -29,7 +29,6 @@ const ExportActionModal = ({
     const { theme } = useThemeContext();
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
-    const [isCloudExpanded, setIsCloudExpanded] = useState<boolean>(false);
 
     if (!visible || !fileUri) return null;
 
@@ -42,13 +41,6 @@ const ExportActionModal = ({
     const handleSaveToDirectory = async (rootDir: 'documents' | 'downloads') => {
         setActionLoading(rootDir);
         const res = await saveToDeviceDirectory(fileUri, fileName, rootDir, moduleDomain, getMimeType());
-        setActionLoading(null);
-        setToastMessage(res.message);
-    };
-
-    const handleCloudUpload = async (provider: 'gdrive' | 'onedrive' | 'dropbox') => {
-        setActionLoading(provider);
-        const res = await saveToCloudProvider(fileUri, fileName, provider, getMimeType());
         setActionLoading(null);
         setToastMessage(res.message);
     };
@@ -149,65 +141,7 @@ const ExportActionModal = ({
                             <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
                         </TouchableOpacity>
 
-                        {/* Option 3: Save to Cloud (Expandable) */}
-                        <View style={[styles.cloudWrapper, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-                            <TouchableOpacity
-                                style={styles.actionCardInner}
-                                onPress={() => setIsCloudExpanded(!isCloudExpanded)}
-                                activeOpacity={0.7}
-                            >
-                                <View style={[styles.actionIconContainer, { backgroundColor: '#0EA5E922' }]}>
-                                    <MaterialCommunityIcons name="cloud-upload-outline" size={22} color="#0EA5E9" />
-                                </View>
-                                <View style={{ flex: 1, marginLeft: 12 }}>
-                                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: theme.textPrimary }}>
-                                        Save to Cloud
-                                    </Text>
-                                    <Text style={{ fontSize: 10, color: theme.textSecondary, marginTop: 2 }}>
-                                        Google Drive, MS OneDrive, Dropbox
-                                    </Text>
-                                </View>
-                                <MaterialCommunityIcons
-                                    name={isCloudExpanded ? 'chevron-up' : 'chevron-down'}
-                                    size={20}
-                                    color={theme.textSecondary}
-                                />
-                            </TouchableOpacity>
-
-                            {/* Cloud Expandable Sub-Menu */}
-                            {isCloudExpanded && (
-                                <View style={styles.cloudSubList}>
-                                    <TouchableOpacity
-                                        style={[styles.cloudSubCard, { borderColor: theme.border }]}
-                                        onPress={() => handleCloudUpload('gdrive')}
-                                        disabled={actionLoading !== null}
-                                    >
-                                        <MaterialCommunityIcons name="google-drive" size={18} color="#4285F4" />
-                                        <Text style={styles.cloudSubText}>Google Drive</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={[styles.cloudSubCard, { borderColor: theme.border }]}
-                                        onPress={() => handleCloudUpload('onedrive')}
-                                        disabled={actionLoading !== null}
-                                    >
-                                        <MaterialCommunityIcons name="microsoft-onedrive" size={18} color="#0078D4" />
-                                        <Text style={styles.cloudSubText}>MS OneDrive</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={[styles.cloudSubCard, { borderColor: theme.border }]}
-                                        onPress={() => handleCloudUpload('dropbox')}
-                                        disabled={actionLoading !== null}
-                                    >
-                                        <MaterialCommunityIcons name="dropbox" size={18} color="#0061FF" />
-                                        <Text style={styles.cloudSubText}>Dropbox</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            )}
-                        </View>
-
-                        {/* Option 4: Copy Content to Clipboard */}
+                        {/* Option 3: Copy Content to Clipboard */}
                         <TouchableOpacity
                             style={[styles.actionCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}
                             onPress={handleCopyClipboard}
@@ -232,7 +166,7 @@ const ExportActionModal = ({
                             <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
                         </TouchableOpacity>
 
-                        {/* Option 5: Share Via OS Intent (External) */}
+                        {/* Option 4: Share Via OS Intent (External) */}
                         <TouchableOpacity
                             style={[styles.actionCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}
                             onPress={handleExternalShare}
@@ -258,24 +192,15 @@ const ExportActionModal = ({
                         </TouchableOpacity>
                     </View>
 
-                    {/* Bottom Action Controls */}
-                    <View style={styles.buttonRow}>
-                        <Button
-                            mode="outlined"
-                            onPress={onDismiss}
-                            style={styles.controlBtn}
-                            textColor={theme.textSecondary}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            mode="contained"
-                            onPress={onDismiss}
-                            style={[styles.controlBtn, { backgroundColor: theme.accent }]}
-                        >
-                            Done
-                        </Button>
-                    </View>
+                    {/* Single Full-Width Cancel Control Button */}
+                    <Button
+                        mode="outlined"
+                        onPress={onDismiss}
+                        style={[styles.cancelBtn, { borderColor: theme.border }]}
+                        textColor={theme.textPrimary}
+                    >
+                        Cancel
+                    </Button>
                 </ScrollView>
 
                 <Snackbar
@@ -292,19 +217,13 @@ const ExportActionModal = ({
 };
 
 const styles = StyleSheet.create({
-    modalContainer: { padding: 20, margin: 16, borderRadius: 18, borderWidth: 1, maxHeight: '88%' },
+    modalContainer: { padding: 20, margin: 16, borderRadius: 18, borderWidth: 1, maxHeight: '85%' },
     headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
     iconBadge: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
     actionList: { gap: 10 },
     actionCard: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1 },
-    actionCardInner: { flexDirection: 'row', alignItems: 'center', padding: 12 },
     actionIconContainer: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-    cloudWrapper: { borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
-    cloudSubList: { paddingHorizontal: 12, paddingBottom: 12, gap: 8 },
-    cloudSubCard: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 8, borderWidth: 1, backgroundColor: '#ffffff0a' },
-    cloudSubText: { fontSize: 12, fontWeight: '600', color: '#fff' },
-    buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 18 },
-    controlBtn: { borderRadius: 14, paddingHorizontal: 8 }
+    cancelBtn: { marginTop: 18, borderRadius: 14, borderHeight: 1 }
 });
 
 export default ExportActionModal;

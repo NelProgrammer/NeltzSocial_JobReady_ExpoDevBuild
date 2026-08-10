@@ -1,7 +1,6 @@
 // @ts-nocheck
-import * as FileSystem from 'expo-file-system/legacy';
+import RNBlobUtil from 'react-native-blob-util';
 import { Platform, Clipboard } from 'react-native';
-import { shareAsync } from 'expo-sharing';
 
 export interface ExportResult {
     success: boolean;
@@ -28,7 +27,8 @@ export const generateExportFileName = (layout: string = 'professional', format: 
 };
 
 /**
- * Direct save to device directory (Documents or Downloads) under /Neltz_Social/[ModuleSubFolder]/
+ * Direct save to Real Public Device Storage (Documents or Downloads)
+ * Target Path: /storage/emulated/0/Documents/Neltz_Social/[ModuleSubFolder]/
  */
 export const saveToDeviceDirectory = async (
     tempUri: string,
@@ -38,31 +38,66 @@ export const saveToDeviceDirectory = async (
     mimeType: string = 'application/pdf'
 ): Promise<ExportResult> => {
     try {
-        const subFolderPath = `Neltz_Social/${moduleDomain}`;
-        const baseDir = targetRoot === 'downloads' 
-            ? `${FileSystem.documentDirectory}downloads/` 
-            : `${FileSystem.documentDirectory}documents/`;
-        
-        const targetDir = `${baseDir}${subFolderPath}/`;
-        const dirInfo = await FileSystem.getInfoAsync(targetDir);
-        if (!dirInfo.exists) {
-            await FileSystem.makeDirectoryAsync(targetDir, { intermediates: true });
+        const cleanSourcePath = tempUri.replace('file://', '');
+        const subFolder = `Neltz_Social/${moduleDomain}`;
+        const displayRoot = targetRoot === 'downloads' ? 'Downloads' : 'Documents';
+
+        if (Platform.OS === 'android') {
+            try {
+                // Android Scoped Storage MediaCollection API writes directly into real public device storage
+                const mediaType = targetRoot === 'downloads' ? 'Download' : 'Audio'; // 'Download' collection in MediaStore
+                await RNBlobUtil.MediaCollection.copyToMediaStore(
+                    {
+                        name: fileName,
+                        parentFolder: subFolder,
+                        mimeType: mimeType
+                    },
+                    'Download',
+                    cleanSourcePath
+                );
+
+                return {
+                    success: true,
+                    fileUri: `/sdcard/Download/${subFolder}/${fileName}`,
+                    fileName,
+                    message: `Saved directly to /${displayRoot}/${subFolder}/${fileName}`
+                };
+            } catch (mediaErr) {
+                console.warn("copyToMediaStore fallback:", mediaErr);
+                // Fallback to direct FS copy under external storage
+                const extDir = `${RNBlobUtil.fs.dirs.SDCardDir}/${displayRoot}/${subFolder}`;
+                if (!(await RNBlobUtil.fs.exists(extDir))) {
+                    await RNBlobUtil.fs.mkdir(extDir);
+                }
+                const targetPath = `${extDir}/${fileName}`;
+                await RNBlobUtil.fs.cp(cleanSourcePath, targetPath);
+                try {
+                    await RNBlobUtil.fs.scanFile([{ path: targetPath, mime: mimeType }]);
+                } catch (e) {}
+
+                return {
+                    success: true,
+                    fileUri: targetPath,
+                    fileName,
+                    message: `Saved directly to /${displayRoot}/${subFolder}/${fileName}`
+                };
+            }
+        } else {
+            // iOS / DocumentDirectory write
+            const targetDir = `${RNBlobUtil.fs.dirs.DocumentDir}/${subFolder}`;
+            if (!(await RNBlobUtil.fs.exists(targetDir))) {
+                await RNBlobUtil.fs.mkdir(targetDir);
+            }
+            const targetPath = `${targetDir}/${fileName}`;
+            await RNBlobUtil.fs.cp(cleanSourcePath, targetPath);
+
+            return {
+                success: true,
+                fileUri: targetPath,
+                fileName,
+                message: `Saved to /${displayRoot}/${subFolder}/${fileName}`
+            };
         }
-
-        const targetUri = `${targetDir}${fileName}`;
-        await FileSystem.copyAsync({
-            from: tempUri,
-            to: targetUri
-        });
-
-        const rootDisplay = targetRoot === 'downloads' ? 'Downloads' : 'Documents';
-
-        return {
-            success: true,
-            fileUri: targetUri,
-            fileName,
-            message: `Saved directly to /${rootDisplay}/${subFolderPath}/${fileName}`
-        };
     } catch (error) {
         console.error("saveToDeviceDirectory error:", error);
         return {
@@ -70,46 +105,6 @@ export const saveToDeviceDirectory = async (
             fileUri: '',
             fileName,
             message: `Could not save file: ${error.message || error}`
-        };
-    }
-};
-
-/**
- * Save / Upload to Cloud Provider (Google Drive, OneDrive, Dropbox)
- */
-export const saveToCloudProvider = async (
-    tempUri: string,
-    fileName: string,
-    provider: 'gdrive' | 'onedrive' | 'dropbox',
-    mimeType: string = 'application/pdf'
-): Promise<ExportResult> => {
-    try {
-        const providerNames = {
-            gdrive: 'Google Drive',
-            onedrive: 'Microsoft OneDrive',
-            dropbox: 'Dropbox'
-        };
-        const title = `Save ${fileName} to ${providerNames[provider]}`;
-
-        await shareAsync(tempUri, {
-            mimeType,
-            dialogTitle: title,
-            UTI: mimeType === 'application/pdf' ? '.pdf' : '.doc'
-        });
-
-        return {
-            success: true,
-            fileUri: tempUri,
-            fileName,
-            message: `Opened cloud upload for ${providerNames[provider]}`
-        };
-    } catch (error) {
-        console.error("saveToCloudProvider error:", error);
-        return {
-            success: false,
-            fileUri: '',
-            fileName,
-            message: `Cloud action cancelled or failed`
         };
     }
 };
