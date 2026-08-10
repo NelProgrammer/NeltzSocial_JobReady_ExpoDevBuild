@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useContext, useState, useEffect } from 'react';
 import { View, StyleSheet, Alert, ScrollView, TouchableOpacity } from 'react-native';
-import { Button, Appbar, Text, Card } from 'react-native-paper';
+import { Button, Appbar, Text, Card, Portal, Modal, Switch } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
@@ -22,6 +22,13 @@ const PreviewScreen = ({ navigation }) => {
     const [exportFormat, setExportFormat] = useState('word_layout');
     const [previewUri, setPreviewUri] = useState(null);
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+    // Viewer Control State (Matching PDF Workbench)
+    const [fitMode, setFitMode] = useState('a4'); // 'a4', 'page', 'width'
+    const [enableScroll, setEnableScroll] = useState(true);
+    const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
     const insets = useSafeAreaInsets();
 
     // Layout State (Saved in UI Settings)
@@ -45,10 +52,15 @@ const PreviewScreen = ({ navigation }) => {
             "personal details": pd, 
             experience: expList, 
             education: eduList, 
-            "Skills": skills, 
-            "References": refList, 
+            skills: skillsObj,
+            Skills: skillsCapObj, 
+            References: refListCap,
+            references: refListLow, 
             "professional summary": summary 
         } = resumeData;
+
+        const skills = skillsObj || skillsCapObj || {};
+        const refList = (refListCap || refListLow || []).filter(r => r.visible !== false);
         const Layout = uiSettings?.Layout || uiSettings?.["Document Settings"]?.Layout || 'professional';
         const names = pd?.names || {};
         const contact = pd?.contact || {};
@@ -248,27 +260,26 @@ const PreviewScreen = ({ navigation }) => {
             ` : ''}
         ` : '';
 
-        const skillsHtml = (skills.Tech || skills.Soft || skills["Professional Certs"] || skills.Certs || skills["Non-Academic Certs"]) ? `
+        const skillsHtml = (skills.Tech || skills.Soft || skills.Certifications || skills["Professional Certs"] || skills.Certs || skills["Non-Academic Certs"]) ? `
              ${sectionHeader('Skills & Certifications')}
-             ${skills.Tech ? `<div style="margin-bottom: 10px;"><strong>Technical Skills:</strong> ${formatBulletList(skills.Tech, uiSettings?.TechFormat)}</div>` : ''}
-             ${skills.Soft ? `<div style="margin-bottom: 10px;"><strong>Soft Skills:</strong> ${formatBulletList(skills.Soft, uiSettings?.SoftFormat)}</div>` : ''}
-             ${(skills["Professional Certs"] || skills.Certs) ? `<div style="margin-bottom: 10px;"><strong>Professional Certifications:</strong> ${formatBulletList(skills["Professional Certs"] || skills.Certs, uiSettings?.ProfCertsFormat)}</div>` : ''}
-             ${skills["Non-Academic Certs"] ? `<div style="margin-bottom: 10px;"><strong>Non-Academic Certifications:</strong> ${formatBulletList(skills["Non-Academic Certs"], uiSettings?.NonAcadCertsFormat)}</div>` : ''}
+             ${skills.Tech ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Technical Skills:</strong> ${formatBulletList(skills.Tech, uiSettings?.TechFormat)}</div>` : ''}
+             ${skills.Soft ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Soft Skills:</strong> ${formatBulletList(skills.Soft, uiSettings?.SoftFormat)}</div>` : ''}
+             ${(skills.Certifications || skills["Professional Certs"] || skills.Certs) ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Certifications:</strong> ${formatBulletList(skills.Certifications || skills["Professional Certs"] || skills.Certs, uiSettings?.ProfCertsFormat)}</div>` : ''}
+             ${skills["Non-Academic Certs"] ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Non-Academic Certifications:</strong> ${formatBulletList(skills["Non-Academic Certs"], uiSettings?.NonAcadCertsFormat)}</div>` : ''}
          ` : '';
 
         const refHtml = refList && refList.length > 0 ? `
              ${sectionHeader('References')}
              <div class="ref-grid" style="${Layout === 'minimalist' ? 'text-align: center;' : ''}">
-                ${refList.filter(r => r.visible).map(ref => `
-                    <div class="ref-item">
+                ${refList.map(ref => `
+                    <div class="ref-item" style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;">
                         <strong>${ref.name}</strong><br/>
-                        ${ref.relation} at ${ref.org}<br/>
-                        ${ref.phone}<br/>
-                        ${ref.email}
+                        ${ref.role || ref.relation || 'Reference'}${ref.company || ref.org ? ` at ${ref.company || ref.org}` : ''}<br/>
+                        ${ref.contact || ref.phone || ''}
                     </div>
                 `).join('')}
              </div>
-         ` : (refList && refList.length > 0 ? '' : `${sectionHeader('References')}<p style="${Layout === 'minimalist' ? 'text-align: center;' : ''}">Available upon request.</p>`);
+         ` : `${sectionHeader('References')}<p style="${Layout === 'minimalist' ? 'text-align: center;' : ''}">Available upon request.</p>`;
 
 
         return `
@@ -457,68 +468,113 @@ const PreviewScreen = ({ navigation }) => {
     return (
         <View style={[styles.container, { backgroundColor: theme.bgDark, paddingTop: Math.max(insets.top, 16) + 8 }]}>
             {/* Header Banner */}
-            <View style={[styles.headerBanner, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
-                <View style={styles.headerRow}>
-                    <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]} onPress={() => navigation.goBack()} activeOpacity={0.7}>
-                        <MaterialCommunityIcons name="arrow-left" size={20} color={theme.textPrimary} />
-                    </TouchableOpacity>
-                    <View style={{ alignItems: 'center' }}>
-                        <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Resume Preview</Text>
-                        <Text style={{ color: theme.textSecondary, fontSize: 11 }}>Format Selector & Export Engine</Text>
+            {!isFullScreenPreview && (
+                <View style={[styles.headerBanner, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+                    <View style={styles.headerRow}>
+                        <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+                            <MaterialCommunityIcons name="arrow-left" size={20} color={theme.textPrimary} />
+                        </TouchableOpacity>
+                        <View style={{ alignItems: 'center' }}>
+                            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Resume Preview</Text>
+                            <Text style={{ color: theme.textSecondary, fontSize: 11 }}>Format Selector & Export Engine</Text>
+                        </View>
+                        <View style={[styles.themeBadge, { backgroundColor: theme.accent }]}>
+                            <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>Preview Mode</Text>
+                        </View>
                     </View>
-                    <View style={[styles.themeBadge, { backgroundColor: theme.accent }]}>
-                        <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>Preview Mode</Text>
-                    </View>
+                    <Text style={[styles.subtitleCentered, { color: theme.textSecondary }]}>Select template layout and export to PDF, Word or Google Docs</Text>
                 </View>
-                <Text style={[styles.subtitleCentered, { color: theme.textSecondary }]}>Select template layout and export to PDF, Word or Google Docs</Text>
-            </View>
+            )}
 
             {/* Unified Body Card Container */}
-            <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border, marginBottom: 60 + Math.max(insets.bottom, 0) }]}>
-                <View style={styles.topContainer}>
-                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Select CV Format (Layout)</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.layoutScroll}>
-                        {['professional', 'modern', 'minimalist', 'chronological', 'functional'].map((l) => (
-                            <TouchableOpacity key={l} onPress={() => changeLayout(l)}>
-                                <Card style={[styles.layoutCard, { backgroundColor: theme.bgDark, borderColor: currentLayout === l ? theme.accent : theme.border }]}>
-                                    <Card.Content style={styles.cardContent}>
-                                        <Text style={[styles.layoutText, { color: currentLayout === l ? theme.accent : theme.textPrimary }]}>{l.toUpperCase()}</Text>
-                                    </Card.Content>
-                                </Card>
+            <View style={[
+                styles.bodyCard, 
+                { backgroundColor: theme.bgSurface, borderColor: theme.border, marginBottom: 60 + Math.max(insets.bottom, 0) },
+                isFullScreenPreview && { marginHorizontal: 4, marginTop: 4, marginBottom: 60 + Math.max(insets.bottom, 0) }
+            ]}>
+                {!isFullScreenPreview && (
+                    <View style={styles.topContainer}>
+                        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Select CV Format (Layout)</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.layoutScroll}>
+                            {['professional', 'modern', 'minimalist', 'chronological', 'functional'].map((l) => (
+                                <TouchableOpacity key={l} onPress={() => changeLayout(l)}>
+                                    <Card style={[styles.layoutCard, { backgroundColor: theme.bgDark, borderColor: currentLayout === l ? theme.accent : theme.border }]}>
+                                        <Card.Content style={styles.cardContent}>
+                                            <Text style={[styles.layoutText, { color: currentLayout === l ? theme.accent : theme.textPrimary }]}>{l.toUpperCase()}</Text>
+                                        </Card.Content>
+                                    </Card>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
+
+                {/* Preview Toolbar Controls */}
+                <View style={[styles.toolbarRow, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                    <Text style={{ color: theme.textSecondary, fontSize: 11, fontWeight: 'bold' }}>
+                        {isFullScreenPreview ? 'FULL SCREEN PREVIEW' : 'CANVAS PREVIEW'}
+                    </Text>
+
+                    <View style={styles.toolbarControls}>
+                        {['a4', 'page', 'width'].map((mode) => (
+                            <TouchableOpacity 
+                                key={mode} 
+                                style={[styles.fitPill, { backgroundColor: fitMode === mode ? theme.accent : theme.bgSurface, borderColor: theme.border }]} 
+                                onPress={() => setFitMode(mode)}
+                            >
+                                <Text style={[styles.fitPillText, { color: fitMode === mode ? '#fff' : theme.textPrimary }]}>{mode.toUpperCase()}</Text>
                             </TouchableOpacity>
                         ))}
-                    </ScrollView>
+
+                        <TouchableOpacity 
+                            style={[styles.toolbarIconBtn, { backgroundColor: isFullScreenPreview ? theme.accent : theme.bgSurface, borderColor: theme.border }]} 
+                            onPress={() => setIsFullScreenPreview(!isFullScreenPreview)}
+                        >
+                            <MaterialCommunityIcons name={isFullScreenPreview ? "fullscreen-exit" : "fullscreen"} size={18} color={isFullScreenPreview ? "#fff" : theme.accent} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={[styles.toolbarIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} 
+                            onPress={() => setIsSettingsOpen(true)}
+                        >
+                            <MaterialCommunityIcons name="cog-outline" size={18} color={theme.textPrimary} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
-                <View style={styles.previewArea}>
+                <View style={[styles.previewArea, isFullScreenPreview && { flex: 1 }]}>
                     <SmartPreviewer 
                         data={resumeData} 
                         layout={currentLayout} 
                         exportFormat={exportFormat} 
                         pdfUri={previewUri} 
                         isGenerating={isGeneratingPdf} 
+                        fitMode={fitMode}
+                        enableScroll={enableScroll}
                     />
                 </View>
 
-                <View style={styles.exportSection}>
-                    <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Select Export Format</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-                        {[
-                            { key: 'pdf', label: 'PDF' },
-                            { key: 'word_layout', label: 'Word (Layout)' },
-                            { key: 'word_text', label: 'Word (Text)' },
-                            { key: 'google_docs', label: 'Google Docs' },
-                        ].map((f) => (
-                            <TouchableOpacity key={f.key} onPress={() => setExportFormat(f.key)}>
-                                <Card style={[styles.layoutCard, { backgroundColor: theme.bgDark, borderColor: exportFormat === f.key ? theme.accent : theme.border }]}>
-                                    <Card.Content style={styles.cardContent}>
-                                        <Text style={[styles.layoutText, { color: exportFormat === f.key ? theme.accent : theme.textPrimary }]}>{f.label}</Text>
-                                    </Card.Content>
-                                </Card>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
+                {!isFullScreenPreview && (
+                    <View style={styles.exportSection}>
+                        <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>Select Export Format</Text>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 4 }}>
+                            {[
+                                { key: 'pdf', label: 'PDF' },
+                                { key: 'word_layout', label: 'Word (Layout)' },
+                                { key: 'word_text', label: 'Word (Text)' },
+                                { key: 'google_docs', label: 'Google Docs' },
+                            ].map((f) => (
+                                <TouchableOpacity key={f.key} onPress={() => setExportFormat(f.key)}>
+                                    <Card style={[styles.layoutCard, { backgroundColor: theme.bgDark, borderColor: exportFormat === f.key ? theme.accent : theme.border }]}>
+                                        <Card.Content style={styles.cardContent}>
+                                            <Text style={[styles.layoutText, { color: exportFormat === f.key ? theme.accent : theme.textPrimary }]}>{f.label}</Text>
+                                        </Card.Content>
+                                    </Card>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
             </View>
 
             {/* Persistent Sticky Footer Card */}
@@ -547,6 +603,33 @@ const PreviewScreen = ({ navigation }) => {
                     <MaterialCommunityIcons name="cog-outline" size={22} color={theme.accent} />
                 </TouchableOpacity>
             </View>
+
+            {/* Viewer Settings Modal */}
+            <Portal>
+                <Modal visible={isSettingsOpen} onDismiss={() => setIsSettingsOpen(false)} contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.textPrimary, marginBottom: 12 }}>Viewer Settings</Text>
+
+                    <View style={styles.modalRow}>
+                        <Text style={{ color: theme.textPrimary, fontSize: 13 }}>Fit Mode</Text>
+                        <View style={{ flexDirection: 'row', gap: 4 }}>
+                            {['a4', 'page', 'width'].map((m) => (
+                                <TouchableOpacity key={m} onPress={() => setFitMode(m)} style={[styles.fitPill, { backgroundColor: fitMode === m ? theme.accent : theme.bgDark, borderColor: theme.border }]}>
+                                    <Text style={{ color: fitMode === m ? '#fff' : theme.textPrimary, fontSize: 10, fontWeight: 'bold' }}>{m.toUpperCase()}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
+
+                    <View style={[styles.modalRow, { marginTop: 12 }]}>
+                        <Text style={{ color: theme.textPrimary, fontSize: 13 }}>Enable Page Scrolling</Text>
+                        <Switch value={enableScroll} onValueChange={(val) => setEnableScroll(val)} color={theme.accent} />
+                    </View>
+
+                    <Button mode="contained" onPress={() => setIsSettingsOpen(false)} style={{ marginTop: 16, backgroundColor: theme.accent, borderRadius: 16 }}>
+                        Done
+                    </Button>
+                </Modal>
+            </Portal>
         </View>
     );
 };
@@ -559,16 +642,23 @@ const styles = StyleSheet.create({
     subtitleCentered: { textAlign: 'center', fontSize: 11, marginTop: 4 },
     themeBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
     bodyCard: { flex: 1, marginHorizontal: 8, marginTop: 8, marginBottom: 60, borderRadius: 16, borderWidth: 1, overflow: 'hidden', padding: 8 },
-    topContainer: { paddingHorizontal: 4, paddingTop: 4, paddingBottom: 8 },
-    sectionTitle: { fontSize: 11, fontWeight: 'bold', marginBottom: 6, textTransform: 'uppercase' },
+    topContainer: { paddingHorizontal: 4, paddingTop: 4, paddingBottom: 4 },
+    sectionTitle: { fontSize: 11, fontWeight: 'bold', marginBottom: 4, textTransform: 'uppercase' },
     layoutScroll: { paddingBottom: 4 },
     layoutCard: { marginRight: 8, borderWidth: 1.5, borderRadius: 8 },
     cardContent: { paddingVertical: 6, paddingHorizontal: 12 },
     layoutText: { fontWeight: 'bold', fontSize: 12 },
+    toolbarRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, marginVertical: 4 },
+    toolbarControls: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    fitPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1 },
+    fitPillText: { fontSize: 10, fontWeight: 'bold' },
+    toolbarIconBtn: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
     previewArea: { flex: 1, justifyContent: 'center', alignItems: 'center', marginVertical: 4 },
     exportSection: { paddingHorizontal: 4, paddingTop: 4, paddingBottom: 4 },
     footerCard: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, borderTopWidth: 1.5, zIndex: 100, elevation: 10 },
-    footerIconBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' }
+    footerIconBtn: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+    modalContainer: { padding: 20, margin: 20, borderRadius: 16, borderWidth: 1 },
+    modalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }
 });
 
 export default PreviewScreen;

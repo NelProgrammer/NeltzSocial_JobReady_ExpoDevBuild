@@ -1,17 +1,19 @@
 // @ts-nocheck
 import React from 'react';
-import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { Surface, Text, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const A4_RATIO = 1.4142;
-const VIGNETTE_PADDING = 20;
-const PAGE_WIDTH = SCREEN_WIDTH - (VIGNETTE_PADDING * 2);
-const PAGE_HEIGHT = PAGE_WIDTH * A4_RATIO;
+const VIGNETTE_PADDING = 12;
 
-const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, exportFormat = 'pdf' }) => {
+const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, exportFormat = 'pdf', fitMode = 'a4' }) => {
+    const { width: windowWidth, height: windowHeight } = useWindowDimensions();
     if (!data) return null;
+
+    // Dynamic responsive dimensions
+    const pageWidth = Math.min(windowWidth - (VIGNETTE_PADDING * 2), 794);
+    const pageHeight = fitMode === 'page' ? (windowHeight - 220) : (pageWidth * A4_RATIO);
 
     // Glow setup
     const getGlowColor = () => {
@@ -37,9 +39,20 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
     const languages = pd.languages || [];
     const expList = data.experience || [];
     const eduList = data.education || { tertiary: [], highschool: {} };
-    const skills = data.Skills || {};
+    const skills = data.skills || data.Skills || {};
     const summary = data["professional summary"];
-    const refList = data["References"] || [];
+    const refList = (data.References || data.references || []).filter(r => r.visible !== false);
+
+    // Calculate content density for 1-Page Fitting
+    const totalItemCount = expList.length + (eduList.tertiary?.length || 0) + (refList.length || 0) + (skills.Tech ? 1 : 0) + (summary ? 1 : 0);
+    const isDense = fitMode === 'page' || totalItemCount > 5;
+
+    // Density Scale Tokens
+    const pagePadding = isDense ? 20 : 24;
+    const nameFontSize = isDense ? 20 : 24;
+    const sectionMargin = isDense ? 12 : 18;
+    const bodyFontSize = isDense ? 11 : 12;
+    const bodyLineHeight = isDense ? 15 : 17;
 
     const maskId = (idStr) => {
         if (!idStr) return '';
@@ -52,8 +65,8 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
     const renderHeader = () => {
         if (layout === 'modern') {
             return (
-                <View style={styles.headerModern}>
-                    <Text style={styles.nameModern}>{names.firstName} {names.Surname}</Text>
+                <View style={[styles.headerModern, { marginHorizontal: -pagePadding, marginTop: -pagePadding, padding: pagePadding }]}>
+                    <Text style={[styles.nameModern, { fontSize: nameFontSize }]}>{names.firstName} {names.Surname}</Text>
                     <View style={styles.contactRowModern}>
                         {contact.Email && <Text style={styles.contactTextModern}>📧 {contact.Email}</Text>}
                         {contact.Phone && <Text style={styles.contactTextModern}>📱 {contact.Phone}</Text>}
@@ -63,8 +76,8 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
         } else if (layout === 'minimalist') {
             return (
                 <View style={styles.headerMinimalist}>
-                    <Text style={styles.nameMinimalist}>{names.firstName} {names.Surname}</Text>
-                    <Divider style={{ marginVertical: 10 }} />
+                    <Text style={[styles.nameMinimalist, { fontSize: nameFontSize - 2 }]}>{names.firstName} {names.Surname}</Text>
+                    <Divider style={{ marginVertical: 8 }} />
                     <Text style={styles.contactTextMinimalist}>
                         {contact.Email} • {contact.Phone}
                     </Text>
@@ -74,7 +87,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
             return (
                 <View style={styles.headerChrono}>
                     <View style={styles.headerChronoMain}>
-                        <Text style={styles.nameChrono}>{names.firstName} {names.Surname}</Text>
+                        <Text style={[styles.nameChrono, { fontSize: nameFontSize }]}>{names.firstName} {names.Surname}</Text>
                         <Text style={styles.titleChrono}>{expList[0]?.Role || 'Professional'}</Text>
                     </View>
                     <View style={styles.contactBoxChrono}>
@@ -86,7 +99,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
         } else if (layout === 'functional') {
             return (
                 <View style={styles.headerFunc}>
-                    <Text style={styles.nameFunc}>{names.firstName} {names.Surname}</Text>
+                    <Text style={[styles.nameFunc, { fontSize: nameFontSize + 4 }]}>{names.firstName} {names.Surname}</Text>
                     <View style={styles.funcDivider} />
                     <Text style={styles.contactTextFunc}>{contact.Email} | {contact.Phone}</Text>
                 </View>
@@ -94,7 +107,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
         } else {
             return (
                 <View style={styles.headerPro}>
-                    <Text style={styles.namePro}>{names.Prefix ? names.Prefix + ' ' : ''}{names.firstName} {names.Surname}</Text>
+                    <Text style={[styles.namePro, { fontSize: nameFontSize }]}>{names.Prefix ? names.Prefix + ' ' : ''}{names.firstName} {names.Surname}</Text>
                     <View style={styles.contactRowPro}>
                         <Text style={styles.contactTextPro}>
                             {contact.Email} | {contact.Phone}
@@ -122,21 +135,21 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
         return (
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={[styles.glowWrapper, glow && { borderColor: glowColor, borderWidth: 4, elevation: 15 }]}>
-                    <Surface style={styles.page} elevation={4}>
+                    <Surface style={[styles.page, { width: pageWidth, minHeight: pageHeight, padding: pagePadding }]} elevation={4}>
                         <Text style={styles.plainTextHeader}>{names.firstName} {names.Surname}</Text>
                         <Text style={styles.plainTextContact}>{contact.Email} | {contact.Phone}</Text>
                         <Text style={styles.plainTextContact}>{address["Home Address"] ? address["Home Address"].replace(/\n/g, ', ') : ''}</Text>
-                        <Divider style={{ marginVertical: 15 }} />
+                        <Divider style={{ marginVertical: 10 }} />
 
                         {summary && (
-                            <View style={styles.section}>
+                            <View style={[styles.section, { marginBottom: sectionMargin }]}>
                                 {renderSectionHeader('Executive Summary')}
                                 <Text style={styles.plainTextBody}>{summary}</Text>
                             </View>
                         )}
                         
                         {expList.length > 0 && (
-                            <View style={styles.section}>
+                            <View style={[styles.section, { marginBottom: sectionMargin }]}>
                                 {renderSectionHeader('Professional Experience')}
                                 {expList.map((job, idx) => (
                                     <View key={idx} style={styles.entry}>
@@ -149,7 +162,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
                         )}
 
                         {(eduList.tertiary?.length > 0) && (
-                            <View style={styles.section}>
+                            <View style={[styles.section, { marginBottom: sectionMargin }]}>
                                 {renderSectionHeader('Education')}
                                 {eduList.tertiary?.map((edu, idx) => (
                                     <View key={idx} style={styles.entry}>
@@ -168,20 +181,20 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
     return (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <View style={[styles.glowWrapper, glow && { borderColor: glowColor, borderWidth: 4, elevation: 15 }]}>
-                <Surface style={styles.page} elevation={4}>
+                <Surface style={[styles.page, { width: pageWidth, minHeight: pageHeight, padding: pagePadding }]} elevation={4}>
                 {renderHeader()}
 
                 {/* Section Priority Logic */}
                 {layout === 'functional' && (skills.Tech || skills.Soft) && (
-                    <View style={styles.section}>
+                    <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Expertise & Skills')}
-                        {skills.Tech && <Text style={styles.bodyText}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {skills.Tech}</Text>}
-                        {skills.Soft && <Text style={styles.bodyText}><Text style={{ fontWeight: 'bold' }}>Core Competencies:</Text> {skills.Soft}</Text>}
+                        {skills.Tech && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {skills.Tech}</Text>}
+                        {skills.Soft && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Core Competencies:</Text> {skills.Soft}</Text>}
                     </View>
                 )}
 
                 {/* Personal Info Meta Section */}
-                <View style={styles.section}>
+                <View style={[styles.section, { marginBottom: sectionMargin }]}>
                     {renderSectionHeader('Personal Information')}
                     <View style={styles.metaGrid}>
                         {identity.idNumber && <View style={styles.metaItem}><Text style={styles.metaLabel}>ID Number:</Text><Text style={styles.metaValue}>{maskId(identity.idNumber)}</Text></View>}
@@ -191,88 +204,84 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
                 </View>
 
                 {summary && (
-                    <View style={styles.section}>
+                    <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader(layout === 'functional' ? 'Professional Profile' : 'Professional Summary')}
-                        <Text style={styles.bodyText}>{summary}</Text>
+                        <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{summary}</Text>
                     </View>
                 )}
 
-
                 {expList.length > 0 && (
-                    <View style={styles.section}>
+                    <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Work Experience')}
                         {expList.map((job, idx) => (
                             <View key={idx} style={styles.entry}>
                                 <View style={styles.entryHeader}>
-                                    <Text style={styles.entryTitle}>{job.Organization}</Text>
+                                    <Text style={styles.entryTitle} numberOfLines={1}>{job.Organization}</Text>
                                     <Text style={styles.entryDate}>{job["Start Date"]} - {job["End Date"] || 'Present'}</Text>
                                 </View>
                                 <Text style={styles.entrySubTitle}>{job.Role}</Text>
-                                <Text style={styles.entryDesc}>{job["Key Responsibilities"]}</Text>
+                                <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1 }]}>{job["Key Responsibilities"]}</Text>
                             </View>
                         ))}
                     </View>
                 )}
 
-                {(eduList.tertiary?.length > 0 || (eduList.highschool && eduList.highschool["Year Completed"])) && (
-                    <View style={styles.section}>
+                {(eduList.tertiary?.length > 0 || (eduList.highschool && (eduList.highschool["Year Completed"] || eduList.highschool["Highest Grade Passed"]))) && (
+                    <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Education')}
                         {eduList.tertiary?.map((edu, idx) => (
                             <View key={idx} style={styles.entry}>
                                 <View style={styles.entryHeader}>
-                                    <Text style={styles.entryTitle}>{edu.Institution}</Text>
+                                    <Text style={styles.entryTitle} numberOfLines={1}>{edu.Institution}</Text>
                                     <Text style={styles.entryDate}>{edu.Year}</Text>
                                 </View>
                                 <Text style={styles.entrySubTitle}>{edu["Qualification Name"]}</Text>
                             </View>
                         ))}
-                        {eduList.highschool && eduList.highschool["Year Completed"] && (
+                        {eduList.highschool && (eduList.highschool["Year Completed"] || eduList.highschool["Highest Grade Passed"]) && (
                             <View style={styles.entry}>
                                 <View style={styles.entryHeader}>
-                                    <Text style={styles.entryTitle}>{eduList.highschool["Province Department"]}</Text>
-                                    <Text style={styles.entryDate}>{eduList.highschool["Year Completed"]}</Text>
+                                    <Text style={styles.entryTitle} numberOfLines={1}>{eduList.highschool["Province Department"] || 'High School'}</Text>
+                                    <Text style={styles.entryDate}>{eduList.highschool["Year Completed"] || ''}</Text>
                                 </View>
-                                <Text style={styles.entrySubTitle}>{eduList.highschool["Highest Grade/Std"]}</Text>
+                                <Text style={styles.entrySubTitle}>{eduList.highschool["Highest Grade Passed"] || eduList.highschool["Highest Grade/Std"] || 'Completed'}</Text>
                             </View>
                         )}
                     </View>
                 )}
 
-                {(skills.Tech || skills.Soft) && (
-                    <View style={styles.section}>
-                        {renderSectionHeader('Skills')}
-                        {skills.Tech && <Text style={styles.bodyText}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {skills.Tech}</Text>}
-                        {skills.Soft && <Text style={styles.bodyText}><Text style={{ fontWeight: 'bold' }}>Soft Skills:</Text> {skills.Soft}</Text>}
+                {(skills.Tech || skills.Soft || skills.Certifications) && (
+                    <View style={[styles.section, { marginBottom: sectionMargin }]}>
+                        {renderSectionHeader('Skills & Certifications')}
+                        {skills.Tech && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {skills.Tech}</Text>}
+                        {skills.Soft && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Soft Skills:</Text> {skills.Soft}</Text>}
+                        {skills.Certifications && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Certifications:</Text> {skills.Certifications}</Text>}
                     </View>
                 )}
 
                 {languages.length > 0 && (
-                    <View style={styles.section}>
+                    <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Languages')}
                         {languages.filter(l => l.visible !== false).map((l, idx) => (
-                            <Text key={idx} style={styles.bodyText}>{l.Language}: {l.proficiency}</Text>
+                            <Text key={idx} style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{l.Language}: {l.proficiency}</Text>
                         ))}
                     </View>
                 )}
 
                 {refList.length > 0 && (
-                    <View style={styles.section}>
+                    <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('References')}
                         <View style={styles.refGrid}>
-                            {refList.filter(r => r.visible).map((ref, idx) => (
+                            {refList.map((ref, idx) => (
                                 <View key={idx} style={styles.refItem}>
                                     <Text style={styles.refName}>{ref.name}</Text>
-                                    <Text style={styles.refDetail}>{ref.relation} at {ref.org}</Text>
-                                    <Text style={styles.refDetail}>{ref.phone}</Text>
+                                    <Text style={styles.refDetail}>{(ref.role || ref.relation || 'Reference')}{ref.company || ref.org ? ` at ${ref.company || ref.org}` : ''}</Text>
+                                    <Text style={styles.refDetail}>{ref.contact || ref.phone}</Text>
                                 </View>
                             ))}
                         </View>
                     </View>
                 )}
-
-
-                {/* More sections can be added here (Education, Skills, etc.) */}
-                
                 </Surface>
             </View>
         </ScrollView>
@@ -286,71 +295,70 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     page: {
-        width: PAGE_WIDTH,
-        minHeight: PAGE_HEIGHT,
         backgroundColor: 'white',
-        padding: 30,
+        borderRadius: 4,
+        overflow: 'hidden'
     },
     // Plain Text Settings
     plainTextHeader: { fontFamily: 'monospace', fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
     plainTextContact: { fontFamily: 'monospace', fontSize: 12, marginBottom: 2 },
-    plainSectionTitle: { fontFamily: 'monospace', fontSize: 14, fontWeight: 'bold', marginTop: 15, marginBottom: 10, textDecorationLine: 'underline' },
-    plainTextBody: { fontFamily: 'monospace', fontSize: 12, lineHeight: 18 },
-    plainTextBold: { fontFamily: 'monospace', fontSize: 12, fontWeight: 'bold' },
-    plainTextSub: { fontFamily: 'monospace', fontSize: 12, marginBottom: 5 },
+    plainSectionTitle: { fontFamily: 'monospace', fontSize: 14, fontWeight: 'bold', marginTop: 12, marginBottom: 8, textDecorationLine: 'underline' },
+    plainTextBody: { fontFamily: 'monospace', fontSize: 11, lineHeight: 16 },
+    plainTextBold: { fontFamily: 'monospace', fontSize: 11, fontWeight: 'bold' },
+    plainTextSub: { fontFamily: 'monospace', fontSize: 11, marginBottom: 4 },
 
     // Professional Layout
-    headerPro: { borderBottomWidth: 2, borderBottomColor: '#2c3e50', paddingBottom: 15, marginBottom: 20 },
-    namePro: { fontSize: 24, fontWeight: 'bold', color: '#2c3e50', textTransform: 'uppercase', letterSpacing: 1 },
-    contactRowPro: { marginTop: 8 },
-    contactTextPro: { fontSize: 12, color: '#555' },
+    headerPro: { borderBottomWidth: 2, borderBottomColor: '#2c3e50', paddingBottom: 12, marginBottom: 16 },
+    namePro: { fontWeight: 'bold', color: '#2c3e50', textTransform: 'uppercase', letterSpacing: 1 },
+    contactRowPro: { marginTop: 6, flexDirection: 'row', flexWrap: 'wrap' },
+    contactTextPro: { fontSize: 11, color: '#555' },
 
     // Modern Layout
-    headerModern: { backgroundColor: '#2c3e50', margin: -30, padding: 30, marginBottom: 20 },
-    nameModern: { fontSize: 28, fontWeight: 'bold', color: 'white' },
-    contactRowModern: { marginTop: 10 },
-    contactTextModern: { fontSize: 13, color: '#ecf0f1', marginBottom: 2 },
+    headerModern: { backgroundColor: '#2c3e50', marginBottom: 16, overflow: 'hidden' },
+    nameModern: { fontWeight: 'bold', color: 'white' },
+    contactRowModern: { marginTop: 6, flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    contactTextModern: { fontSize: 12, color: '#ecf0f1' },
 
     // Minimalist Layout
-    headerMinimalist: { alignItems: 'center', marginBottom: 30 },
-    nameMinimalist: { fontSize: 22, fontWeight: '300', color: '#333' },
+    headerMinimalist: { alignItems: 'center', marginBottom: 20 },
+    nameMinimalist: { fontWeight: '300', color: '#333' },
     contactTextMinimalist: { fontSize: 11, color: '#888' },
 
     // Chronological Layout
-    headerChrono: { flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 3, borderBottomColor: '#333', paddingBottom: 15, marginBottom: 20 },
+    headerChrono: { flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 3, borderBottomColor: '#333', paddingBottom: 12, marginBottom: 16 },
     headerChronoMain: { flex: 1 },
-    nameChrono: { fontSize: 26, fontWeight: 'bold', color: '#000' },
-    titleChrono: { fontSize: 14, color: '#666', marginTop: 2, textTransform: 'uppercase' },
+    nameChrono: { fontWeight: 'bold', color: '#000' },
+    titleChrono: { fontSize: 13, color: '#666', marginTop: 2, textTransform: 'uppercase' },
     contactBoxChrono: { alignItems: 'flex-end' },
     contactTextChrono: { fontSize: 11, color: '#333' },
 
     // Functional Layout
-    headerFunc: { alignItems: 'center', marginBottom: 25 },
-    nameFunc: { fontSize: 32, fontWeight: 'bold', color: '#2c3e50', letterSpacing: 2 },
-    funcDivider: { width: 50, height: 4, backgroundColor: '#2c3e50', marginVertical: 10 },
-    contactTextFunc: { fontSize: 12, color: '#777', textTransform: 'uppercase' },
+    headerFunc: { alignItems: 'center', marginBottom: 20 },
+    nameFunc: { fontWeight: 'bold', color: '#2c3e50', letterSpacing: 2 },
+    funcDivider: { width: 40, height: 3, backgroundColor: '#2c3e50', marginVertical: 8 },
+    contactTextFunc: { fontSize: 11, color: '#777', textTransform: 'uppercase' },
 
-    section: { marginBottom: 20 },
-    sectionTitle: { fontSize: 14, fontWeight: 'bold', color: '#2c3e50', borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 3, marginBottom: 8 },
-    sectionTitleMin: { fontSize: 13, fontWeight: 'normal', color: '#888', textAlign: 'center', marginBottom: 15 },
+    section: { marginBottom: 14 },
+    sectionTitle: { fontSize: 13, fontWeight: 'bold', color: '#2c3e50', borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 2, marginBottom: 6 },
+    sectionTitleMin: { fontSize: 12, fontWeight: 'normal', color: '#888', textAlign: 'center', marginBottom: 10 },
     
     metaGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-    metaItem: { width: '50%', marginBottom: 5 },
+    metaItem: { width: '50%', marginBottom: 4 },
     metaLabel: { fontSize: 10, fontWeight: 'bold', color: '#777' },
     metaValue: { fontSize: 11, color: '#333' },
 
-    bodyText: { fontSize: 12, color: '#333', lineHeight: 18 },
+    bodyText: { color: '#333' },
     
-    entry: { marginBottom: 15 },
+    entry: { marginBottom: 10 },
     entryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    entryTitle: { fontSize: 13, fontWeight: 'bold', color: '#2c3e50' },
-    entryDate: { fontSize: 11, color: '#777' },
-    entrySubTitle: { fontSize: 12, fontStyle: 'italic', color: '#555', marginVertical: 2 },
-    entryDesc: { fontSize: 11, color: '#333', lineHeight: 16 },
+    entryTitle: { fontSize: 12, fontWeight: 'bold', color: '#2c3e50', flex: 1 },
+    entryDate: { fontSize: 11, color: '#777', marginLeft: 8 },
+    entrySubTitle: { fontSize: 11, fontStyle: 'italic', color: '#555', marginVertical: 1 },
+    entryDesc: { color: '#333' },
 
     refGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-    refItem: { width: '50%', marginBottom: 10 },
-    refName: { fontSize: 12, fontWeight: 'bold', color: '#333' },
+    refItem: { width: '50%', marginBottom: 8 },
+    refName: { fontSize: 11, fontWeight: 'bold', color: '#333' },
     refDetail: { fontSize: 10, color: '#666' }
 });
 

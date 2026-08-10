@@ -86,7 +86,7 @@ const SmartPreviewer = ({
         content = mode === 'workbook' ? (
             <WorkbookVignette buildList={buildList} />
         ) : (
-            <NativeVignette_Preview data={data} layout={layout} exportFormat={exportFormat} />
+            <NativeVignette_Preview data={data} layout={layout} exportFormat={exportFormat} fitMode={fitMode} />
         );
     } else if (engineState === 'web_iframe') {
         if (!pdfUri) {
