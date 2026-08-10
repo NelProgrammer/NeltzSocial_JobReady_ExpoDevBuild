@@ -1,7 +1,7 @@
 // @ts-nocheck
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform, Clipboard } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { shareAsync } from 'expo-sharing';
 
 export interface ExportResult {
     success: boolean;
@@ -28,122 +28,88 @@ export const generateExportFileName = (layout: string = 'professional', format: 
 };
 
 /**
- * Direct save to app local document vault (synced with PDF Workbench)
+ * Direct save to device directory (Documents or Downloads) under /Neltz_Social/[ModuleSubFolder]/
  */
-export const saveToAppVault = async (tempUri: string, fileName: string): Promise<ExportResult> => {
+export const saveToDeviceDirectory = async (
+    tempUri: string,
+    fileName: string,
+    targetRoot: 'documents' | 'downloads' = 'documents',
+    moduleDomain: 'Resumes' | 'PDF_Workbench' = 'Resumes',
+    mimeType: string = 'application/pdf'
+): Promise<ExportResult> => {
     try {
-        const vaultDir = `${FileSystem.documentDirectory}exports/`;
-        const dirInfo = await FileSystem.getInfoAsync(vaultDir);
+        const subFolderPath = `Neltz_Social/${moduleDomain}`;
+        const baseDir = targetRoot === 'downloads' 
+            ? `${FileSystem.documentDirectory}downloads/` 
+            : `${FileSystem.documentDirectory}documents/`;
+        
+        const targetDir = `${baseDir}${subFolderPath}/`;
+        const dirInfo = await FileSystem.getInfoAsync(targetDir);
         if (!dirInfo.exists) {
-            await FileSystem.makeDirectoryAsync(vaultDir, { intermediates: true });
+            await FileSystem.makeDirectoryAsync(targetDir, { intermediates: true });
         }
 
-        const vaultUri = `${vaultDir}${fileName}`;
+        const targetUri = `${targetDir}${fileName}`;
         await FileSystem.copyAsync({
             from: tempUri,
-            to: vaultUri
+            to: targetUri
         });
 
-        // Register into PDF Workbench inventory if it's a PDF
-        if (fileName.endsWith('.pdf')) {
-            try {
-                const existingJson = await AsyncStorage.getItem('pdf_workbench_inventory');
-                const inventory = existingJson ? JSON.parse(existingJson) : [];
-
-                const newEntry = {
-                    id: `pdf_vault_${Date.now()}`,
-                    name: fileName,
-                    uri: vaultUri,
-                    createdAt: new Date().toISOString(),
-                    sizeBytes: (await FileSystem.getInfoAsync(vaultUri)).size || 0,
-                    source: 'Resume Export Vault'
-                };
-
-                // Add to start of array if not present
-                if (!inventory.some((i: any) => i.name === fileName)) {
-                    inventory.unshift(newEntry);
-                    await AsyncStorage.setItem('pdf_workbench_inventory', JSON.stringify(inventory));
-                }
-            } catch (invErr) {
-                console.warn("Could not sync to PDF Workbench inventory:", invErr);
-            }
-        }
+        const rootDisplay = targetRoot === 'downloads' ? 'Downloads' : 'Documents';
 
         return {
             success: true,
-            fileUri: vaultUri,
+            fileUri: targetUri,
             fileName,
-            message: `Saved to App Vault: ${fileName}`
+            message: `Saved directly to /${rootDisplay}/${subFolderPath}/${fileName}`
         };
     } catch (error) {
-        console.error("saveToAppVault error:", error);
-        return {
-            success: false,
-            fileUri: '',
-            fileName,
-            message: `Failed to save to App Vault: ${error.message || error}`
-        };
-    }
-};
-
-/**
- * Direct save to device local storage (StorageAccessFramework / Downloads)
- */
-export const saveToDeviceDownloads = async (tempUri: string, fileName: string, mimeType: string = 'application/pdf'): Promise<ExportResult> => {
-    try {
-        if (Platform.OS === 'android') {
-            const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-            if (permissions.granted) {
-                const base64Data = await FileSystem.readAsStringAsync(tempUri, {
-                    encoding: FileSystem.EncodingType.Base64
-                });
-
-                const createdFileUri = await FileSystem.StorageAccessFramework.createFileAsync(
-                    permissions.directoryUri,
-                    fileName,
-                    mimeType
-                );
-
-                await FileSystem.writeAsStringAsync(createdFileUri, base64Data, {
-                    encoding: FileSystem.EncodingType.Base64
-                });
-
-                return {
-                    success: true,
-                    fileUri: createdFileUri,
-                    fileName,
-                    message: `Direct saved to device storage: ${fileName}`
-                };
-            } else {
-                return {
-                    success: false,
-                    fileUri: '',
-                    fileName,
-                    message: 'Storage permission declined'
-                };
-            }
-        } else {
-            // iOS / fallback direct document storage
-            const targetUri = `${FileSystem.documentDirectory}${fileName}`;
-            await FileSystem.copyAsync({
-                from: tempUri,
-                to: targetUri
-            });
-
-            return {
-                success: true,
-                fileUri: targetUri,
-                fileName,
-                message: `Saved to Documents: ${fileName}`
-            };
-        }
-    } catch (error) {
-        console.error("saveToDeviceDownloads error:", error);
+        console.error("saveToDeviceDirectory error:", error);
         return {
             success: false,
             fileUri: '',
             fileName,
             message: `Could not save file: ${error.message || error}`
+        };
+    }
+};
+
+/**
+ * Save / Upload to Cloud Provider (Google Drive, OneDrive, Dropbox)
+ */
+export const saveToCloudProvider = async (
+    tempUri: string,
+    fileName: string,
+    provider: 'gdrive' | 'onedrive' | 'dropbox',
+    mimeType: string = 'application/pdf'
+): Promise<ExportResult> => {
+    try {
+        const providerNames = {
+            gdrive: 'Google Drive',
+            onedrive: 'Microsoft OneDrive',
+            dropbox: 'Dropbox'
+        };
+        const title = `Save ${fileName} to ${providerNames[provider]}`;
+
+        await shareAsync(tempUri, {
+            mimeType,
+            dialogTitle: title,
+            UTI: mimeType === 'application/pdf' ? '.pdf' : '.doc'
+        });
+
+        return {
+            success: true,
+            fileUri: tempUri,
+            fileName,
+            message: `Opened cloud upload for ${providerNames[provider]}`
+        };
+    } catch (error) {
+        console.error("saveToCloudProvider error:", error);
+        return {
+            success: false,
+            fileUri: '',
+            fileName,
+            message: `Cloud action cancelled or failed`
         };
     }
 };

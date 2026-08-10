@@ -607,6 +607,7 @@ const PreviewScreen = ({ navigation }) => {
                 fileUri={exportedFileUri}
                 fileName={exportedFileName}
                 exportFormat={exportFormat}
+                moduleDomain="Resumes"
                 rawTextContent={generatePlainText()}
             />
         </View>

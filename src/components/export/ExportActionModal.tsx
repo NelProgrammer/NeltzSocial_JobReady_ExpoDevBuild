@@ -1,10 +1,10 @@
 // @ts-nocheck
 import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Portal, Modal, Text, Button, Surface, ActivityIndicator, Snackbar } from 'react-native-paper';
+import { Portal, Modal, Text, Button, ActivityIndicator, Snackbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeContext } from '../../context/ThemeContext';
-import { saveToDeviceDownloads, saveToAppVault, copyContentToClipboard } from '../../services/ExportEngineService';
+import { saveToDeviceDirectory, saveToCloudProvider, copyContentToClipboard } from '../../services/ExportEngineService';
 import { shareAsync } from 'expo-sharing';
 
 interface ExportActionModalProps {
@@ -13,8 +13,8 @@ interface ExportActionModalProps {
     fileUri: string | null;
     fileName: string;
     exportFormat: string;
+    moduleDomain?: 'Resumes' | 'PDF_Workbench';
     rawTextContent?: string;
-    onOpenPreview?: () => void;
 }
 
 const ExportActionModal = ({
@@ -23,12 +23,13 @@ const ExportActionModal = ({
     fileUri,
     fileName,
     exportFormat,
-    rawTextContent = '',
-    onOpenPreview
+    moduleDomain = 'Resumes',
+    rawTextContent = ''
 }: ExportActionModalProps) => {
     const { theme } = useThemeContext();
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [isCloudExpanded, setIsCloudExpanded] = useState<boolean>(false);
 
     if (!visible || !fileUri) return null;
 
@@ -38,16 +39,16 @@ const ExportActionModal = ({
         return 'application/msword';
     };
 
-    const handleSaveDevice = async () => {
-        setActionLoading('device');
-        const res = await saveToDeviceDownloads(fileUri, fileName, getMimeType());
+    const handleSaveToDirectory = async (rootDir: 'documents' | 'downloads') => {
+        setActionLoading(rootDir);
+        const res = await saveToDeviceDirectory(fileUri, fileName, rootDir, moduleDomain, getMimeType());
         setActionLoading(null);
         setToastMessage(res.message);
     };
 
-    const handleSaveVault = async () => {
-        setActionLoading('vault');
-        const res = await saveToAppVault(fileUri, fileName);
+    const handleCloudUpload = async (provider: 'gdrive' | 'onedrive' | 'dropbox') => {
+        setActionLoading(provider);
+        const res = await saveToCloudProvider(fileUri, fileName, provider, getMimeType());
         setActionLoading(null);
         setToastMessage(res.message);
     };
@@ -86,69 +87,127 @@ const ExportActionModal = ({
                     {/* Header Row */}
                     <View style={styles.headerRow}>
                         <View style={[styles.iconBadge, { backgroundColor: theme.accent + '22' }]}>
-                            <MaterialCommunityIcons name="file-check-outline" size={28} color={theme.accent} />
+                            <MaterialCommunityIcons name="file-export-outline" size={26} color={theme.accent} />
                         </View>
                         <View style={{ flex: 1, marginLeft: 12 }}>
-                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.textPrimary }}>Document Export Ready</Text>
+                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.textPrimary }}>Export Document</Text>
                             <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }} numberOfLines={1}>
                                 {fileName}
                             </Text>
                         </View>
                     </View>
 
-                    {/* Action Cards */}
+                    {/* Menu Options */}
                     <View style={styles.actionList}>
-                        {/* Option 1: Direct Save to Device Downloads */}
+                        {/* Option 1: Save to Documents */}
                         <TouchableOpacity
                             style={[styles.actionCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}
-                            onPress={handleSaveDevice}
+                            onPress={() => handleSaveToDirectory('documents')}
                             disabled={actionLoading !== null}
                             activeOpacity={0.7}
                         >
                             <View style={[styles.actionIconContainer, { backgroundColor: '#3B82F622' }]}>
-                                {actionLoading === 'device' ? (
+                                {actionLoading === 'documents' ? (
                                     <ActivityIndicator size={20} color="#3B82F6" />
                                 ) : (
-                                    <MaterialCommunityIcons name="download" size={22} color="#3B82F6" />
+                                    <MaterialCommunityIcons name="folder-outline" size={22} color="#3B82F6" />
                                 )}
                             </View>
                             <View style={{ flex: 1, marginLeft: 12 }}>
                                 <Text style={{ fontSize: 13, fontWeight: 'bold', color: theme.textPrimary }}>
-                                    Save Direct to Device Downloads
+                                    Save to Documents
                                 </Text>
                                 <Text style={{ fontSize: 10, color: theme.textSecondary, marginTop: 2 }}>
-                                    Direct write to your device local storage via SAF
+                                    Saves directly to /Documents/Neltz_Social/{moduleDomain}/
                                 </Text>
                             </View>
                             <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
                         </TouchableOpacity>
 
-                        {/* Option 2: Add to App Vault & PDF Workbench */}
+                        {/* Option 2: Save to Downloads */}
                         <TouchableOpacity
                             style={[styles.actionCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}
-                            onPress={handleSaveVault}
+                            onPress={() => handleSaveToDirectory('downloads')}
                             disabled={actionLoading !== null}
                             activeOpacity={0.7}
                         >
                             <View style={[styles.actionIconContainer, { backgroundColor: '#10B98122' }]}>
-                                {actionLoading === 'vault' ? (
+                                {actionLoading === 'downloads' ? (
                                     <ActivityIndicator size={20} color="#10B981" />
                                 ) : (
-                                    <MaterialCommunityIcons name="folder-sync-outline" size={22} color="#10B981" />
+                                    <MaterialCommunityIcons name="download-outline" size={22} color="#10B981" />
                                 )}
                             </View>
                             <View style={{ flex: 1, marginLeft: 12 }}>
                                 <Text style={{ fontSize: 13, fontWeight: 'bold', color: theme.textPrimary }}>
-                                    Save to App Vault & PDF Workbench
+                                    Save to Downloads
                                 </Text>
                                 <Text style={{ fontSize: 10, color: theme.textSecondary, marginTop: 2 }}>
-                                    Store in local vault for client-side merging and splitting
+                                    Saves directly to /Downloads/Neltz_Social/{moduleDomain}/
                                 </Text>
                             </View>
                             <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
                         </TouchableOpacity>
 
-                        {/* Option 3: Copy Text Content to Clipboard */}
+                        {/* Option 3: Save to Cloud (Expandable) */}
+                        <View style={[styles.cloudWrapper, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                            <TouchableOpacity
+                                style={styles.actionCardInner}
+                                onPress={() => setIsCloudExpanded(!isCloudExpanded)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.actionIconContainer, { backgroundColor: '#0EA5E922' }]}>
+                                    <MaterialCommunityIcons name="cloud-upload-outline" size={22} color="#0EA5E9" />
+                                </View>
+                                <View style={{ flex: 1, marginLeft: 12 }}>
+                                    <Text style={{ fontSize: 13, fontWeight: 'bold', color: theme.textPrimary }}>
+                                        Save to Cloud
+                                    </Text>
+                                    <Text style={{ fontSize: 10, color: theme.textSecondary, marginTop: 2 }}>
+                                        Google Drive, MS OneDrive, Dropbox
+                                    </Text>
+                                </View>
+                                <MaterialCommunityIcons
+                                    name={isCloudExpanded ? 'chevron-up' : 'chevron-down'}
+                                    size={20}
+                                    color={theme.textSecondary}
+                                />
+                            </TouchableOpacity>
+
+                            {/* Cloud Expandable Sub-Menu */}
+                            {isCloudExpanded && (
+                                <View style={styles.cloudSubList}>
+                                    <TouchableOpacity
+                                        style={[styles.cloudSubCard, { borderColor: theme.border }]}
+                                        onPress={() => handleCloudUpload('gdrive')}
+                                        disabled={actionLoading !== null}
+                                    >
+                                        <MaterialCommunityIcons name="google-drive" size={18} color="#4285F4" />
+                                        <Text style={styles.cloudSubText}>Google Drive</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={[styles.cloudSubCard, { borderColor: theme.border }]}
+                                        onPress={() => handleCloudUpload('onedrive')}
+                                        disabled={actionLoading !== null}
+                                    >
+                                        <MaterialCommunityIcons name="microsoft-onedrive" size={18} color="#0078D4" />
+                                        <Text style={styles.cloudSubText}>MS OneDrive</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={[styles.cloudSubCard, { borderColor: theme.border }]}
+                                        onPress={() => handleCloudUpload('dropbox')}
+                                        disabled={actionLoading !== null}
+                                    >
+                                        <MaterialCommunityIcons name="dropbox" size={18} color="#0061FF" />
+                                        <Text style={styles.cloudSubText}>Dropbox</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* Option 4: Copy Content to Clipboard */}
                         <TouchableOpacity
                             style={[styles.actionCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}
                             onPress={handleCopyClipboard}
@@ -173,7 +232,7 @@ const ExportActionModal = ({
                             <MaterialCommunityIcons name="chevron-right" size={20} color={theme.textSecondary} />
                         </TouchableOpacity>
 
-                        {/* Option 4: Secondary OS Intent Share */}
+                        {/* Option 5: Share Via OS Intent (External) */}
                         <TouchableOpacity
                             style={[styles.actionCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}
                             onPress={handleExternalShare}
@@ -189,7 +248,7 @@ const ExportActionModal = ({
                             </View>
                             <View style={{ flex: 1, marginLeft: 12 }}>
                                 <Text style={{ fontSize: 13, fontWeight: 'bold', color: theme.textPrimary }}>
-                                    Share via OS Intent (External)
+                                    Share Via OS Intent (External)
                                 </Text>
                                 <Text style={{ fontSize: 10, color: theme.textSecondary, marginTop: 2 }}>
                                     Send file to external apps via OS share drawer
@@ -199,13 +258,24 @@ const ExportActionModal = ({
                         </TouchableOpacity>
                     </View>
 
-                    <Button
-                        mode="contained"
-                        onPress={onDismiss}
-                        style={{ marginTop: 16, backgroundColor: theme.accent, borderRadius: 16 }}
-                    >
-                        Done
-                    </Button>
+                    {/* Bottom Action Controls */}
+                    <View style={styles.buttonRow}>
+                        <Button
+                            mode="outlined"
+                            onPress={onDismiss}
+                            style={styles.controlBtn}
+                            textColor={theme.textSecondary}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            mode="contained"
+                            onPress={onDismiss}
+                            style={[styles.controlBtn, { backgroundColor: theme.accent }]}
+                        >
+                            Done
+                        </Button>
+                    </View>
                 </ScrollView>
 
                 <Snackbar
@@ -222,12 +292,19 @@ const ExportActionModal = ({
 };
 
 const styles = StyleSheet.create({
-    modalContainer: { padding: 20, margin: 16, borderRadius: 18, borderWidth: 1, maxHeight: '85%' },
+    modalContainer: { padding: 20, margin: 16, borderRadius: 18, borderWidth: 1, maxHeight: '88%' },
     headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
     iconBadge: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
     actionList: { gap: 10 },
     actionCard: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1 },
-    actionIconContainer: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }
+    actionCardInner: { flexDirection: 'row', alignItems: 'center', padding: 12 },
+    actionIconContainer: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+    cloudWrapper: { borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
+    cloudSubList: { paddingHorizontal: 12, paddingBottom: 12, gap: 8 },
+    cloudSubCard: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderRadius: 8, borderWidth: 1, backgroundColor: '#ffffff0a' },
+    cloudSubText: { fontSize: 12, fontWeight: '600', color: '#fff' },
+    buttonRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 18 },
+    controlBtn: { borderRadius: 14, paddingHorizontal: 8 }
 });
 
 export default ExportActionModal;
