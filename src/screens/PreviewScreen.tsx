@@ -8,6 +8,8 @@ import { shareAsync } from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import { WebView } from 'react-native-webview';
 import { ResumeContext } from '../context/ResumeContext';
+import { useThemeContext } from '../context/ThemeContext';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { VIGNETTE_CSS } from '../constants/VignetteStyles';
 import SmartPreviewer from '../components/preview/SmartPreviewer';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
@@ -15,6 +17,7 @@ import * as Device from 'expo-device';
 
 const PreviewScreen = ({ navigation }) => {
     const { resumeData, updateResumeData, uiSettings, updateUiSettings } = useContext(ResumeContext);
+    const { theme } = useThemeContext();
     const [loading, setLoading] = useState(false);
     const [exportFormat, setExportFormat] = useState('word_layout');
     const [previewUri, setPreviewUri] = useState(null);
