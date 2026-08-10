@@ -64,11 +64,9 @@ const Education = () => {
             enableOnAndroid={true}
             extraScrollHeight={100}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ padding: 10, paddingBottom: 120, flexGrow: 1 }}
+            contentContainerStyle={{ padding: 6, paddingTop: 4, paddingBottom: 120, flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
         >
-            <Headline style={{ marginBottom: 10 }}>Education</Headline>
-
             {/* High School Section */}
             <Card style={styles.card}>
                 <Card.Title title="High School" left={(props) => <IconButton {...props} icon="school" />} />
@@ -89,31 +87,22 @@ const Education = () => {
                         />
                         <TextInput
                             label="Highest Grade"
-                            value={highschool["Highest Grade/Std"]}
-                            onChangeText={(text) => updateHighSchool("Highest Grade/Std", text)}
+                            value={String(highschool["Highest Grade Passed"] || '')}
+                            onChangeText={(text) => updateHighSchool("Highest Grade Passed", text)}
                             style={[styles.input, { flex: 1, marginLeft: 5 }]}
                         />
                     </View>
-                    <TextInput
-                        label="Subjects / Stream"
-                        value={highschool["Subjects Stream"]}
-                        onChangeText={(text) => updateHighSchool("Subjects Stream", text)}
-                        style={styles.input}
-                        placeholder="e.g. Science, Maths, Accounting"
-                    />
                 </Card.Content>
             </Card>
 
-            <Divider style={{ marginVertical: 15 }} />
-            <Subheading style={{ marginBottom: 10, marginLeft: 5 }}>Tertiary Education</Subheading>
-
-            {/* Tertiary Repeater */}
+            {/* Tertiary Qualifications Section */}
+            <Subheading style={{ marginTop: 10, marginBottom: 5 }}>Tertiary / Higher Education</Subheading>
             {tertiary.map((qual, index) => (
                 <Card key={index} style={styles.card}>
                     <Card.Title
-                        title={qual.Institution || "New Institution"}
-                        subtitle={qual["Qualification Name"] || "Qualification"}
-                        left={(props) => <IconButton {...props} icon="book-education" />}
+                        title={qual["Qualification Name"] || "New Qualification"}
+                        subtitle={qual["Institution"] || "Institution"}
+                        left={(props) => <IconButton {...props} icon="certificate" />}
                         right={(props) => (
                             <View style={{ flexDirection: 'row' }}>
                                 <IconButton {...props} icon={expandedTertiaryIndex === index ? "chevron-up" : "chevron-down"} onPress={() => setExpandedTertiaryIndex(expandedTertiaryIndex === index ? null : index)} />
@@ -123,28 +112,29 @@ const Education = () => {
                     />
                     {expandedTertiaryIndex === index && (
                         <Card.Content>
-                            <TextInput
-                                label="Institution"
-                                value={qual.Institution}
-                                onChangeText={(text) => updateTertiary(index, 'Institution', text)}
-                                style={styles.input}
-                            />
+                            <Divider style={{ marginBottom: 10 }} />
                             <TextInput
                                 label="Qualification Name"
                                 value={qual["Qualification Name"]}
                                 onChangeText={(text) => updateTertiary(index, 'Qualification Name', text)}
                                 style={styles.input}
                             />
+                            <TextInput
+                                label="Institution"
+                                value={qual["Institution"]}
+                                onChangeText={(text) => updateTertiary(index, 'Institution', text)}
+                                style={styles.input}
+                            />
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                 <TextInput
                                     label="Year"
-                                    value={String(qual.Year || '')}
+                                    value={String(qual["Year"] || '')}
                                     onChangeText={(text) => updateTertiary(index, 'Year', text)}
                                     style={[styles.input, { flex: 1, marginRight: 5 }]}
                                     keyboardType="numeric"
                                 />
                                 <TextInput
-                                    label="NQF Level"
+                                    label="NQF Level (Optional)"
                                     value={String(qual["NQF Level"] || '')}
                                     onChangeText={(text) => updateTertiary(index, 'NQF Level', text)}
                                     style={[styles.input, { flex: 1, marginLeft: 5 }]}
@@ -155,19 +145,18 @@ const Education = () => {
                 </Card>
             ))}
 
-            <Button mode="contained" icon="plus" onPress={addTertiary} style={styles.addButton}>
-                Add Qualification
+            <Button mode="contained" icon="plus" onPress={addTertiary} style={styles.addBtn}>
+                Add Tertiary Qualification
             </Button>
-            <View style={{ height: 50 }} />
         </KeyboardAwareScrollView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    card: { marginBottom: 10 },
-    input: { marginBottom: 10, backgroundColor: '#fff', fontSize: 14 },
-    addButton: { marginTop: 10, marginBottom: 20 }
+    container: { flex: 1 },
+    card: { marginBottom: 15 },
+    input: { marginBottom: 10 },
+    addBtn: { marginTop: 10, marginBottom: 20 }
 });
 
 export default Education;

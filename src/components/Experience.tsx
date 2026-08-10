@@ -83,11 +83,9 @@ const Experience = () => {
             enableOnAndroid={true}
             extraScrollHeight={100}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ padding: 10, paddingBottom: 120, flexGrow: 1 }}
+            contentContainerStyle={{ padding: 6, paddingTop: 4, paddingBottom: 120, flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
         >
-            <Headline style={{ marginBottom: 10 }}>Work Experience</Headline>
-
             {experiences.map((exp, index) => (
                 <Card key={index} style={styles.card}>
                     <Card.Title
@@ -153,53 +151,39 @@ const Experience = () => {
                                 onChangeText={(text) => updateExpField(index, 'Reason for Leaving', text)}
                                 style={styles.input}
                             />
-                             <TextInput
-                                label="Systems / Tools Used"
+                            <TextInput
+                                label="Systems Used"
                                 value={exp["Systems Used"]}
                                 onChangeText={(text) => handleSystemsChange(index, text)}
                                 style={styles.input}
                                 multiline
-                                placeholder={
-                                    uiSettings.SystemsUsedFormat !== 'comma'
-                                        ? "- SystemName {List of functionalities used}\n- e.g. MS Word {Document formatting, Mail merge}"
-                                        : "SystemName {List of functionalities used}, e.g. MS Word {Document formatting, Mail merge}"
-                                }
+                                numberOfLines={3}
                             />
-                            <View style={styles.switchRow}>
-                                <Text style={{ fontSize: 13 }}>Format Systems as Bulleted List?</Text>
-                                <Switch
-                                    value={uiSettings.SystemsUsedFormat !== 'comma'}
-                                    onValueChange={(val) => updateUiSettings({ ...uiSettings, SystemsUsedFormat: val ? 'bullet' : 'comma' })}
-                                />
-                            </View>
                             <TextInput
-                                label="Key Achievements"
+                                label="Achievements"
                                 value={exp["Achievements"]}
                                 onChangeText={(text) => updateExpField(index, 'Achievements', text)}
                                 style={styles.input}
                                 multiline
-                                numberOfLines={2}
-                                placeholder="e.g. Increased efficiency by 15%"
+                                numberOfLines={3}
                             />
                         </Card.Content>
                     )}
                 </Card>
             ))}
 
-            <Button mode="contained" icon="plus" onPress={addExperience} style={styles.addButton}>
-                Add Job
+            <Button mode="contained" icon="plus" onPress={addExperience} style={styles.addBtn}>
+                Add Job Experience
             </Button>
-            <View style={{ height: 50 }} />
         </KeyboardAwareScrollView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    card: { marginBottom: 10 },
-    input: { marginBottom: 10, backgroundColor: '#fff', fontSize: 14 },
-    addButton: { marginTop: 10, marginBottom: 20 },
-    switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, paddingVertical: 5 }
+    container: { flex: 1 },
+    card: { marginBottom: 15 },
+    input: { marginBottom: 10 },
+    addBtn: { marginTop: 10, marginBottom: 20 }
 });
 
 export default Experience;

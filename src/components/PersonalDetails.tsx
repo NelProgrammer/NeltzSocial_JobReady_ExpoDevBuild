@@ -119,10 +119,9 @@ const PersonalDetails = () => {
             enableOnAndroid={true}
             extraScrollHeight={100}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ padding: 10, paddingBottom: 120, flexGrow: 1 }}
+            contentContainerStyle={{ padding: 6, paddingTop: 4, paddingBottom: 120, flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
         >
-            <Headline style={{ marginBottom: 15, paddingLeft: 5 }}>Personal Details</Headline>
 
             
                 <Card style={styles.card}>

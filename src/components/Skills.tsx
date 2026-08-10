@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useContext } from 'react';
-import { ScrollView, View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { TextInput, Headline, Card, Switch, Text } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
@@ -10,15 +10,15 @@ const Skills = () => {
 
     if (!resumeData) return null;
 
-    const skills = resumeData.Skills || {};
+    const skills = resumeData.skills || {};
 
     const updateSkill = (key, value) => {
         const newSkills = { ...skills, [key]: value };
-        updateResumeData({ ...resumeData, Skills: newSkills });
+        updateResumeData({ ...resumeData, skills: newSkills });
     };
 
-    const handleTextChange = (field, settingKey, text) => {
-        if (uiSettings[settingKey] !== 'comma') {
+    const handleTextChange = (field, formatSettingKey, text) => {
+        if (uiSettings[formatSettingKey] !== 'comma') {
             if (text && !text.startsWith('- ')) {
                 text = '- ' + text;
             }
@@ -44,11 +44,9 @@ const Skills = () => {
             enableOnAndroid={true}
             extraScrollHeight={100}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ padding: 10, paddingBottom: 120, flexGrow: 1 }}
+            contentContainerStyle={{ padding: 6, paddingTop: 4, paddingBottom: 120, flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
         >
-            <Headline style={{ marginBottom: 10 }}>Skills & Certifications</Headline>
-
             <Card style={styles.card}>
                 <Card.Content>
                     <TextInput
@@ -68,12 +66,12 @@ const Skills = () => {
                         <Text style={{ fontSize: 13 }}>Format Technical Skills as Bulleted List?</Text>
                         <Switch
                             value={uiSettings.TechFormat !== 'comma'}
-                            onValueChange={(val) => updateUiSettings({ ...uiSettings, TechFormat: val ? 'bullet' : 'comma' })}
+                            onValueChange={(val) => updateUiSettings('TechFormat', val ? 'list' : 'comma')}
                         />
                     </View>
 
                     <TextInput
-                        label="Soft Skills"
+                        label="Soft / Interpersonal Skills"
                         value={skills.Soft}
                         onChangeText={(text) => handleTextChange('Soft', 'SoftFormat', text)}
                         style={styles.input}
@@ -82,75 +80,48 @@ const Skills = () => {
                         placeholder={
                             uiSettings.SoftFormat !== 'comma'
                                 ? uiSettings.placeholders.Soft
-                                : "e.g. Leadership, Communication, Teamwork..."
+                                : "e.g. Communication, Problem Solving, Team Leadership..."
                         }
                     />
                     <View style={styles.switchRow}>
                         <Text style={{ fontSize: 13 }}>Format Soft Skills as Bulleted List?</Text>
                         <Switch
                             value={uiSettings.SoftFormat !== 'comma'}
-                            onValueChange={(val) => updateUiSettings({ ...uiSettings, SoftFormat: val ? 'bullet' : 'comma' })}
-                        />
-                    </View>
-                </Card.Content>
-            </Card>
-
-            <Card style={styles.card}>
-                <Card.Content>
-                    <TextInput
-                        label="Professional Certifications"
-                        value={skills["Professional Certs"]}
-                        onChangeText={(text) => handleTextChange('Professional Certs', 'ProfCertsFormat', text)}
-                        style={styles.input}
-                        multiline
-                        numberOfLines={3}
-                        placeholder={
-                            uiSettings.ProfCertsFormat !== 'comma'
-                                ? uiSettings.placeholders.ProfCerts
-                                : "e.g. PMP, AWS Certified Solutions Architect..."
-                        }
-                    />
-                    <View style={styles.switchRow}>
-                        <Text style={{ fontSize: 13 }}>Format Professional Certs as Bulleted List?</Text>
-                        <Switch
-                            value={uiSettings.ProfCertsFormat !== 'comma'}
-                            onValueChange={(val) => updateUiSettings({ ...uiSettings, ProfCertsFormat: val ? 'bullet' : 'comma' })}
+                            onValueChange={(val) => updateUiSettings('SoftFormat', val ? 'list' : 'comma')}
                         />
                     </View>
 
                     <TextInput
-                        label="Non-Academic Certifications"
-                        value={skills["Non-Academic Certs"]}
-                        onChangeText={(text) => handleTextChange('Non-Academic Certs', 'NonAcadCertsFormat', text)}
+                        label="Certifications & Training"
+                        value={skills.Certifications}
+                        onChangeText={(text) => handleTextChange('Certifications', 'CertFormat', text)}
                         style={styles.input}
                         multiline
-                        numberOfLines={3}
+                        numberOfLines={4}
                         placeholder={
-                            uiSettings.NonAcadCertsFormat !== 'comma'
-                                ? uiSettings.placeholders.NonAcadCerts
-                                : "e.g. First Aid Level 1, Safety Training..."
+                            uiSettings.CertFormat !== 'comma'
+                                ? uiSettings.placeholders.Certifications
+                                : "e.g. AWS Certified Developer, PMP, First Aid Level 1..."
                         }
                     />
                     <View style={styles.switchRow}>
-                        <Text style={{ fontSize: 13 }}>Format Non-Academic Certs as Bulleted List?</Text>
+                        <Text style={{ fontSize: 13 }}>Format Certifications as Bulleted List?</Text>
                         <Switch
-                            value={uiSettings.NonAcadCertsFormat !== 'comma'}
-                            onValueChange={(val) => updateUiSettings({ ...uiSettings, NonAcadCertsFormat: val ? 'bullet' : 'comma' })}
+                            value={uiSettings.CertFormat !== 'comma'}
+                            onValueChange={(val) => updateUiSettings('CertFormat', val ? 'list' : 'comma')}
                         />
                     </View>
                 </Card.Content>
             </Card>
-
-            <View style={{ height: 50 }} />
         </KeyboardAwareScrollView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
+    container: { flex: 1 },
     card: { marginBottom: 15 },
-    input: { marginBottom: 5, backgroundColor: '#fff' },
-    switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15, paddingVertical: 5 }
+    input: { marginBottom: 10 },
+    switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }
 });
 
 export default Skills;
