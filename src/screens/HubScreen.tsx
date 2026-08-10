@@ -299,7 +299,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
         </LinearGradient>
 
         {/* Unified Body Card Container */}
-        <Surface style={[styles.bodyCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} elevation={2}>
+        <Surface style={[styles.bodyCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, marginBottom: 60 + Math.max(insets.bottom, 0) }]} elevation={2}>
           {/* Success Suite Section */}
           <View style={styles.menuContainer}>
             <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
@@ -345,7 +345,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
       </ScrollView>
 
       {/* Persistent Sticky Footer Card */}
-      <Surface style={[styles.footerCard, { backgroundColor: activeTheme.bgDark, borderColor: activeTheme.border, paddingBottom: Math.max(insets.bottom, 10) }]} elevation={5}>
+      <Surface style={[styles.footerCard, { backgroundColor: activeTheme.bgDark, borderColor: activeTheme.border, height: 56 + Math.max(insets.bottom, 0), paddingBottom: Math.max(insets.bottom, 4) }]} elevation={5}>
         <TouchableOpacity style={[styles.burgerBtn, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} onPress={() => { setMode('VIEW'); setModalVisible(true); }} activeOpacity={0.7}>
           <MaterialCommunityIcons name="menu" size={24} color="#fff" />
         </TouchableOpacity>
