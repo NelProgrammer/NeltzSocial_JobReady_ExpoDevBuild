@@ -12,6 +12,8 @@ import { useThemeContext } from '../context/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { VIGNETTE_CSS } from '../constants/VignetteStyles';
 import SmartPreviewer from '../components/preview/SmartPreviewer';
+import ExportActionModal from '../components/export/ExportActionModal';
+import { generateExportFileName } from '../services/ExportEngineService';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
 
@@ -28,6 +30,11 @@ const PreviewScreen = ({ navigation }) => {
     const [enableScroll, setEnableScroll] = useState(true);
     const [isFullScreenPreview, setIsFullScreenPreview] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    // In-App Direct Export Modal State
+    const [exportModalVisible, setExportModalVisible] = useState(false);
+    const [exportedFileUri, setExportedFileUri] = useState(null);
+    const [exportedFileName, setExportedFileName] = useState('');
 
     const insets = useSafeAreaInsets();
 
@@ -358,23 +365,9 @@ const PreviewScreen = ({ navigation }) => {
             const html = generateHtml();
             const { uri } = await Print.printToFileAsync({ html, width: 612, height: 792 }); // Letter size
 
-            // Generate filename with format My_Resume_+CCYY-MM-DD HH-MM-SS-MS
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const hours = String(now.getHours()).padStart(2, '0');
-            const minutes = String(now.getMinutes()).padStart(2, '0');
-            const seconds = String(now.getSeconds()).padStart(2, '0');
-            const ms = String(now.getMilliseconds()).padStart(3, '0');
-
-            const fileName = `My_Resume_${year}-${month}-${day} ${hours}-${minutes}-${seconds}-${ms}.pdf`;
-
-            // expo-print generates a random filename. We move it to a new path with our custom name 
-            // so the share sheet recognizes the right filename.
+            const fileName = generateExportFileName(currentLayout, 'pdf');
             const newUri = `${FileSystem.cacheDirectory}${fileName}`;
 
-            // Delete if a file with the same name already exists to prevent errors
             const fileInfo = await FileSystem.getInfoAsync(newUri);
             if (fileInfo.exists) {
                 await FileSystem.deleteAsync(newUri);
@@ -385,11 +378,9 @@ const PreviewScreen = ({ navigation }) => {
                 to: newUri
             });
 
-            await shareAsync(newUri, {
-                UTI: '.pdf',
-                mimeType: 'application/pdf',
-                dialogTitle: `Share ${fileName}`
-            });
+            setExportedFileUri(newUri);
+            setExportedFileName(fileName);
+            setExportModalVisible(true);
 
         } catch (error) {
             Alert.alert("Error", "Could not generate PDF");
@@ -404,7 +395,7 @@ const PreviewScreen = ({ navigation }) => {
         const { "personal details": pd, experience: expList, education: eduList, Skills: skills, "professional summary": summary } = resumeData;
         const names = pd?.names || {};
         
-        let text = `${names.firstName} ${names.Surname}\n\n`;
+        let text = `${names.firstName || ''} ${names.Surname || ''}\n\n`;
         if (summary) text += `EXECUTIVE SUMMARY\n${summary}\n\n`;
         
         if (expList && expList.length > 0) {
@@ -427,17 +418,13 @@ const PreviewScreen = ({ navigation }) => {
     const exportToWord = async (type) => {
         setLoading(true);
         try {
-            const now = new Date();
-            const timestamp = now.toISOString().replace(/[:.]/g, '-');
-            const extension = type === 'text' ? 'docx' : 'doc';
-            const fileName = `My_Resume_${type === 'google_docs' ? 'GoogleDocs' : 'Word'}_${timestamp}.${extension}`;
+            const fileName = generateExportFileName(currentLayout, type === 'text' ? 'word_text' : exportFormat);
             const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
             
             let content = '';
             if (type === 'text') {
                 content = generatePlainText();
             } else {
-                // HTML to Word/Google Docs (Layout)
                 content = `
                     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                     <head><meta charset='utf-8'><title>Resume</title></head>
@@ -448,14 +435,9 @@ const PreviewScreen = ({ navigation }) => {
 
             await FileSystem.writeAsStringAsync(fileUri, content);
 
-            // Google Docs on mobile intercepts standard doc/docx MIMEs.
-            const mimeType = type === 'text' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/msword';
-
-            await shareAsync(fileUri, {
-                title: type === 'google_docs' ? `Save ${fileName} to Google Drive / Docs` : `Share ${fileName}`,
-                mimeType: mimeType,
-                dialogTitle: type === 'google_docs' ? 'Open with Google Docs or Save to Drive' : 'Share File'
-            });
+            setExportedFileUri(fileUri);
+            setExportedFileName(fileName);
+            setExportModalVisible(true);
 
         } catch (error) {
             Alert.alert("Error", "Could not export document");
@@ -617,6 +599,16 @@ const PreviewScreen = ({ navigation }) => {
                     </Button>
                 </Modal>
             </Portal>
+
+            {/* In-App Direct Export Action Modal */}
+            <ExportActionModal
+                visible={exportModalVisible}
+                onDismiss={() => setExportModalVisible(false)}
+                fileUri={exportedFileUri}
+                fileName={exportedFileName}
+                exportFormat={exportFormat}
+                rawTextContent={generatePlainText()}
+            />
         </View>
     );
 };
