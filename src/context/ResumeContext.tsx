@@ -405,13 +405,49 @@ export const ResumeProvider = ({ children }) => {
         }
     };
 
-    // Update Resume Data (Auto-Save Logic)
+    // Ensure array items carry unique IDs and ISO + Epoch timestamps for DB parity
+    const ensureItemTimestamps = (data) => {
+        if (!data) return data;
+        const nowIso = new Date().toISOString();
+        const nowMs = Date.now();
+
+        const stampArray = (arr) => {
+            if (!Array.isArray(arr)) return arr;
+            return arr.map((item, idx) => {
+                if (typeof item !== 'object' || item === null) return item;
+                return {
+                    ...item,
+                    id: item.id || `item_${nowMs}_${idx}_${Math.random().toString(36).substr(2, 5)}`,
+                    updatedAt: item.updatedAt || nowIso,
+                    updatedAtMs: item.updatedAtMs || nowMs
+                };
+            });
+        };
+
+        return {
+            ...data,
+            experience: stampArray(data.experience),
+            education: {
+                ...(data.education || {}),
+                tertiary: stampArray(data.education?.tertiary)
+            },
+            Skills: Array.isArray(data.Skills) ? stampArray(data.Skills) : data.Skills,
+            references: stampArray(data.references || data.References)
+        };
+    };
+
+    // Update Resume Data (Auto-Save Logic with DB-Mapped Timestamps)
     const updateResumeData = async (newData) => {
         if (!user || !activeResumeId) return;
-        setResumeData(newData);
-        
         const timestamp = Date.now();
-        await Storage.saveResumeData(user.id, activeResumeId, newData);
+        const stampedData = ensureItemTimestamps({
+            ...newData,
+            updatedAt: new Date(timestamp).toISOString(),
+            updatedAtMs: timestamp
+        });
+
+        setResumeData(stampedData);
+        await Storage.saveResumeData(user.id, activeResumeId, stampedData);
         
         const updatedMeta = meta.map(m => m.id === activeResumeId ? { ...m, lastModified: timestamp } : m);
         setMeta(updatedMeta);
@@ -420,6 +456,24 @@ export const ResumeProvider = ({ children }) => {
         if (user.accessToken) {
             syncResumes(user.id, user.accessToken);
         }
+    };
+
+    // Toggle Item Selection for Targeted CV Views
+    const toggleTargetedItemSelection = async (sectionName, itemId, isSelected) => {
+        if (!user || !activeResumeId || !resumeData) return;
+        const currentSelections = resumeData.selections || { experience: {}, tertiary: {}, skills: {}, references: {} };
+        const sectionSelections = { ...(currentSelections[sectionName] || {}) };
+        sectionSelections[itemId] = isSelected;
+
+        const updatedData = {
+            ...resumeData,
+            selections: {
+                ...currentSelections,
+                [sectionName]: sectionSelections
+            }
+        };
+
+        await updateResumeData(updatedData);
     };
 
     // Rename Resume
@@ -496,6 +550,7 @@ export const ResumeProvider = ({ children }) => {
             createResume,
             switchResume,
             updateResumeData,
+            toggleTargetedItemSelection,
             renameResume,
             deleteResume,
             duplicateResume,

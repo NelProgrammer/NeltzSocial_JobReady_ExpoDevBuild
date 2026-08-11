@@ -24,4 +24,5 @@ export interface ResumeContextType {
   loading: boolean;
   fetchResume: () => Promise<void>;
   updateResume: (data: any) => Promise<void>;
+  toggleTargetedItemSelection?: (sectionName: string, itemId: string, isSelected: boolean) => Promise<void>;
 }
