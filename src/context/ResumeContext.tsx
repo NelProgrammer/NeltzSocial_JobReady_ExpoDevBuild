@@ -285,6 +285,43 @@ export const ResumeProvider = ({ children }) => {
         }
     };
 
+    // Synchronize Field & Item Level Timestamps with Database (public.resume_timestamps)
+    const syncTimestamps = async (profileId, token, resumeId, timestampItems = []) => {
+        if (!profileId || !token || !resumeId) return;
+        try {
+            if (timestampItems.length > 0) {
+                await fetchWithTimeout(`${backendUrl}/sync/timestamps/push`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        items: timestampItems.map(item => ({
+                            id: item.id || `ts_${Date.now()}`,
+                            resume_id: resumeId,
+                            profile_id: profileId,
+                            field_name: item.fieldName || item.field_name || 'root',
+                            last_modified: item.updatedAt || new Date().toISOString(),
+                            updated_at_ms: item.updatedAtMs || Date.now()
+                        }))
+                    })
+                }, 5000);
+            }
+
+            const pullRes = await fetchWithTimeout(`${backendUrl}/sync/timestamps/pull/${resumeId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }, 5000);
+
+            if (pullRes.ok) {
+                const serverTimestamps = await pullRes.json();
+                await Storage.saveData(`ts_${profileId}_${resumeId}`, serverTimestamps);
+            }
+        } catch (err) {
+            console.warn('[Sync] Timestamp synchronization skipped:', err.message);
+        }
+    };
+
     // Load data when user changes
     useEffect(() => {
         const loadInitialData = async () => {
