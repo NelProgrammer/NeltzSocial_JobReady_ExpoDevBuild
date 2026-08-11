@@ -244,7 +244,9 @@ export const ResumeProvider = ({ children }) => {
                     for (const serverSet of serverSettings) {
                         if (toDownloadIds.includes(serverSet.resume_id)) {
                             await Storage.saveUiSettings(profileId, serverSet.resume_id, {
-                                ...serverSet.settings_json,
+                                section_formats: serverSet.section_formats || {},
+                                layout: serverSet.layout || 'professional',
+                                placeholders: serverSet.placeholders || {},
                                 lastModified: serverSet.last_modified * 1000
                             });
                         }
@@ -264,7 +266,9 @@ export const ResumeProvider = ({ children }) => {
                         itemsToPush.push({
                             resume_id: resId,
                             profile_id: profileId,
-                            settings_json: settings,
+                            section_formats: settings.section_formats || { tech: settings.tech_format || 'bullet' },
+                            layout: settings.layout || 'professional',
+                            placeholders: settings.placeholders || {},
                             last_modified: (settings.lastModified || Date.now()) / 1000
                         });
                     }
