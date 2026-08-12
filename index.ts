@@ -1,6 +1,10 @@
 // @ts-nocheck
-import { registerRootComponent } from 'expo';
+import * as tslib from 'tslib';
+if (tslib && !tslib.default) {
+  (tslib as any).default = tslib;
+}
 
+import { registerRootComponent } from 'expo';
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
