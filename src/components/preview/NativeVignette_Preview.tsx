@@ -1,13 +1,21 @@
-// @ts-nocheck
 import React from 'react';
 import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native';
 import { Surface, Text, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ResumeData } from '../../types/resume';
 
 const A4_RATIO = 1.4142;
 const VIGNETTE_PADDING = 12;
 
-const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, exportFormat = 'pdf', fitMode = 'a4' }) => {
+interface NativeVignetteProps {
+    data: ResumeData | any;
+    layout?: string;
+    glow?: string | null;
+    exportFormat?: string;
+    fitMode?: string;
+}
+
+const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 'professional', glow = null, exportFormat = 'pdf', fitMode = 'a4' }) => {
     const { width: windowWidth, height: windowHeight } = useWindowDimensions();
     if (!data) return null;
 
@@ -53,7 +61,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
     const eduList = data.education || { tertiary: [], highschool: {} };
     const skills = data.skills || data.Skills || {};
     const summary = data["professional summary"];
-    const refList = (data.References || data.references || []).filter(r => r.visible !== false);
+    const refList = (data.References || data.references || []).filter((r: any) => r.visible !== false);
 
     // Calculate content density for 1-Page Fitting
     const totalItemCount = expList.length + (eduList.tertiary?.length || 0) + (refList.length || 0) + (skills.Tech ? 1 : 0) + (summary ? 1 : 0);
@@ -66,7 +74,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
     const bodyFontSize = isDense ? 11 : 12;
     const bodyLineHeight = isDense ? 15 : 17;
 
-    const maskId = (idStr) => {
+    const maskId = (idStr: string) => {
         if (!idStr) return '';
         if (identity.idMask !== false && idStr.length >= 6) {
             return `${idStr.substring(0, 6)} **** ***`;
@@ -135,7 +143,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
         }
     };
 
-    const renderSectionHeader = (title) => {
+    const renderSectionHeader = (title: string) => {
         if (exportFormat === 'word_text') {
             return <Text style={styles.plainSectionTitle}>{title.toUpperCase()}</Text>;
         }
@@ -163,11 +171,11 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
                         {expList.length > 0 && (
                             <View style={[styles.section, { marginBottom: sectionMargin }]}>
                                 {renderSectionHeader('Professional Experience')}
-                                {expList.map((job, idx) => (
+                                {expList.map((job: any, idx: number) => (
                                     <View key={idx} style={styles.entry}>
                                         <Text style={styles.plainTextBold}>{job.Organization} | {job.Role}</Text>
                                         <Text style={styles.plainTextSub}>{job["Start Date"]} - {job["End Date"] || 'Present'}</Text>
-                                        <Text style={styles.plainTextBody}>{job["Key Responsibilities"]}</Text>
+                                        <Text style={styles.plainTextBody}>{stringifyField(job["Key Responsibilities"])}</Text>
                                     </View>
                                 ))}
                             </View>
@@ -176,7 +184,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
                         {(eduList.tertiary?.length > 0) && (
                             <View style={[styles.section, { marginBottom: sectionMargin }]}>
                                 {renderSectionHeader('Education')}
-                                {eduList.tertiary?.map((edu, idx) => (
+                                {eduList.tertiary?.map((edu: any, idx: number) => (
                                     <View key={idx} style={styles.entry}>
                                         <Text style={styles.plainTextBold}>{edu.Institution} | {edu["Qualification Name"]}</Text>
                                         <Text style={styles.plainTextSub}>{edu.Year}</Text>
@@ -191,7 +199,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
     }
 
     // Helper to safely format multi-item arrays or strings into text
-    const stringifyField = (val) => {
+    const stringifyField = (val: any) => {
         if (!val) return '';
         if (Array.isArray(val)) {
             return val.map(item => {
@@ -239,7 +247,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
                 {expList.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Work Experience')}
-                        {expList.map((job, idx) => (
+                        {expList.map((job: any, idx: number) => (
                             <View key={idx} style={styles.entry}>
                                 <View style={styles.entryHeader}>
                                     <Text style={styles.entryTitle} numberOfLines={1}>{job.Organization}</Text>
@@ -255,7 +263,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
                 {(eduList.tertiary?.length > 0 || (eduList.highschool && (eduList.highschool["Year Completed"] || eduList.highschool["Highest Grade Passed"]))) && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Education')}
-                        {eduList.tertiary?.map((edu, idx) => (
+                        {eduList.tertiary?.map((edu: any, idx: number) => (
                             <View key={idx} style={styles.entry}>
                                 <View style={styles.entryHeader}>
                                     <Text style={styles.entryTitle} numberOfLines={1}>{edu.Institution}</Text>
@@ -288,7 +296,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
                 {languages.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Languages')}
-                        {languages.filter(l => l.visible !== false).map((l, idx) => (
+                        {languages.filter((l: any) => l.visible !== false).map((l: any, idx: number) => (
                             <Text key={idx} style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{l.Language}: {l.proficiency}</Text>
                         ))}
                     </View>
@@ -298,7 +306,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('References')}
                         <View style={styles.refGrid}>
-                            {refList.map((ref, idx) => (
+                            {refList.map((ref: any, idx: number) => (
                                 <View key={idx} style={styles.refItem}>
                                     <Text style={styles.refName}>{ref.name}</Text>
                                     <Text style={styles.refDetail}>{(ref.role || ref.relation || 'Reference')}{ref.company || ref.org ? ` at ${ref.company || ref.org}` : ''}</Text>

@@ -20,9 +20,19 @@ export interface AuthContextType {
 }
 
 export interface ResumeContextType {
-  resume: any | null;
+  resume?: any | null;
+  resumeData?: any | null;
   loading: boolean;
-  fetchResume: () => Promise<void>;
-  updateResume: (data: any) => Promise<void>;
+  meta?: any[];
+  activeResumeId?: string | null;
+  setActiveResumeId?: (id: string) => void;
+  uiSettings?: any;
+  updateUiSettings?: (key: string, value: any) => Promise<void>;
+  fetchResume?: () => Promise<void>;
+  updateResume?: (data: any) => Promise<void>;
+  updateResumeData?: (data: any) => Promise<void>;
+  targetedResumes?: any[];
+  recruitmentShares?: any[];
+  syncUiSettings?: () => Promise<void>;
   toggleTargetedItemSelection?: (sectionName: string, itemId: string, isSelected: boolean) => Promise<void>;
 }

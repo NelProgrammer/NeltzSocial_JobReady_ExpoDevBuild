@@ -1,17 +1,19 @@
-// @ts-nocheck
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { TextInput, Button, Card, IconButton, Divider, Text } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
+import { WorkExperience, SubExperienceItem } from '../types/resume';
 
-const Experience = () => {
-    const { resumeData, updateResumeData, uiSettings, updateUiSettings } = useContext(ResumeContext);
-    const [expandedIndex, setExpandedIndex] = useState(null);
+const Experience: React.FC = () => {
+    const context = useContext(ResumeContext);
+    const resumeData = context?.resumeData;
+    const updateResumeData = context?.updateResumeData;
+    const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-    if (!resumeData) return null;
+    if (!resumeData || !updateResumeData) return null;
 
-    const experiences = resumeData.experience || [];
+    const experiences: WorkExperience[] = resumeData.experience || [];
 
     React.useEffect(() => {
         if (experiences.length === 0) {
@@ -31,7 +33,7 @@ const Experience = () => {
         setExpandedIndex(experiences.length); // Auto-expand new item
     };
 
-    const removeExperience = (index) => {
+    const removeExperience = (index: number) => {
         Alert.alert(
             "Remove Job",
             "Are you sure?",
@@ -51,16 +53,18 @@ const Experience = () => {
         );
     };
 
-    const updateExpField = (index, key, value) => {
+    type SubField = 'Key Responsibilities' | 'Achievements' | 'Systems Used';
+
+    const updateExpField = (index: number, key: string, value: any) => {
         const newExp = [...experiences];
-        newExp[index][key] = value;
+        (newExp[index] as any)[key] = value;
         updateResumeData({ ...resumeData, experience: newExp });
     };
 
     // Sub-item list helpers
-    const getSubList = (exp, field, prefix) => {
+    const getSubList = (exp: WorkExperience, field: SubField, prefix: string): SubExperienceItem[] => {
         const raw = exp[field];
-        if (Array.isArray(raw)) return raw;
+        if (Array.isArray(raw)) return raw as SubExperienceItem[];
         if (typeof raw === 'string' && raw.trim().length > 0) {
             return raw.split('\n').filter(line => line.trim().length > 0).map((line, idx) => ({
                 id: `${prefix}_${exp.id || 'exp'}_${idx}_${Date.now()}`,
@@ -71,16 +75,16 @@ const Experience = () => {
         return [];
     };
 
-    const updateSubList = (expIndex, field, items) => {
+    const updateSubList = (expIndex: number, field: SubField, items: SubExperienceItem[]) => {
         const newExp = [...experiences];
-        newExp[expIndex][field] = items;
+        (newExp[expIndex] as any)[field] = items;
         updateResumeData({ ...resumeData, experience: newExp });
     };
 
-    const addSubItem = (expIndex, field, prefix) => {
+    const addSubItem = (expIndex: number, field: SubField, prefix: string) => {
         const exp = experiences[expIndex];
         const current = getSubList(exp, field, prefix);
-        const newItem = {
+        const newItem: SubExperienceItem = {
             id: `${prefix}_${exp.id || 'exp'}_${Date.now()}_${current.length + 1}`,
             text: '',
             name: ''
@@ -88,7 +92,7 @@ const Experience = () => {
         updateSubList(expIndex, field, [...current, newItem]);
     };
 
-    const updateSubItemText = (expIndex, field, prefix, subIndex, text) => {
+    const updateSubItemText = (expIndex: number, field: SubField, prefix: string, subIndex: number, text: string) => {
         const exp = experiences[expIndex];
         const current = [...getSubList(exp, field, prefix)];
         current[subIndex] = {
@@ -99,14 +103,14 @@ const Experience = () => {
         updateSubList(expIndex, field, current);
     };
 
-    const removeSubItem = (expIndex, field, prefix, subIndex) => {
+    const removeSubItem = (expIndex: number, field: SubField, prefix: string, subIndex: number) => {
         const exp = experiences[expIndex];
         const current = [...getSubList(exp, field, prefix)];
         current.splice(subIndex, 1);
         updateSubList(expIndex, field, current);
     };
 
-    const renderSubSection = (expIndex, exp, label, field, prefix) => {
+    const renderSubSection = (expIndex: number, exp: WorkExperience, label: string, field: SubField, prefix: string) => {
         const subItems = getSubList(exp, field, prefix);
 
         return (
