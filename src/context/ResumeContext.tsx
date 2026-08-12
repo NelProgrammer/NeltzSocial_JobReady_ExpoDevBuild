@@ -244,8 +244,14 @@ export const ResumeProvider = ({ children }) => {
                     for (const serverSet of serverSettings) {
                         if (toDownloadIds.includes(serverSet.resume_id)) {
                             await Storage.saveUiSettings(profileId, serverSet.resume_id, {
-                                section_formats: serverSet.section_formats || {},
                                 layout: serverSet.layout || 'professional',
+                                personal_details_settings: serverSet.personal_details_settings || {},
+                                skills_settings: serverSet.skills_settings || {},
+                                experience_settings: serverSet.experience_settings || {},
+                                education_settings: serverSet.education_settings || {},
+                                tertiary_education_settings: serverSet.tertiary_education_settings || {},
+                                references_settings: serverSet.references_settings || {},
+                                languages_settings: serverSet.languages_settings || {},
                                 placeholders: serverSet.placeholders || {},
                                 lastModified: serverSet.last_modified * 1000
                             });
@@ -266,8 +272,14 @@ export const ResumeProvider = ({ children }) => {
                         itemsToPush.push({
                             resume_id: resId,
                             profile_id: profileId,
-                            section_formats: settings.section_formats || { tech: settings.tech_format || 'bullet' },
                             layout: settings.layout || 'professional',
+                            personal_details_settings: settings.personal_details_settings || {},
+                            skills_settings: settings.skills_settings || {},
+                            experience_settings: settings.experience_settings || {},
+                            education_settings: settings.education_settings || {},
+                            tertiary_education_settings: settings.tertiary_education_settings || {},
+                            references_settings: settings.references_settings || {},
+                            languages_settings: settings.languages_settings || {},
                             placeholders: settings.placeholders || {},
                             last_modified: (settings.lastModified || Date.now()) / 1000
                         });
