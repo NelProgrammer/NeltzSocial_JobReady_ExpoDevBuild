@@ -1,8 +1,8 @@
 // @ts-nocheck
 import React, { useContext, useState } from 'react';
-import { ScrollView, View, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { TextInput, Headline, Button, Card, Paragraph, IconButton, Divider, Switch, Text } from 'react-native-paper';
+import { TextInput, Button, Card, IconButton, Divider, Text } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
 
 const Experience = () => {
@@ -21,9 +21,10 @@ const Experience = () => {
 
     const addExperience = () => {
         const newExp = {
+            id: `exp_${Date.now()}`,
             "Start Date": "", "End Date": "", "Organization": "", "Department": "",
-            "Role": "", "Key Responsibilities": "", "Responsibility Format": "list", "Reason for Leaving": "",
-            "Systems Used": "", "Achievements": ""
+            "Role": "", "Key Responsibilities": [], "Reason for Leaving": "",
+            "Systems Used": [], "Achievements": []
         };
         const newData = { ...resumeData, experience: [...experiences, newExp] };
         updateResumeData(newData);
@@ -56,25 +57,89 @@ const Experience = () => {
         updateResumeData({ ...resumeData, experience: newExp });
     };
 
-    const handleSystemsChange = (index, text) => {
-        if (uiSettings.SystemsUsedFormat !== 'comma') {
-            if (text && !text.startsWith('- ')) {
-                text = '- ' + text;
-            }
-            const oldText = experiences[index]["Systems Used"] || "";
-            if (text.endsWith('\n') && text.length > oldText.length) {
-                text = text + '- ';
-            }
-            const lines = text.split('\n');
-            const processed = lines.map(line => {
-                if (line.length > 0 && !line.startsWith('- ')) {
-                    return '- ' + line;
-                }
-                return line;
-            });
-            text = processed.join('\n');
+    // Sub-item list helpers
+    const getSubList = (exp, field, prefix) => {
+        const raw = exp[field];
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === 'string' && raw.trim().length > 0) {
+            return raw.split('\n').filter(line => line.trim().length > 0).map((line, idx) => ({
+                id: `${prefix}_${exp.id || 'exp'}_${idx}_${Date.now()}`,
+                text: line.replace(/^-\s*/, '').trim(),
+                name: line.replace(/^-\s*/, '').trim()
+            }));
         }
-        updateExpField(index, 'Systems Used', text);
+        return [];
+    };
+
+    const updateSubList = (expIndex, field, items) => {
+        const newExp = [...experiences];
+        newExp[expIndex][field] = items;
+        updateResumeData({ ...resumeData, experience: newExp });
+    };
+
+    const addSubItem = (expIndex, field, prefix) => {
+        const exp = experiences[expIndex];
+        const current = getSubList(exp, field, prefix);
+        const newItem = {
+            id: `${prefix}_${exp.id || 'exp'}_${Date.now()}_${current.length + 1}`,
+            text: '',
+            name: ''
+        };
+        updateSubList(expIndex, field, [...current, newItem]);
+    };
+
+    const updateSubItemText = (expIndex, field, prefix, subIndex, text) => {
+        const exp = experiences[expIndex];
+        const current = [...getSubList(exp, field, prefix)];
+        current[subIndex] = {
+            ...current[subIndex],
+            text: text,
+            name: text
+        };
+        updateSubList(expIndex, field, current);
+    };
+
+    const removeSubItem = (expIndex, field, prefix, subIndex) => {
+        const exp = experiences[expIndex];
+        const current = [...getSubList(exp, field, prefix)];
+        current.splice(subIndex, 1);
+        updateSubList(expIndex, field, current);
+    };
+
+    const renderSubSection = (expIndex, exp, label, field, prefix) => {
+        const subItems = getSubList(exp, field, prefix);
+
+        return (
+            <View style={{ marginBottom: 14 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 14, color: '#333', marginBottom: 6 }}>{label}</Text>
+                {subItems.map((item, subIndex) => (
+                    <View key={item.id || subIndex} style={styles.subItemRow}>
+                        <TextInput
+                            label={`${label} #${subIndex + 1}`}
+                            value={item.text || item.name || ''}
+                            onChangeText={(text) => updateSubItemText(expIndex, field, prefix, subIndex, text)}
+                            style={[styles.input, { flex: 1 }]}
+                            placeholder={`Describe ${label.toLowerCase()} item...`}
+                        />
+                        <IconButton
+                            icon="delete"
+                            iconColor="#B00020"
+                            size={20}
+                            onPress={() => removeSubItem(expIndex, field, prefix, subIndex)}
+                        />
+                    </View>
+                ))}
+                <Button
+                    mode="outlined"
+                    icon="plus"
+                    compact
+                    onPress={() => addSubItem(expIndex, field, prefix)}
+                    style={styles.subAddBtn}
+                >
+                    Add {label} Item
+                </Button>
+            </View>
+        );
     };
 
     return (
@@ -87,7 +152,7 @@ const Experience = () => {
             keyboardShouldPersistTaps="handled"
         >
             {experiences.map((exp, index) => (
-                <Card key={index} style={styles.card}>
+                <Card key={exp.id || index} style={styles.card}>
                     <Card.Title
                         title={exp.Organization || "New Job"}
                         subtitle={exp.Role || "Role"}
@@ -137,35 +202,16 @@ const Experience = () => {
                                     placeholder="YYYY-MM-DD"
                                 />
                             </View>
-                            <TextInput
-                                label="Responsibilities"
-                                value={exp["Key Responsibilities"]}
-                                onChangeText={(text) => updateExpField(index, 'Key Responsibilities', text)}
-                                style={styles.input}
-                                multiline
-                                numberOfLines={4}
-                            />
+
+                            {renderSubSection(index, exp, "Key Responsibilities", "Key Responsibilities", "resp")}
+                            {renderSubSection(index, exp, "Key Achievements", "Achievements", "ach")}
+                            {renderSubSection(index, exp, "Systems Used", "Systems Used", "sys")}
+
                             <TextInput
                                 label="Reason for Leaving"
                                 value={exp["Reason for Leaving"]}
                                 onChangeText={(text) => updateExpField(index, 'Reason for Leaving', text)}
                                 style={styles.input}
-                            />
-                            <TextInput
-                                label="Systems Used"
-                                value={exp["Systems Used"]}
-                                onChangeText={(text) => handleSystemsChange(index, text)}
-                                style={styles.input}
-                                multiline
-                                numberOfLines={3}
-                            />
-                            <TextInput
-                                label="Achievements"
-                                value={exp["Achievements"]}
-                                onChangeText={(text) => updateExpField(index, 'Achievements', text)}
-                                style={styles.input}
-                                multiline
-                                numberOfLines={3}
                             />
                         </Card.Content>
                     )}
@@ -182,8 +228,10 @@ const Experience = () => {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     card: { marginBottom: 15 },
-    input: { marginBottom: 10 },
-    addBtn: { marginTop: 10, marginBottom: 20 }
+    input: { marginBottom: 10, backgroundColor: '#F8F9FA' },
+    subItemRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+    subAddBtn: { marginTop: 4, alignSelf: 'flex-start', borderColor: '#6200EE' },
+    addBtn: { marginTop: 10, paddingVertical: 6, backgroundColor: '#6200EE' }
 });
 
 export default Experience;
