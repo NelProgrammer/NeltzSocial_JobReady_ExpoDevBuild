@@ -190,6 +190,20 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
         );
     }
 
+    // Helper to safely format multi-item arrays or strings into text
+    const stringifyField = (val) => {
+        if (!val) return '';
+        if (Array.isArray(val)) {
+            return val.map(item => {
+                if (typeof item === 'object' && item !== null) {
+                    return item.name || item.text || item.skill || '';
+                }
+                return String(item);
+            }).filter(Boolean).join('\n');
+        }
+        return String(val);
+    };
+
     return (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <View style={[styles.glowWrapper, glow && { borderColor: glowColor, borderWidth: 4, elevation: 15 }]}>
@@ -200,8 +214,8 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
                 {layout === 'functional' && (skills.Tech || skills.Soft) && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Expertise & Skills')}
-                        {skills.Tech && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {skills.Tech}</Text>}
-                        {skills.Soft && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Core Competencies:</Text> {skills.Soft}</Text>}
+                        {skills.Tech && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {stringifyField(skills.Tech)}</Text>}
+                        {skills.Soft && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Core Competencies:</Text> {stringifyField(skills.Soft)}</Text>}
                     </View>
                 )}
 
@@ -232,7 +246,7 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
                                     <Text style={styles.entryDate}>{job["Start Date"]} - {job["End Date"] || 'Present'}</Text>
                                 </View>
                                 <Text style={styles.entrySubTitle}>{job.Role}</Text>
-                                <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1 }]}>{job["Key Responsibilities"]}</Text>
+                                <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1 }]}>{stringifyField(job["Key Responsibilities"])}</Text>
                             </View>
                         ))}
                     </View>
@@ -265,9 +279,9 @@ const NativeVignette_Preview = ({ data, layout = 'professional', glow = null, ex
                 {(skills.Tech || skills.Soft || skills.Certifications) && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Skills & Certifications')}
-                        {skills.Tech && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {skills.Tech}</Text>}
-                        {skills.Soft && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Soft Skills:</Text> {skills.Soft}</Text>}
-                        {skills.Certifications && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Certifications:</Text> {skills.Certifications}</Text>}
+                        {skills.Tech && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {stringifyField(skills.Tech)}</Text>}
+                        {skills.Soft && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Soft Skills:</Text> {stringifyField(skills.Soft)}</Text>}
+                        {skills.Certifications && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Certifications:</Text> {stringifyField(skills.Certifications)}</Text>}
                     </View>
                 )}
 

@@ -87,8 +87,14 @@ const PreviewScreen = ({ navigation }) => {
             return addrStr.replace(/\n/g, ', ');
         };
 
-        const formatBulletList = (text, format) => {
-            if (!text) return '';
+        const formatBulletList = (val, format) => {
+            if (!val) return '';
+            let text = '';
+            if (Array.isArray(val)) {
+                text = val.map(item => typeof item === 'object' && item !== null ? (item.name || item.text || item.skill || '') : String(item)).filter(Boolean).join('\n');
+            } else {
+                text = String(val);
+            }
             if (format === 'comma') {
                 const lines = text.split('\n')
                     .map(line => line.replace(/^-\s*/, '').trim())
@@ -237,8 +243,8 @@ const PreviewScreen = ({ navigation }) => {
                         <span>${job["Start Date"]} - ${job["End Date"] || 'Present'}</span>
                     </div>
                     <div class="job-role" style="font-style: italic; color: #555; margin-bottom: 5px;">${job.Role}</div>
-                    <div class="job-desc" style="font-size: 14px; line-height: 1.5; white-space: pre-line; margin-bottom: 5px;">${job["Key Responsibilities"]}</div>
-                    ${job.Achievements ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Key Achievements:</strong> ${job.Achievements}</div>` : ''}
+                    <div class="job-desc" style="font-size: 14px; line-height: 1.5; white-space: pre-line; margin-bottom: 5px;">${formatBulletList(job["Key Responsibilities"], uiSettings?.ResponsibilityFormat)}</div>
+                    ${job.Achievements ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Key Achievements:</strong> ${formatBulletList(job.Achievements, 'bullet')}</div>` : ''}
                     ${job["Systems Used"] ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Systems & Tools Used:</strong> ${formatBulletList(job["Systems Used"], uiSettings?.SystemsUsedFormat)}</div>` : ''}
                     ${job["Reason for Leaving"] ? `<div style="font-size: 12.5px; margin-top: 5px; font-style: italic; color: #777;">Reason for leaving: ${job["Reason for Leaving"]}</div>` : ''}
                 </div>

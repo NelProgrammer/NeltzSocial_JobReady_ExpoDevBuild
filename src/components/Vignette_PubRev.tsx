@@ -70,6 +70,19 @@ const Vignette_PubRev = ({ data, layout = 'professional' }) => {
         </View>
     );
 
+    const stringifyField = (val) => {
+        if (!val) return '';
+        if (Array.isArray(val)) {
+            return val.map(item => {
+                if (typeof item === 'object' && item !== null) {
+                    return item.name || item.text || item.skill || '';
+                }
+                return String(item);
+            }).filter(Boolean).join('\n');
+        }
+        return String(val);
+    };
+
     return (
         <ScrollView style={styles.sheet} showsVerticalScrollIndicator={false}>
             {renderHeader()}
@@ -91,10 +104,10 @@ const Vignette_PubRev = ({ data, layout = 'professional' }) => {
                                 <Text style={styles.itemDate}>{exp["Start Date"]} - {exp["End Date"] || 'Present'}</Text>
                             </View>
                             <Text style={styles.itemSubtitle}>{exp.Role}</Text>
-                            <Text style={styles.bodyText}>{exp["Key Responsibilities"]}</Text>
+                            <Text style={styles.bodyText}>{stringifyField(exp["Key Responsibilities"])}</Text>
                             {exp["Achievements"] ? (
                                 <Text style={[styles.bodyText, { marginTop: 5, fontStyle: 'italic' }]}>
-                                    Key Achievement: {exp["Achievements"]}
+                                    Key Achievement: {stringifyField(exp["Achievements"])}
                                 </Text>
                             ) : null}
                         </View>
@@ -132,13 +145,13 @@ const Vignette_PubRev = ({ data, layout = 'professional' }) => {
                     {skills.Tech ? (
                         <View style={styles.skillRow}>
                             <Text style={styles.skillLabel}>Technical:</Text>
-                            <Text style={styles.skillValue}>{skills.Tech}</Text>
+                            <Text style={styles.skillValue}>{stringifyField(skills.Tech)}</Text>
                         </View>
                     ) : null}
                     {skills.Soft ? (
                         <View style={styles.skillRow}>
                             <Text style={styles.skillLabel}>Soft Skills:</Text>
-                            <Text style={styles.skillValue}>{skills.Soft}</Text>
+                            <Text style={styles.skillValue}>{stringifyField(skills.Soft)}</Text>
                         </View>
                     ) : null}
                 </View>
