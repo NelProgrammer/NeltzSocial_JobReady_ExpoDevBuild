@@ -169,12 +169,11 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                                                     value={item.howObtained || 'Course'}
                                                     onValueChange={val => updateItemProperty('Tech', index, 'howObtained', val)}
                                                     buttons={[
-                                                        { label: 'Course', value: 'Course' },
-                                                        { label: 'Self-Taught', value: 'Self-Taught' },
-                                                        { label: 'On-the-Job', value: 'On-the-Job' }
+                                                        { label: 'Course', value: 'Course', disabled: !isEditMode },
+                                                        { label: 'Self-Taught', value: 'Self-Taught', disabled: !isEditMode },
+                                                        { label: 'On-the-Job', value: 'On-the-Job', disabled: !isEditMode }
                                                     ]}
                                                     style={styles.segmented}
-                                                    disabled={!isEditMode}
                                                 />
                                                 <TextInput
                                                     label="Years in Use"
