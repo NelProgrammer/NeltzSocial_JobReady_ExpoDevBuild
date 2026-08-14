@@ -1,13 +1,28 @@
 import React, { useContext, useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { TextInput, Button, Card, IconButton, Divider, Text } from 'react-native-paper';
+import { TextInput, Button, Card, IconButton, Divider, Text, Portal, Dialog } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
 import { ProfessionalCertItem, TechCertItem, RegulatoryCertItem, TertiaryEducationItem } from '../types/resume';
 
 interface EducationProps {
     isEditMode?: boolean;
 }
+
+const MONTHS = [
+    { label: 'Jan', value: '01' },
+    { label: 'Feb', value: '02' },
+    { label: 'Mar', value: '03' },
+    { label: 'Apr', value: '04' },
+    { label: 'May', value: '05' },
+    { label: 'Jun', value: '06' },
+    { label: 'Jul', value: '07' },
+    { label: 'Aug', value: '08' },
+    { label: 'Sep', value: '09' },
+    { label: 'Oct', value: '10' },
+    { label: 'Nov', value: '11' },
+    { label: 'Dec', value: '12' },
+];
 
 const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     const { resumeData, updateResumeData } = useContext(ResumeContext) as any;
@@ -24,6 +39,13 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     // Level 2 sub-item expand states
     const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
+    // Calendar Picker Dialog State
+    const [pickerVisible, setPickerVisible] = useState<boolean>(false);
+    const [pickerTitle, setPickerTitle] = useState<string>('Select Year / Date');
+    const [pickerValueSetter, setPickerValueSetter] = useState<((val: string) => void) | null>(null);
+    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const [selectedMonth, setSelectedMonth] = useState<string>('01');
+
     if (!resumeData || !updateResumeData) return null;
 
     const education = resumeData.education || {};
@@ -39,6 +61,37 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
 
     const toggleItem = (itemId: string) => {
         setExpandedItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+    };
+
+    const openCalendarPicker = (title: string, currentVal: any, onSelect: (dateStr: string) => void) => {
+        if (!isEditMode) return;
+        setPickerTitle(title);
+        setPickerValueSetter(() => onSelect);
+
+        const valStr = String(currentVal || '');
+        if (valStr.includes('-')) {
+            const parts = valStr.split('-');
+            const yearNum = parseInt(parts[0], 10);
+            if (!isNaN(yearNum)) setSelectedYear(yearNum);
+            if (parts[1]) setSelectedMonth(parts[1]);
+        } else {
+            const yearNum = parseInt(valStr, 10);
+            if (!isNaN(yearNum) && yearNum > 1950 && yearNum < 2100) {
+                setSelectedYear(yearNum);
+            } else {
+                setSelectedYear(new Date().getFullYear());
+            }
+            setSelectedMonth('01');
+        }
+
+        setPickerVisible(true);
+    };
+
+    const applyCalendarDate = (dateVal: string) => {
+        if (pickerValueSetter) {
+            pickerValueSetter(dateVal);
+        }
+        setPickerVisible(false);
     };
 
     const getCsvSummary = (items: any[], nameKey: string) => {
@@ -229,14 +282,24 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                             editable={isEditMode}
                         />
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <TextInput
-                                label="Year Completed"
-                                value={String(highschool["Year Completed"] || '')}
-                                onChangeText={(text) => updateHighSchool("Year Completed", text)}
-                                style={[styles.input, { flex: 1, marginRight: 5 }]}
-                                keyboardType="numeric"
-                                editable={isEditMode}
-                            />
+                            <TouchableOpacity
+                                style={{ flex: 1, marginRight: 5 }}
+                                onPress={() => openCalendarPicker("High School Year Completed", highschool["Year Completed"], (val) => updateHighSchool("Year Completed", val))}
+                                disabled={!isEditMode}
+                                activeOpacity={0.8}
+                            >
+                                <TextInput
+                                    label="Year Completed"
+                                    value={String(highschool["Year Completed"] || '')}
+                                    style={styles.input}
+                                    left={<TextInput.Icon icon="calendar" onPress={() => openCalendarPicker("High School Year Completed", highschool["Year Completed"], (val) => updateHighSchool("Year Completed", val))} />}
+                                    right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker("High School Year Completed", highschool["Year Completed"], (val) => updateHighSchool("Year Completed", val))} />}
+                                    placeholder="YYYY or YYYY-MM"
+                                    editable={false}
+                                    pointerEvents="none"
+                                />
+                            </TouchableOpacity>
+
                             <TextInput
                                 label="Highest Grade Passed"
                                 value={String(highschool["Highest Grade Passed"] || '')}
@@ -294,7 +357,24 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                                 <TextInput label="Qualification Name" value={qual["Qualification Name"] || ''} onChangeText={(text) => updateTertiary(index, 'Qualification Name', text)} style={styles.input} editable={isEditMode} />
                                                 <TextInput label="Institution" value={qual["Institution"] || ''} onChangeText={(text) => updateTertiary(index, 'Institution', text)} style={styles.input} editable={isEditMode} />
                                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                    <TextInput label="Year" value={String(qual["Year"] || '')} onChangeText={(text) => updateTertiary(index, 'Year', text)} style={[styles.input, { flex: 1, marginRight: 5 }]} keyboardType="numeric" editable={isEditMode} />
+                                                    <TouchableOpacity
+                                                        style={{ flex: 1, marginRight: 5 }}
+                                                        onPress={() => openCalendarPicker("Tertiary Year Completed", qual["Year"], (val) => updateTertiary(index, 'Year', val))}
+                                                        disabled={!isEditMode}
+                                                        activeOpacity={0.8}
+                                                    >
+                                                        <TextInput
+                                                            label="Year Completed"
+                                                            value={String(qual["Year"] || '')}
+                                                            style={styles.input}
+                                                            left={<TextInput.Icon icon="calendar" onPress={() => openCalendarPicker("Tertiary Year Completed", qual["Year"], (val) => updateTertiary(index, 'Year', val))} />}
+                                                            right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker("Tertiary Year Completed", qual["Year"], (val) => updateTertiary(index, 'Year', val))} />}
+                                                            placeholder="YYYY or YYYY-MM"
+                                                            editable={false}
+                                                            pointerEvents="none"
+                                                        />
+                                                    </TouchableOpacity>
+
                                                     <TextInput label="NQF Level (Optional)" value={String(qual["NQF Level"] || '')} onChangeText={(text) => updateTertiary(index, 'NQF Level', text)} style={[styles.input, { flex: 1, marginLeft: 5 }]} editable={isEditMode} />
                                                 </View>
                                             </View>
@@ -352,10 +432,45 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                                 <Divider style={{ marginBottom: 8 }} />
                                                 <TextInput label="Certification Name" value={cert.name || ''} onChangeText={(text) => updateProfCert(index, 'name', text)} style={styles.input} editable={isEditMode} />
                                                 <TextInput label="Issuing Body / Institution" value={cert.institution || ''} onChangeText={(text) => updateProfCert(index, 'institution', text)} style={styles.input} editable={isEditMode} />
+                                                
                                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                    <TextInput label="Year Obtained" value={String(cert.yearObtained || '')} onChangeText={(text) => updateProfCert(index, 'yearObtained', text)} style={[styles.input, { flex: 1, marginRight: 5 }]} keyboardType="numeric" editable={isEditMode} />
-                                                    <TextInput label="Registration No." value={cert.certNumber || ''} onChangeText={(text) => updateProfCert(index, 'certNumber', text)} style={[styles.input, { flex: 1, marginLeft: 5 }]} editable={isEditMode} />
+                                                    <TouchableOpacity
+                                                        style={{ flex: 1, marginRight: 5 }}
+                                                        onPress={() => openCalendarPicker("Year Obtained", cert.yearObtained, (val) => updateProfCert(index, 'yearObtained', val))}
+                                                        disabled={!isEditMode}
+                                                        activeOpacity={0.8}
+                                                    >
+                                                        <TextInput
+                                                            label="Year Obtained"
+                                                            value={String(cert.yearObtained || '')}
+                                                            style={styles.input}
+                                                            left={<TextInput.Icon icon="calendar" onPress={() => openCalendarPicker("Year Obtained", cert.yearObtained, (val) => updateProfCert(index, 'yearObtained', val))} />}
+                                                            right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker("Year Obtained", cert.yearObtained, (val) => updateProfCert(index, 'yearObtained', val))} />}
+                                                            placeholder="YYYY or YYYY-MM"
+                                                            editable={false}
+                                                            pointerEvents="none"
+                                                        />
+                                                    </TouchableOpacity>
+
+                                                    <TouchableOpacity
+                                                        style={{ flex: 1, marginLeft: 5 }}
+                                                        onPress={() => openCalendarPicker("Expiry Year", cert.expiryYear, (val) => updateProfCert(index, 'expiryYear', val))}
+                                                        disabled={!isEditMode}
+                                                        activeOpacity={0.8}
+                                                    >
+                                                        <TextInput
+                                                            label="Expiry Year"
+                                                            value={String(cert.expiryYear || '')}
+                                                            style={styles.input}
+                                                            left={<TextInput.Icon icon="calendar-end" onPress={() => openCalendarPicker("Expiry Year", cert.expiryYear, (val) => updateProfCert(index, 'expiryYear', val))} />}
+                                                            right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker("Expiry Year", cert.expiryYear, (val) => updateProfCert(index, 'expiryYear', val))} />}
+                                                            placeholder="YYYY or YYYY-MM"
+                                                            editable={false}
+                                                            pointerEvents="none"
+                                                        />
+                                                    </TouchableOpacity>
                                                 </View>
+                                                <TextInput label="Registration No." value={cert.certNumber || ''} onChangeText={(text) => updateProfCert(index, 'certNumber', text)} style={styles.input} editable={isEditMode} />
                                             </View>
                                         )}
                                     </View>
@@ -411,8 +526,26 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                                 <Divider style={{ marginBottom: 8 }} />
                                                 <TextInput label="Technical Cert Name (e.g. AWS Architect, CCNA)" value={cert.name || ''} onChangeText={(text) => updateTechCert(index, 'name', text)} style={styles.input} editable={isEditMode} />
                                                 <TextInput label="Provider / Platform (e.g. AWS, Cisco, Microsoft)" value={cert.provider || ''} onChangeText={(text) => updateTechCert(index, 'provider', text)} style={styles.input} editable={isEditMode} />
+                                                
                                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                    <TextInput label="Year Obtained" value={String(cert.yearObtained || '')} onChangeText={(text) => updateTechCert(index, 'yearObtained', text)} style={[styles.input, { flex: 1, marginRight: 5 }]} keyboardType="numeric" editable={isEditMode} />
+                                                    <TouchableOpacity
+                                                        style={{ flex: 1, marginRight: 5 }}
+                                                        onPress={() => openCalendarPicker("Year Obtained", cert.yearObtained, (val) => updateTechCert(index, 'yearObtained', val))}
+                                                        disabled={!isEditMode}
+                                                        activeOpacity={0.8}
+                                                    >
+                                                        <TextInput
+                                                            label="Year Obtained"
+                                                            value={String(cert.yearObtained || '')}
+                                                            style={styles.input}
+                                                            left={<TextInput.Icon icon="calendar" onPress={() => openCalendarPicker("Year Obtained", cert.yearObtained, (val) => updateTechCert(index, 'yearObtained', val))} />}
+                                                            right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker("Year Obtained", cert.yearObtained, (val) => updateTechCert(index, 'yearObtained', val))} />}
+                                                            placeholder="YYYY or YYYY-MM"
+                                                            editable={false}
+                                                            pointerEvents="none"
+                                                        />
+                                                    </TouchableOpacity>
+
                                                     <TextInput label="Cert ID / License No." value={cert.certNumber || ''} onChangeText={(text) => updateTechCert(index, 'certNumber', text)} style={[styles.input, { flex: 1, marginLeft: 5 }]} editable={isEditMode} />
                                                 </View>
                                             </View>
@@ -468,12 +601,46 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                         {isItemExpanded && (
                                             <View style={{ marginTop: 8 }}>
                                                 <Divider style={{ marginBottom: 8 }} />
-                                                <TextInput label="Regulatory Cert / License Name (e.g. RE5, PSIRA Grade A)" value={cert.name || ''} onChangeText={(text) => updateRegCert(index, 'name', text)} style={styles.input} editable={isEditMode} />
-                                                <TextInput label="Issuing Authority / Statutory Body (e.g. FSCA, PSIRA, DoL)" value={cert.issuingBody || ''} onChangeText={(text) => updateRegCert(index, 'issuingBody', text)} style={styles.input} editable={isEditMode} />
+                                                <TextInput label="Regulatory Cert / License Name" value={cert.name || ''} onChangeText={(text) => updateRegCert(index, 'name', text)} style={styles.input} editable={isEditMode} />
+                                                <TextInput label="Issuing Authority / Statutory Body" value={cert.issuingBody || ''} onChangeText={(text) => updateRegCert(index, 'issuingBody', text)} style={styles.input} editable={isEditMode} />
                                                 <TextInput label="License / Practice Number" value={cert.licenseNumber || ''} onChangeText={(text) => updateRegCert(index, 'licenseNumber', text)} style={styles.input} editable={isEditMode} />
+                                                
                                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                                    <TextInput label="Year Issued" value={String(cert.yearObtained || '')} onChangeText={(text) => updateRegCert(index, 'yearObtained', text)} style={[styles.input, { flex: 1, marginRight: 5 }]} keyboardType="numeric" editable={isEditMode} />
-                                                    <TextInput label="Expiry Year" value={String(cert.expiryYear || '')} onChangeText={(text) => updateRegCert(index, 'expiryYear', text)} style={[styles.input, { flex: 1, marginLeft: 5 }]} keyboardType="numeric" editable={isEditMode} />
+                                                    <TouchableOpacity
+                                                        style={{ flex: 1, marginRight: 5 }}
+                                                        onPress={() => openCalendarPicker("Year Issued", cert.yearObtained, (val) => updateRegCert(index, 'yearObtained', val))}
+                                                        disabled={!isEditMode}
+                                                        activeOpacity={0.8}
+                                                    >
+                                                        <TextInput
+                                                            label="Year Issued"
+                                                            value={String(cert.yearObtained || '')}
+                                                            style={styles.input}
+                                                            left={<TextInput.Icon icon="calendar" onPress={() => openCalendarPicker("Year Issued", cert.yearObtained, (val) => updateRegCert(index, 'yearObtained', val))} />}
+                                                            right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker("Year Issued", cert.yearObtained, (val) => updateRegCert(index, 'yearObtained', val))} />}
+                                                            placeholder="YYYY or YYYY-MM"
+                                                            editable={false}
+                                                            pointerEvents="none"
+                                                        />
+                                                    </TouchableOpacity>
+
+                                                    <TouchableOpacity
+                                                        style={{ flex: 1, marginLeft: 5 }}
+                                                        onPress={() => openCalendarPicker("Expiry Year", cert.expiryYear, (val) => updateRegCert(index, 'expiryYear', val))}
+                                                        disabled={!isEditMode}
+                                                        activeOpacity={0.8}
+                                                    >
+                                                        <TextInput
+                                                            label="Expiry Year"
+                                                            value={String(cert.expiryYear || '')}
+                                                            style={styles.input}
+                                                            left={<TextInput.Icon icon="calendar-end" onPress={() => openCalendarPicker("Expiry Year", cert.expiryYear, (val) => updateRegCert(index, 'expiryYear', val))} />}
+                                                            right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker("Expiry Year", cert.expiryYear, (val) => updateRegCert(index, 'expiryYear', val))} />}
+                                                            placeholder="YYYY or YYYY-MM"
+                                                            editable={false}
+                                                            pointerEvents="none"
+                                                        />
+                                                    </TouchableOpacity>
                                                 </View>
                                             </View>
                                         )}
@@ -485,6 +652,61 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                     </Card.Content>
                 )}
             </Card>
+
+            {/* Interactive Calendar Month-Year Picker Dialog */}
+            <Portal>
+                <Dialog visible={pickerVisible} onDismiss={() => setPickerVisible(false)}>
+                    <Dialog.Title style={{ textAlign: 'center', fontSize: 16 }}>
+                        📅 {pickerTitle}
+                    </Dialog.Title>
+                    <Dialog.Content>
+                        {/* Quick Set Full Year Only */}
+                        <Button
+                            mode="contained-tonal"
+                            icon="calendar-check"
+                            onPress={() => applyCalendarDate(String(selectedYear))}
+                            style={{ marginBottom: 12, backgroundColor: '#e0e7ff' }}
+                            labelStyle={{ color: '#1e40af', fontWeight: 'bold' }}
+                        >
+                            Set Full Year ({selectedYear}) Only
+                        </Button>
+
+                        {/* Year Selector */}
+                        <View style={styles.yearSelectorRow}>
+                            <IconButton icon="chevron-left" size={24} onPress={() => setSelectedYear(y => y - 1)} />
+                            <Text style={styles.yearText}>{selectedYear}</Text>
+                            <IconButton icon="chevron-right" size={24} onPress={() => setSelectedYear(y => y + 1)} />
+                        </View>
+
+                        {/* Month Grid */}
+                        <Text style={styles.monthGridTitle}>Select Specific Month (Optional):</Text>
+                        <View style={styles.monthGrid}>
+                            {MONTHS.map(m => {
+                                const isSelected = selectedMonth === m.value;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={m.value}
+                                        style={[styles.monthItem, isSelected && styles.selectedMonthItem]}
+                                        onPress={() => {
+                                            setSelectedMonth(m.value);
+                                            applyCalendarDate(`${selectedYear}-${m.value}`);
+                                        }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={[styles.monthText, isSelected && styles.selectedMonthText]}>
+                                            {m.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setPickerVisible(false)}>Cancel</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
 
         </KeyboardAwareScrollView>
     );
@@ -501,7 +723,15 @@ const styles = StyleSheet.create({
     input: { marginBottom: 8, backgroundColor: '#ffffff' },
     addBtn: { marginTop: 8, alignSelf: 'flex-start', backgroundColor: '#6200EE' },
     emptyCard: { padding: 12, backgroundColor: '#f0f4f8', borderRadius: 8, marginBottom: 10 },
-    emptyText: { color: '#64748b', fontSize: 13 }
+    emptyText: { color: '#64748b', fontSize: 13 },
+    yearSelectorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+    yearText: { fontSize: 18, fontWeight: 'bold', marginHorizontal: 15, color: '#1e293b' },
+    monthGridTitle: { fontSize: 12, fontWeight: 'bold', color: '#64748b', marginBottom: 8, textAlign: 'center' },
+    monthGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+    monthItem: { width: '30%', paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#cbd5e1', alignItems: 'center', marginBottom: 8, backgroundColor: '#f8fafc' },
+    selectedMonthItem: { backgroundColor: '#6200EE', borderColor: '#6200EE' },
+    monthText: { fontSize: 13, fontWeight: 'bold', color: '#334155' },
+    selectedMonthText: { color: '#ffffff' }
 });
 
 export default Education;
