@@ -50,6 +50,15 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
         return [];
     };
 
+    const getCategoryCsvSummary = (field: keyof ResumeSkills) => {
+        const items = getSkillItems(field);
+        const names = items.map(i => (i.name || i.text || '').trim()).filter(Boolean);
+        if (names.length === 0) return 'CSV: No items added';
+        const joined = names.join(', ');
+        const summary = joined.length > 70 ? `${joined.substring(0, 67)}...` : joined;
+        return `CSV: ${summary}`;
+    };
+
     const updateSkillItems = (field: keyof ResumeSkills, items: any[]) => {
         if (!isEditMode) return;
         const newSkills = { ...skills, [field]: items };
@@ -101,12 +110,16 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
     const renderTechnicalSkills = () => {
         const items: TechSkillItem[] = getSkillItems('Tech');
         const isCatExpanded = !!expandedCategories.Tech;
+        const csvSummary = getCategoryCsvSummary('Tech');
 
         return (
             <Card style={styles.card}>
                 <Card.Title
                     title={`⚡ Technical Skills (${items.length})`}
-                    subtitle={isCatExpanded ? "Tap chevron to collapse section" : "Tap chevron to expand section"}
+                    subtitle={csvSummary}
+                    subtitleNumberOfLines={2}
+                    titleStyle={{ fontSize: 14, fontWeight: 'bold' }}
+                    subtitleStyle={{ fontSize: 11, color: '#64748b' }}
                     left={(props) => <IconButton {...props} icon="laptop" />}
                     right={(props) => (
                         <IconButton
@@ -205,12 +218,16 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
     const renderSoftSkills = () => {
         const items: SoftSkillItem[] = getSkillItems('Soft');
         const isCatExpanded = !!expandedCategories.Soft;
+        const csvSummary = getCategoryCsvSummary('Soft');
 
         return (
             <Card style={styles.card}>
                 <Card.Title
                     title={`🧠 Soft / Interpersonal Skills (${items.length})`}
-                    subtitle={isCatExpanded ? "Tap chevron to collapse section" : "Tap chevron to expand section"}
+                    subtitle={csvSummary}
+                    subtitleNumberOfLines={2}
+                    titleStyle={{ fontSize: 14, fontWeight: 'bold' }}
+                    subtitleStyle={{ fontSize: 11, color: '#64748b' }}
                     left={(props) => <IconButton {...props} icon="account-group" />}
                     right={(props) => (
                         <IconButton
@@ -287,12 +304,16 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
     const renderNonAcadCerts = () => {
         const items: NonAcadCertItem[] = getSkillItems('NonAcadCerts');
         const isCatExpanded = !!expandedCategories.NonAcadCerts;
+        const csvSummary = getCategoryCsvSummary('NonAcadCerts');
 
         return (
             <Card style={styles.card}>
                 <Card.Title
                     title={`📜 Non-Academic Certifications (${items.length})`}
-                    subtitle={isCatExpanded ? "Tap chevron to collapse section" : "Tap chevron to expand section"}
+                    subtitle={csvSummary}
+                    subtitleNumberOfLines={2}
+                    titleStyle={{ fontSize: 14, fontWeight: 'bold' }}
+                    subtitleStyle={{ fontSize: 11, color: '#64748b' }}
                     left={(props) => <IconButton {...props} icon="certificate" />}
                     right={(props) => (
                         <IconButton
@@ -388,12 +409,16 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
     const renderSystemsUsed = () => {
         const items: SystemUsedItem[] = getSkillItems('SystemsUsed');
         const isCatExpanded = !!expandedCategories.SystemsUsed;
+        const csvSummary = getCategoryCsvSummary('SystemsUsed');
 
         return (
             <Card style={styles.card}>
                 <Card.Title
                     title={`🛠️ Systems & Tools Used (${items.length})`}
-                    subtitle={isCatExpanded ? "Tap chevron to collapse section" : "Tap chevron to expand section"}
+                    subtitle={csvSummary}
+                    subtitleNumberOfLines={2}
+                    titleStyle={{ fontSize: 14, fontWeight: 'bold' }}
+                    subtitleStyle={{ fontSize: 11, color: '#64748b' }}
                     left={(props) => <IconButton {...props} icon="wrench-clock" />}
                     right={(props) => (
                         <IconButton
