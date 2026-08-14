@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
-import { Text, Card, Switch, IconButton, Button, Divider, Portal, Dialog, TextInput, Badge } from 'react-native-paper';
+import { Text, Card, Switch, IconButton, Button, Divider, Portal, Dialog, TextInput } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Dropdown } from 'react-native-element-dropdown';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -13,7 +13,7 @@ type FieldsSelectionScreenProps = {
 };
 
 const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigation }) => {
-  const { resumeData, uiSettings, updateUiSettings } = useContext(ResumeContext) as any;
+  const { resumeData, updateResumeData, uiSettings, updateUiSettings } = useContext(ResumeContext) as any;
   const { theme } = useThemeContext();
   const insets = useSafeAreaInsets();
 
@@ -34,7 +34,7 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
       id: 'targeted_sales',
       primaryResumeId: resumeData?.id || 'master',
       profileId: 'local_user',
-      name: 'Sales & Marketing Application CV',
+      name: 'Targeted Application CV',
       configType: 'targeted',
       visibility: {},
       certificationsVisibility: {},
@@ -43,7 +43,7 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
     }
   ]);
 
-  const [selectedConfigId, setSelectedConfigId] = useState<string>('main_config');
+  const [selectedConfigId, setSelectedConfigId] = useState<string>('targeted_sales');
   const [createDialogVisible, setCreateDialogVisible] = useState<boolean>(false);
   const [newConfigName, setNewConfigName] = useState<string>('');
 
@@ -101,18 +101,50 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
     setCreateDialogVisible(false);
   };
 
-  // Toggle item visibility for targeted resumes
-  const toggleVisibility = (itemId: string) => {
-    if (isMain) return; // Locked ALL-ON for Main Resume
-    const currentVis = activeConfig.visibility || {};
-    const newVis = { ...currentVis, [itemId]: currentVis[itemId] === false ? true : false };
-    const updatedConfigs = configurations.map(c => c.id === selectedConfigId ? { ...c, visibility: newVis } : c);
-    setConfigurations(updatedConfigs);
+  const isVisible = (itemId: string, itemObj?: any) => {
+    if (isMain) return true; // Main Resume stays 100% visible
+    if (itemObj && itemObj.visible !== undefined) {
+      return itemObj.visible !== false;
+    }
+    return activeConfig.visibility?.[itemId] !== false;
   };
 
-  const isVisible = (itemId: string) => {
-    if (isMain) return true; // Always ON for Main Resume
-    return activeConfig.visibility?.[itemId] !== false;
+  // Synchronized item visibility toggle
+  const toggleItemVisibility = (itemId: string, category: string, index: number, itemObj?: any) => {
+    if (isMain) return; // Main Resume locked ALL-ON
+
+    const currentVis = isVisible(itemId, itemObj);
+    const newStatus = !currentVis;
+
+    // 1. Update local configuration visibility map
+    const currentVisMap = activeConfig.visibility || {};
+    const newVisMap = { ...currentVisMap, [itemId]: newStatus };
+    const updatedConfigs = configurations.map(c => c.id === selectedConfigId ? { ...c, visibility: newVisMap } : c);
+    setConfigurations(updatedConfigs);
+
+    // 2. Persist visibility directly into resumeData in ResumeContext
+    if (!resumeData || !updateResumeData) return;
+    const newData = JSON.parse(JSON.stringify(resumeData));
+
+    if (category === 'references' && newData.References && newData.References[index]) {
+      newData.References[index].visible = newStatus;
+    } else if (category === 'soft' && newData.skills?.Soft && newData.skills.Soft[index]) {
+      newData.skills.Soft[index].visible = newStatus;
+    } else if (category === 'tech' && newData.skills?.Tech && newData.skills.Tech[index]) {
+      newData.skills.Tech[index].visible = newStatus;
+    } else if (category === 'nonacad' && newData.skills?.NonAcadCerts && newData.skills.NonAcadCerts[index]) {
+      newData.skills.NonAcadCerts[index].visible = newStatus;
+    } else if (category === 'profcert' && newData.education?.professionalCertifications && newData.education.professionalCertifications[index]) {
+      newData.education.professionalCertifications[index].visible = newStatus;
+    } else if (category === 'tertiary' && newData.education?.tertiary && newData.education.tertiary[index]) {
+      newData.education.tertiary[index].visible = newStatus;
+    } else if (category === 'experience' && newData.experience && newData.experience[index]) {
+      newData.experience[index].visible = newStatus;
+    } else if (category === 'address' && newData.personal?.addresses && newData.personal.addresses[index]) {
+      newData.personal.addresses[index].visible = newStatus;
+    }
+
+    updateResumeData(newData);
   };
 
   // Data helpers from Source of Truth
@@ -129,9 +161,7 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
   const techSkills = skills.Tech || [];
   const softSkills = skills.Soft || [];
   const nonAcadCerts = skills.NonAcadCerts || [];
-  const systemsUsed = skills.SystemsUsed || [];
   const references = resumeData?.References || [];
-  const languages = pd.languages || [];
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bgDark, paddingTop: Math.max(insets.top, 16) + 8 }]}>
@@ -163,7 +193,7 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
         </View>
 
         <Text style={[styles.subtitleCentered, { color: theme.textSecondary }]}>
-          {isMain ? "Main Resume: Shows 100% of career data (Toggles locked ON)" : "Targeted Resume: Toggle items to hide/show for this specific application"}
+          {isMain ? "Main Resume: 100% visible (Locked ALL-ON)" : "Targeted Resume: Toggle switches below to hide/show fields for this document"}
         </Text>
       </View>
 
@@ -180,25 +210,33 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
                   <Text style={styles.itemTitle}>{names.firstName || 'First Name'} {names.Surname || 'Surname'}</Text>
                   <Text style={styles.itemSub}>{contact.Email || 'No email'} · {contact.Phone || 'No phone'}</Text>
                 </View>
-                <Switch value={isVisible('pd_names')} onValueChange={() => toggleVisibility('pd_names')} disabled={isMain} trackColor={switchColors} />
+                <Switch value={isVisible('pd_names')} onValueChange={() => toggleItemVisibility('pd_names', 'names', 0)} disabled={isMain} trackColor={switchColors} />
               </View>
               {identity.idNumber && (
                 <View style={styles.itemRow}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.itemTitle}>ID Number: {identity.idMask !== false ? `${identity.idNumber.substring(0, 6)} **** ***` : identity.idNumber}</Text>
                   </View>
-                  <Switch value={isVisible('pd_id')} onValueChange={() => toggleVisibility('pd_id')} disabled={isMain} trackColor={switchColors} />
+                  <Switch value={isVisible('pd_id')} onValueChange={() => toggleItemVisibility('pd_id', 'identity', 0)} disabled={isMain} trackColor={switchColors} />
                 </View>
               )}
-              {addresses.map((addr: any, idx: number) => (
-                <View key={addr.id || idx} style={styles.itemRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.itemTitle}>📍 {addr.addressType}: {addr.streetAddress || 'Address'}</Text>
-                    <Text style={styles.itemSub}>{addr.cityOrTown}, {addr.province}</Text>
+              {addresses.map((addr: any, idx: number) => {
+                const itemId = addr.id || `addr_${idx}`;
+                return (
+                  <View key={itemId} style={styles.itemRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.itemTitle}>📍 {addr.addressType || 'Address'}: {addr.streetAddress || ''}</Text>
+                      <Text style={styles.itemSub}>{addr.cityOrTown || ''}, {addr.province || ''}</Text>
+                    </View>
+                    <Switch
+                      value={isVisible(itemId, addr)}
+                      onValueChange={() => toggleItemVisibility(itemId, 'address', idx, addr)}
+                      disabled={isMain}
+                      trackColor={switchColors}
+                    />
                   </View>
-                  <Switch value={isVisible(addr.id || `addr_${idx}`)} onValueChange={() => toggleVisibility(addr.id || `addr_${idx}`)} disabled={isMain} trackColor={switchColors} />
-                </View>
-              ))}
+                );
+              })}
             </Card.Content>
           </Card>
 
@@ -207,27 +245,43 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
             <Card.Title title="Education & Qualifications" left={(props) => <IconButton {...props} icon="school" />} />
             <Card.Content>
               <Text style={styles.subHeader}>Tertiary Qualifications</Text>
-              {tertiary.map((item: any, idx: number) => (
-                <View key={item.id || idx} style={styles.itemRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.itemTitle}>🎓 {item["Qualification Name"] || 'Qualification'}</Text>
-                    <Text style={styles.itemSub}>{item["Institution"]} ({item["Year"]})</Text>
+              {tertiary.map((item: any, idx: number) => {
+                const itemId = item.id || `tert_${idx}`;
+                return (
+                  <View key={itemId} style={styles.itemRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.itemTitle}>🎓 {item["Qualification Name"] || 'Qualification'}</Text>
+                      <Text style={styles.itemSub}>{item["Institution"]} ({item["Year"]})</Text>
+                    </View>
+                    <Switch
+                      value={isVisible(itemId, item)}
+                      onValueChange={() => toggleItemVisibility(itemId, 'tertiary', idx, item)}
+                      disabled={isMain}
+                      trackColor={switchColors}
+                    />
                   </View>
-                  <Switch value={isVisible(item.id || `tert_${idx}`)} onValueChange={() => toggleVisibility(item.id || `tert_${idx}`)} disabled={isMain} trackColor={switchColors} />
-                </View>
-              ))}
+                );
+              })}
 
               <Divider style={{ marginVertical: 8 }} />
               <Text style={styles.subHeader}>Professional Certifications</Text>
-              {profCerts.map((item: any, idx: number) => (
-                <View key={item.id || idx} style={styles.itemRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.itemTitle}>📜 {item.name || 'Certification'}</Text>
-                    <Text style={styles.itemSub}>{item.institution} ({item.yearObtained})</Text>
+              {profCerts.map((item: any, idx: number) => {
+                const itemId = item.id || `cert_${idx}`;
+                return (
+                  <View key={itemId} style={styles.itemRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.itemTitle}>📜 {item.name || 'Certification'}</Text>
+                      <Text style={styles.itemSub}>{item.institution} ({item.yearObtained})</Text>
+                    </View>
+                    <Switch
+                      value={isVisible(itemId, item)}
+                      onValueChange={() => toggleItemVisibility(itemId, 'profcert', idx, item)}
+                      disabled={isMain}
+                      trackColor={switchColors}
+                    />
                   </View>
-                  <Switch value={isVisible(item.id || `cert_${idx}`)} onValueChange={() => toggleVisibility(item.id || `cert_${idx}`)} disabled={isMain} trackColor={switchColors} />
-                </View>
-              ))}
+                );
+              })}
             </Card.Content>
           </Card>
 
@@ -235,25 +289,25 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
           <Card style={styles.sectionCard}>
             <Card.Title title="Work Experience" left={(props) => <IconButton {...props} icon="briefcase" />} />
             <Card.Content>
-              {experiences.map((job: any, idx: number) => (
-                <View key={job.id || idx} style={styles.jobBox}>
-                  <View style={styles.itemRow}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.itemTitle}>💼 {job.Role} at {job.Organization}</Text>
-                      <Text style={styles.itemSub}>{job["Start Date"]} – {job["End Date"]}</Text>
+              {experiences.map((job: any, idx: number) => {
+                const itemId = job.id || `exp_${idx}`;
+                return (
+                  <View key={itemId} style={styles.jobBox}>
+                    <View style={styles.itemRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.itemTitle}>💼 {job.Role} at {job.Organization}</Text>
+                        <Text style={styles.itemSub}>{job["Start Date"]} – {job["End Date"]}</Text>
+                      </View>
+                      <Switch
+                        value={isVisible(itemId, job)}
+                        onValueChange={() => toggleItemVisibility(itemId, 'experience', idx, job)}
+                        disabled={isMain}
+                        trackColor={switchColors}
+                      />
                     </View>
-                    <Switch value={isVisible(job.id || `exp_${idx}`)} onValueChange={() => toggleVisibility(job.id || `exp_${idx}`)} disabled={isMain} trackColor={switchColors} />
                   </View>
-
-                  {/* Job Sub-Items */}
-                  {Array.isArray(job["Key Responsibilities"]) && job["Key Responsibilities"].map((resp: any, rIdx: number) => (
-                    <View key={resp.id || rIdx} style={styles.subItemRow}>
-                      <Text style={[styles.itemSub, { flex: 1, paddingLeft: 12 }]}>• {resp.text || resp.name}</Text>
-                      <Switch value={isVisible(resp.id || `resp_${idx}_${rIdx}`)} onValueChange={() => toggleVisibility(resp.id || `resp_${idx}_${rIdx}`)} disabled={isMain} trackColor={switchColors} />
-                    </View>
-                  ))}
-                </View>
-              ))}
+                );
+              })}
             </Card.Content>
           </Card>
 
@@ -262,24 +316,41 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
             <Card.Title title="Skills & Tools" left={(props) => <IconButton {...props} icon="tools" />} />
             <Card.Content>
               <Text style={styles.subHeader}>Technical Skills</Text>
-              {techSkills.map((item: any, idx: number) => (
-                <View key={item.id || idx} style={styles.itemRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.itemTitle}>⚡ {item.name}</Text>
-                    <Text style={styles.itemSub}>{item.howObtained} · {item.yearsInUse ? `${item.yearsInUse} yrs` : 'Active'}</Text>
+              {techSkills.map((item: any, idx: number) => {
+                const itemId = item.id || `tech_${idx}`;
+                const skillName = typeof item === 'string' ? item : item.name;
+                return (
+                  <View key={itemId} style={styles.itemRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.itemTitle}>⚡ {skillName}</Text>
+                    </View>
+                    <Switch
+                      value={isVisible(itemId, item)}
+                      onValueChange={() => toggleItemVisibility(itemId, 'tech', idx, item)}
+                      disabled={isMain}
+                      trackColor={switchColors}
+                    />
                   </View>
-                  <Switch value={isVisible(item.id || `tech_${idx}`)} onValueChange={() => toggleVisibility(item.id || `tech_${idx}`)} disabled={isMain} trackColor={switchColors} />
-                </View>
-              ))}
+                );
+              })}
 
               <Divider style={{ marginVertical: 8 }} />
               <Text style={styles.subHeader}>Soft Skills</Text>
-              {softSkills.map((item: any, idx: number) => (
-                <View key={item.id || idx} style={styles.itemRow}>
-                  <Text style={[styles.itemTitle, { flex: 1 }]}>🧠 {item.name}</Text>
-                  <Switch value={isVisible(item.id || `soft_${idx}`)} onValueChange={() => toggleVisibility(item.id || `soft_${idx}`)} disabled={isMain} trackColor={switchColors} />
-                </View>
-              ))}
+              {softSkills.map((item: any, idx: number) => {
+                const itemId = item.id || `soft_${idx}`;
+                const skillName = typeof item === 'string' ? item : item.name;
+                return (
+                  <View key={itemId} style={styles.itemRow}>
+                    <Text style={[styles.itemTitle, { flex: 1 }]}>🧠 {skillName}</Text>
+                    <Switch
+                      value={isVisible(itemId, item)}
+                      onValueChange={() => toggleItemVisibility(itemId, 'soft', idx, item)}
+                      disabled={isMain}
+                      trackColor={switchColors}
+                    />
+                  </View>
+                );
+              })}
             </Card.Content>
           </Card>
 
@@ -287,15 +358,23 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
           <Card style={styles.sectionCard}>
             <Card.Title title="References" left={(props) => <IconButton {...props} icon="account-badge" />} />
             <Card.Content>
-              {references.map((item: any, idx: number) => (
-                <View key={item.id || idx} style={styles.itemRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.itemTitle}>👥 {item.name || item.Name}</Text>
-                    <Text style={styles.itemSub}>{item.role || item.Role} at {item.company || item.Organization}</Text>
+              {references.map((item: any, idx: number) => {
+                const itemId = item.id || `ref_${idx}`;
+                return (
+                  <View key={itemId} style={styles.itemRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.itemTitle}>👥 {item.name || item.Name}</Text>
+                      <Text style={styles.itemSub}>{item.role || item.Role} at {item.company || item.Organization}</Text>
+                    </View>
+                    <Switch
+                      value={isVisible(itemId, item)}
+                      onValueChange={() => toggleItemVisibility(itemId, 'references', idx, item)}
+                      disabled={isMain}
+                      trackColor={switchColors}
+                    />
                   </View>
-                  <Switch value={isVisible(item.id || `ref_${idx}`)} onValueChange={() => toggleVisibility(item.id || `ref_${idx}`)} disabled={isMain} trackColor={switchColors} />
-                </View>
-              ))}
+                );
+              })}
             </Card.Content>
           </Card>
 
@@ -379,7 +458,6 @@ const styles = StyleSheet.create({
   subHeader: { fontWeight: 'bold', fontSize: 13, color: '#475569', marginBottom: 6 },
   itemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6 },
   jobBox: { borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, padding: 10, marginBottom: 8, backgroundColor: '#f8fafc' },
-  subItemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 3 },
   itemTitle: { fontWeight: 'bold', fontSize: 13, color: '#1e293b' },
   itemSub: { fontSize: 11, color: '#64748b' },
   footerCard: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 56, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, borderTopWidth: 1.5, zIndex: 100, elevation: 10 },

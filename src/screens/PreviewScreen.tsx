@@ -91,10 +91,15 @@ const PreviewScreen = ({ navigation }) => {
             if (!val) return '';
             let text = '';
             if (Array.isArray(val)) {
-                text = val.map(item => typeof item === 'object' && item !== null ? (item.name || item.text || item.skill || '') : String(item)).filter(Boolean).join('\n');
+                text = val
+                    .filter(item => typeof item === 'object' && item !== null ? item.visible !== false : true)
+                    .map(item => typeof item === 'object' && item !== null ? (item.name || item.text || item.skill || '') : String(item))
+                    .filter(Boolean)
+                    .join('\n');
             } else {
                 text = String(val);
             }
+            if (!text.trim()) return '';
             if (format === 'comma') {
                 const lines = text.split('\n')
                     .map(line => line.replace(/^-\s*/, '').trim())
@@ -104,7 +109,7 @@ const PreviewScreen = ({ navigation }) => {
                 const lines = text.split('\n')
                     .map(line => line.replace(/^-\s*/, '').trim())
                     .filter(line => line.length > 0);
-                if (lines.length === 0) return text;
+                if (lines.length === 0) return '';
                 return `<ul style="margin: 5px 0 10px 0; padding-left: 20px; list-style-type: disc;">` + 
                     lines.map(line => `<li>${line}</li>`).join('') + 
                     `</ul>`;
@@ -234,26 +239,29 @@ const PreviewScreen = ({ navigation }) => {
             </ul>
         ` : '';
 
-        const expHtml = expList && expList.length > 0 ? `
+        const visibleExp = (expList || []).filter(job => job.visible !== false);
+        const expHtml = visibleExp && visibleExp.length > 0 ? `
             ${sectionHeader('Professional Experience')}
-            ${expList.map(job => `
+            ${visibleExp.map(job => `
                 <div class="job-item" style="margin-bottom: 20px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
                         <span>${job.Organization}${job.Department ? ` (${job.Department})` : ''}</span>
                         <span>${job["Start Date"]} - ${job["End Date"] || 'Present'}</span>
                     </div>
                     <div class="job-role" style="font-style: italic; color: #555; margin-bottom: 5px;">${job.Role}</div>
-                    <div class="job-desc" style="font-size: 14px; line-height: 1.5; white-space: pre-line; margin-bottom: 5px;">${formatBulletList(job["Key Responsibilities"], uiSettings?.ResponsibilityFormat)}</div>
-                    ${job.Achievements ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Key Achievements:</strong> ${formatBulletList(job.Achievements, 'bullet')}</div>` : ''}
-                    ${job["Systems Used"] ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Systems & Tools Used:</strong> ${formatBulletList(job["Systems Used"], uiSettings?.SystemsUsedFormat)}</div>` : ''}
+                    ${formatBulletList(job["Key Responsibilities"], uiSettings?.ResponsibilityFormat) ? `<div class="job-desc" style="font-size: 14px; line-height: 1.5; white-space: pre-line; margin-bottom: 5px;">${formatBulletList(job["Key Responsibilities"], uiSettings?.ResponsibilityFormat)}</div>` : ''}
+                    ${job.Achievements && formatBulletList(job.Achievements, 'bullet') ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Key Achievements:</strong> ${formatBulletList(job.Achievements, 'bullet')}</div>` : ''}
+                    ${job["Systems Used"] && formatBulletList(job["Systems Used"], uiSettings?.SystemsUsedFormat) ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Systems & Tools Used:</strong> ${formatBulletList(job["Systems Used"], uiSettings?.SystemsUsedFormat)}</div>` : ''}
                     ${job["Reason for Leaving"] ? `<div style="font-size: 12.5px; margin-top: 5px; font-style: italic; color: #777;">Reason for leaving: ${job["Reason for Leaving"]}</div>` : ''}
                 </div>
             `).join('')}
         ` : '';
 
-        const eduHtml = (eduList?.tertiary?.length > 0 || eduList?.highschool?.["Year Completed"]) ? `
+        const visibleTertiary = (eduList?.tertiary || []).filter(edu => edu.visible !== false);
+        const hasHighschool = eduList?.highschool?.["Year Completed"] && eduList?.highschool?.visible !== false;
+        const eduHtml = (visibleTertiary.length > 0 || hasHighschool) ? `
             ${sectionHeader('Education')}
-            ${eduList.tertiary.map(edu => `
+            ${visibleTertiary.map(edu => `
                  <div class="edu-item" style="margin-bottom: 15px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
                         <span>${edu.Institution}</span>
@@ -262,7 +270,7 @@ const PreviewScreen = ({ navigation }) => {
                     <div>${edu["Qualification Name"]}</div>
                 </div>
             `).join('')}
-            ${eduList.highschool["Year Completed"] ? `
+            ${hasHighschool ? `
                 <div class="edu-item" style="margin-bottom: 15px;">
                      <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
                         <span>${eduList.highschool["Province Department"]}</span>
@@ -273,12 +281,19 @@ const PreviewScreen = ({ navigation }) => {
             ` : ''}
         ` : '';
 
-        const skillsHtml = (skills.Tech || skills.Soft || skills.Certifications || skills["Professional Certs"] || skills.Certs || skills["Non-Academic Certs"]) ? `
+        const techText = formatBulletList(skills.Tech, uiSettings?.TechFormat);
+        const softText = formatBulletList(skills.Soft, uiSettings?.SoftFormat);
+        const profCertsText = formatBulletList(skills.Certifications || skills.professionalCertifications || skills["Professional Certs"] || skills.Certs, uiSettings?.ProfCertsFormat);
+        const nonAcadText = formatBulletList(skills.NonAcadCerts || skills["Non-Academic Certs"], uiSettings?.NonAcadCertsFormat);
+
+        const hasVisibleSkills = techText || softText || profCertsText || nonAcadText;
+
+        const skillsHtml = hasVisibleSkills ? `
              ${sectionHeader('Skills & Certifications')}
-             ${skills.Tech ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Technical Skills:</strong> ${formatBulletList(skills.Tech, uiSettings?.TechFormat)}</div>` : ''}
-             ${skills.Soft ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Soft Skills:</strong> ${formatBulletList(skills.Soft, uiSettings?.SoftFormat)}</div>` : ''}
-             ${(skills.Certifications || skills["Professional Certs"] || skills.Certs) ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Certifications:</strong> ${formatBulletList(skills.Certifications || skills["Professional Certs"] || skills.Certs, uiSettings?.ProfCertsFormat)}</div>` : ''}
-             ${skills["Non-Academic Certs"] ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Non-Academic Certifications:</strong> ${formatBulletList(skills["Non-Academic Certs"], uiSettings?.NonAcadCertsFormat)}</div>` : ''}
+             ${techText ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Technical Skills:</strong> ${techText}</div>` : ''}
+             ${softText ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Soft Skills:</strong> ${softText}</div>` : ''}
+             ${profCertsText ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Certifications:</strong> ${profCertsText}</div>` : ''}
+             ${nonAcadText ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Non-Academic Certifications:</strong> ${nonAcadText}</div>` : ''}
          ` : '';
 
         const refHtml = refList && refList.length > 0 ? `
@@ -286,13 +301,13 @@ const PreviewScreen = ({ navigation }) => {
              <div class="ref-grid" style="${Layout === 'minimalist' ? 'text-align: center;' : ''}">
                 ${refList.map(ref => `
                     <div class="ref-item" style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;">
-                        <strong>${ref.name}</strong><br/>
-                        ${ref.role || ref.relation || 'Reference'}${ref.company || ref.org ? ` at ${ref.company || ref.org}` : ''}<br/>
-                        ${ref.contact || ref.phone || ''}
+                        <strong>${ref.name || ref.Name || ''}</strong><br/>
+                        ${ref.role || ref.Role || 'Reference'}${ref.company || ref.Organization ? ` at ${ref.company || ref.Organization}` : ''}<br/>
+                        ${ref.contact || ref.Contact || ''}
                     </div>
                 `).join('')}
              </div>
-         ` : `${sectionHeader('References')}<p style="${Layout === 'minimalist' ? 'text-align: center;' : ''}">Available upon request.</p>`;
+         ` : '';
 
 
         return `
