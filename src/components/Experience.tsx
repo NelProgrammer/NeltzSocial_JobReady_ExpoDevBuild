@@ -10,20 +10,19 @@ interface ExperienceProps {
 }
 
 const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
-    const context = useContext(ResumeContext);
+    const context = useContext(ResumeContext) as any;
     const resumeData = context?.resumeData;
     const updateResumeData = context?.updateResumeData;
-    const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const [expandedIndex, setExpandedIndex] = useState<number | null>(null); // Collapsed by default
+    const [expandedSubSections, setExpandedSubSections] = useState<Record<string, boolean>>({}); // Nested sub-sections collapsed by default
 
     if (!resumeData || !updateResumeData) return null;
 
     const experiences: WorkExperience[] = resumeData.experience || [];
 
-    React.useEffect(() => {
-        if (experiences.length === 0 && isEditMode) {
-            addExperience();
-        }
-    }, []);
+    const toggleSubSection = (key: string) => {
+        setExpandedSubSections(prev => ({ ...prev, [key]: !prev[key] }));
+    };
 
     const addExperience = () => {
         if (!isEditMode) return;
@@ -122,44 +121,79 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
         updateSubList(expIndex, field, current);
     };
 
+    const getCsvSummary = (items: SubExperienceItem[]) => {
+        const texts = items.map(i => (i.text || i.name || '').trim()).filter(Boolean);
+        if (texts.length === 0) return 'No items added';
+        const joined = texts.join(', ');
+        return joined.length > 70 ? `${joined.substring(0, 67)}...` : joined;
+    };
+
     const renderSubSection = (expIndex: number, exp: WorkExperience, label: string, field: SubField, prefix: string) => {
         const subItems = getSubList(exp, field, prefix);
+        const subKey = `${expIndex}_${field}`;
+        const isSubExpanded = !!expandedSubSections[subKey];
+        const csvSummary = getCsvSummary(subItems);
 
         return (
-            <View style={{ marginBottom: 14 }}>
-                <Text style={{ fontWeight: 'bold', fontSize: 14, color: '#333', marginBottom: 6 }}>{label}</Text>
-                {subItems.map((item, subIndex) => (
-                    <View key={item.id || subIndex} style={styles.subItemRow}>
-                        <TextInput
-                            label={`${label} #${subIndex + 1}`}
-                            value={item.text || item.name || ''}
-                            onChangeText={(text) => updateSubItemText(expIndex, field, prefix, subIndex, text)}
-                            style={[styles.input, { flex: 1 }]}
-                            placeholder={`Describe ${label.toLowerCase()} item...`}
-                            editable={isEditMode}
+            <Card style={styles.subCard}>
+                <Card.Title
+                    title={`${label} (${subItems.length})`}
+                    subtitle={`CSV: ${csvSummary}`}
+                    subtitleNumberOfLines={2}
+                    titleStyle={{ fontSize: 13, fontWeight: 'bold' }}
+                    subtitleStyle={{ fontSize: 11, color: '#64748b' }}
+                    right={(props) => (
+                        <IconButton
+                            {...props}
+                            icon={isSubExpanded ? "chevron-up" : "chevron-down"}
+                            onPress={() => toggleSubSection(subKey)}
                         />
-                        {isEditMode && (
-                            <IconButton
-                                icon="delete"
-                                iconColor="#B00020"
-                                size={20}
-                                onPress={() => removeSubItem(expIndex, field, prefix, subIndex)}
-                            />
+                    )}
+                />
+                {isSubExpanded && (
+                    <Card.Content>
+                        <Divider style={{ marginBottom: 10 }} />
+                        {subItems.length === 0 ? (
+                            <Text style={styles.emptySubText}>No {label.toLowerCase()} items added yet.</Text>
+                        ) : (
+                            subItems.map((item, subIndex) => (
+                                <View key={item.id || subIndex} style={styles.subItemRow}>
+                                    <TextInput
+                                        label={`${label} #${subIndex + 1}`}
+                                        value={item.text || item.name || ''}
+                                        onChangeText={(text) => updateSubItemText(expIndex, field, prefix, subIndex, text)}
+                                        style={[styles.input, { flex: 1 }]}
+                                        placeholder={`Describe ${label.toLowerCase()} item...`}
+                                        editable={isEditMode}
+                                    />
+                                    {isEditMode && (
+                                        <IconButton
+                                            icon="delete"
+                                            iconColor="#B00020"
+                                            size={20}
+                                            onPress={() => removeSubItem(expIndex, field, prefix, subIndex)}
+                                        />
+                                    )}
+                                </View>
+                            ))
                         )}
-                    </View>
-                ))}
-                {isEditMode && (
-                    <Button
-                        mode="outlined"
-                        icon="plus"
-                        compact
-                        onPress={() => addSubItem(expIndex, field, prefix)}
-                        style={styles.subAddBtn}
-                    >
-                        Add {label} Item
-                    </Button>
+                        {isEditMode && (
+                            <Button
+                                mode="outlined"
+                                icon="plus"
+                                compact
+                                onPress={() => {
+                                    addSubItem(expIndex, field, prefix);
+                                    setExpandedSubSections(prev => ({ ...prev, [subKey]: true }));
+                                }}
+                                style={styles.subAddBtn}
+                            >
+                                Add {label} Item
+                            </Button>
+                        )}
+                    </Card.Content>
                 )}
-            </View>
+            </Card>
         );
     };
 
@@ -177,78 +211,88 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                     <Text style={styles.emptyText}>ℹ️ No work experience added yet. Tap "+ Add Job Experience" to get started.</Text>
                 </View>
             ) : (
-                experiences.map((exp, index) => (
-                    <Card key={exp.id || index} style={styles.card}>
-                        <Card.Title
-                            title={exp.Organization || "New Job"}
-                            subtitle={exp.Role || "Role"}
-                            left={(props) => <IconButton {...props} icon="briefcase" />}
-                            right={(props) => (
-                                <View style={{ flexDirection: 'row' }}>
-                                    <IconButton {...props} icon={expandedIndex === index ? "chevron-up" : "chevron-down"} onPress={() => setExpandedIndex(expandedIndex === index ? null : index)} />
-                                    {isEditMode && <IconButton {...props} icon="delete" onPress={() => removeExperience(index)} />}
-                                </View>
+                experiences.map((exp, index) => {
+                    const isJobExpanded = expandedIndex === index;
+
+                    return (
+                        <Card key={exp.id || index} style={styles.card}>
+                            <Card.Title
+                                title={exp.Organization || "New Job"}
+                                subtitle={exp.Role ? `${exp.Role}${exp.Department ? ` (${exp.Department})` : ''}` : "Role & Organization"}
+                                left={(props) => <IconButton {...props} icon="briefcase-outline" />}
+                                right={(props) => (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <IconButton
+                                            {...props}
+                                            icon={isJobExpanded ? "chevron-up" : "chevron-down"}
+                                            onPress={() => setExpandedIndex(isJobExpanded ? null : index)}
+                                        />
+                                        {isEditMode && (
+                                            <IconButton {...props} icon="delete" onPress={() => removeExperience(index)} />
+                                        )}
+                                    </View>
+                                )}
+                            />
+
+                            {isJobExpanded && (
+                                <Card.Content>
+                                    <Divider style={{ marginBottom: 10 }} />
+                                    <TextInput
+                                        label="Organization / Company"
+                                        value={exp.Organization || ''}
+                                        onChangeText={(text) => updateExpField(index, 'Organization', text)}
+                                        style={styles.input}
+                                        editable={isEditMode}
+                                    />
+                                    <TextInput
+                                        label="Role / Title"
+                                        value={exp.Role || ''}
+                                        onChangeText={(text) => updateExpField(index, 'Role', text)}
+                                        style={styles.input}
+                                        editable={isEditMode}
+                                    />
+                                    <TextInput
+                                        label="Department"
+                                        value={exp.Department || ''}
+                                        onChangeText={(text) => updateExpField(index, 'Department', text)}
+                                        style={styles.input}
+                                        editable={isEditMode}
+                                    />
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                        <TextInput
+                                            label="Start Date"
+                                            value={exp["Start Date"] || ''}
+                                            onChangeText={(text) => updateExpField(index, 'Start Date', text)}
+                                            style={[styles.input, { flex: 1, marginRight: 5 }]}
+                                            placeholder="YYYY-MM"
+                                            editable={isEditMode}
+                                        />
+                                        <TextInput
+                                            label="End Date"
+                                            value={exp["End Date"] || ''}
+                                            onChangeText={(text) => updateExpField(index, 'End Date', text)}
+                                            style={[styles.input, { flex: 1, marginLeft: 5 }]}
+                                            placeholder="YYYY-MM / Present"
+                                            editable={isEditMode}
+                                        />
+                                    </View>
+
+                                    {renderSubSection(index, exp, "Key Responsibilities", "Key Responsibilities", "resp")}
+                                    {renderSubSection(index, exp, "Key Achievements", "Achievements", "ach")}
+                                    {renderSubSection(index, exp, "Systems & Tools Used", "Systems Used", "sys")}
+
+                                    <TextInput
+                                        label="Reason for Leaving"
+                                        value={exp["Reason for Leaving"] || ''}
+                                        onChangeText={(text) => updateExpField(index, 'Reason for Leaving', text)}
+                                        style={styles.input}
+                                        editable={isEditMode}
+                                    />
+                                </Card.Content>
                             )}
-                        />
-
-                        {expandedIndex === index && (
-                            <Card.Content>
-                                <Divider style={{ marginBottom: 10 }} />
-                                <TextInput
-                                    label="Organization"
-                                    value={exp.Organization || ''}
-                                    onChangeText={(text) => updateExpField(index, 'Organization', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                                <TextInput
-                                    label="Role"
-                                    value={exp.Role || ''}
-                                    onChangeText={(text) => updateExpField(index, 'Role', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                                <TextInput
-                                    label="Department"
-                                    value={exp.Department || ''}
-                                    onChangeText={(text) => updateExpField(index, 'Department', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                    <TextInput
-                                        label="Start Date"
-                                        value={exp["Start Date"] || ''}
-                                        onChangeText={(text) => updateExpField(index, 'Start Date', text)}
-                                        style={[styles.input, { flex: 1, marginRight: 5 }]}
-                                        placeholder="YYYY-MM-DD"
-                                        editable={isEditMode}
-                                    />
-                                    <TextInput
-                                        label="End Date"
-                                        value={exp["End Date"] || ''}
-                                        onChangeText={(text) => updateExpField(index, 'End Date', text)}
-                                        style={[styles.input, { flex: 1, marginLeft: 5 }]}
-                                        placeholder="YYYY-MM-DD"
-                                        editable={isEditMode}
-                                    />
-                                </View>
-
-                                {renderSubSection(index, exp, "Key Responsibilities", "Key Responsibilities", "resp")}
-                                {renderSubSection(index, exp, "Key Achievements", "Achievements", "ach")}
-                                {renderSubSection(index, exp, "Systems Used", "Systems Used", "sys")}
-
-                                <TextInput
-                                    label="Reason for Leaving"
-                                    value={exp["Reason for Leaving"] || ''}
-                                    onChangeText={(text) => updateExpField(index, 'Reason for Leaving', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                            </Card.Content>
-                        )}
-                    </Card>
-                ))
+                        </Card>
+                    );
+                })
             )}
 
             {isEditMode && (
@@ -262,13 +306,15 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    card: { marginBottom: 15 },
-    input: { marginBottom: 10, backgroundColor: '#F8F9FA' },
+    card: { marginBottom: 15, backgroundColor: '#ffffff' },
+    subCard: { marginBottom: 10, borderWidth: 1, borderColor: '#cbd5e1', backgroundColor: '#f8fafc' },
+    input: { marginBottom: 8, backgroundColor: '#ffffff' },
     subItemRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-    subAddBtn: { marginTop: 4, alignSelf: 'flex-start', borderColor: '#6200EE' },
-    addBtn: { marginTop: 10, paddingVertical: 6, backgroundColor: '#6200EE', alignSelf: 'flex-start' },
+    subAddBtn: { marginTop: 6, alignSelf: 'flex-start', borderColor: '#6200EE' },
+    addBtn: { marginTop: 10, paddingVertical: 4, backgroundColor: '#6200EE', alignSelf: 'flex-start' },
     emptyCard: { padding: 14, backgroundColor: '#f0f4f8', borderRadius: 8, marginBottom: 15 },
-    emptyText: { color: '#64748b', fontSize: 13 }
+    emptyText: { color: '#64748b', fontSize: 13 },
+    emptySubText: { color: '#94a3b8', fontSize: 12, fontStyle: 'italic', marginBottom: 8 }
 });
 
 export default Experience;

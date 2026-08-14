@@ -67,4 +67,22 @@ describe('Experience Sub-List Data Normalization Logic Tests', () => {
         expect(list[0].text).toBe('Led sprint planning');
         expect(list[1].text).toBe('Code reviews and mentoring');
     });
+
+    test('generates CSV summary for experience sub-items', () => {
+        const getCsvSummary = (items: SubExperienceItem[]) => {
+            const texts = items.map(i => (i.text || i.name || '').trim()).filter(Boolean);
+            if (texts.length === 0) return 'No items added';
+            const joined = texts.join(', ');
+            return joined.length > 70 ? `${joined.substring(0, 67)}...` : joined;
+        };
+
+        const items: SubExperienceItem[] = [
+            { id: '1', text: 'Jira' },
+            { id: '2', text: 'SAP' },
+            { id: '3', text: 'Git' }
+        ];
+
+        expect(getCsvSummary(items)).toBe('Jira, SAP, Git');
+        expect(getCsvSummary([])).toBe('No items added');
+    });
 });
