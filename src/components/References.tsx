@@ -3,6 +3,7 @@ import { View, StyleSheet, Alert } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { TextInput, Button, Card, IconButton, Divider, Text } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
+import { ReferenceItem } from '../types/resume';
 
 interface ReferencesProps {
     isEditMode?: boolean;
@@ -14,20 +15,22 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
 
     if (!resumeData || !updateResumeData) return null;
 
-    const references = resumeData.References || [];
+    const references: ReferenceItem[] = resumeData.References || [];
 
     const addReference = () => {
         if (!isEditMode) return;
-        const newRef = {
+        const newRef: ReferenceItem = {
             id: `ref_${Date.now()}_${references.length + 1}`,
-            name: "", Name: "",
-            role: "", Role: "",
-            company: "", organization: "", Organization: "",
-            cellPhone: "", workPhone: "", email: "",
-            contact: "", visible: true
+            name: "",
+            role: "",
+            company: "",
+            cellPhone: "",
+            workPhone: "",
+            email: "",
+            visible: true
         };
         updateResumeData({ ...resumeData, References: [...references, newRef] });
-        setExpandedIndex(references.length); // Expand newly added reference
+        setExpandedIndex(references.length);
     };
 
     const removeReference = (index: number) => {
@@ -54,24 +57,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
     const updateRef = (index: number, key: string, value: string) => {
         if (!isEditMode) return;
         const newRef = [...references];
-        const currentObj = { ...newRef[index], [key]: value };
-
-        if (key === 'name') currentObj.Name = value;
-        if (key === 'role') currentObj.Role = value;
-        if (key === 'company' || key === 'organization') {
-            currentObj.company = value;
-            currentObj.organization = value;
-            currentObj.Organization = value;
-        }
-
-        // Composite fallback contact string
-        const cell = currentObj.cellPhone || '';
-        const work = currentObj.workPhone || '';
-        const email = currentObj.email || '';
-        currentObj.contact = [cell, work, email].filter(Boolean).join(' | ');
-        currentObj.Contact = currentObj.contact;
-
-        newRef[index] = currentObj;
+        newRef[index] = { ...newRef[index], [key]: value };
         updateResumeData({ ...resumeData, References: newRef });
     };
 
@@ -89,7 +75,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                     <Text style={styles.emptyText}>ℹ️ No references added yet. Tap "+ Add Reference" to get started.</Text>
                 </View>
             ) : (
-                references.map((ref: any, index: number) => {
+                references.map((ref: ReferenceItem, index: number) => {
                     const refName = ref.name || ref.Name || "";
                     const refRole = ref.role || ref.Role || "";
                     const refCompany = ref.company || ref.organization || ref.Organization || "";

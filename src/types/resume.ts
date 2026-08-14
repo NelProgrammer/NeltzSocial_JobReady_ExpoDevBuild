@@ -142,8 +142,6 @@ export interface ReferenceItem {
   cellPhone?: string;
   workPhone?: string;
   email?: string;
-  contact?: string;
-  Contact?: string;
   visible?: boolean;
 }
 

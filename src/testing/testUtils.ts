@@ -115,8 +115,6 @@ export const createMockResumeData = (overrides?: Partial<ResumeData>): ResumeDat
       cellPhone: '082 123 4567',
       workPhone: '011 987 6543',
       email: 'jane@techcorp.com',
-      contact: '082 123 4567 | 011 987 6543 | jane@techcorp.com',
-      Contact: '082 123 4567 | 011 987 6543 | jane@techcorp.com',
       visible: true,
     },
   ],

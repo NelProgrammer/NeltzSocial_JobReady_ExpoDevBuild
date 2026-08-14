@@ -37,8 +37,8 @@ describe('FieldsSelection & Preview Visibility Integration Test', () => {
             ]
         },
         References: [
-            { id: 'ref_1', name: 'Alice Smith', role: 'Manager', organization: 'Acme Corp', contact: '0821234567', visible: false },
-            { id: 'ref_2', name: 'Bob Jones', role: 'Lead Architect', organization: 'Tech SA', contact: '0839876543', visible: true }
+            { id: 'ref_1', name: 'Alice Smith', role: 'Manager', organization: 'Acme Corp', cellPhone: '0821234567', visible: false },
+            { id: 'ref_2', name: 'Bob Jones', role: 'Lead Architect', organization: 'Tech SA', cellPhone: '0839876543', visible: true }
         ]
     };
 

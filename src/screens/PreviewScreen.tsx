@@ -304,13 +304,12 @@ const PreviewScreen = ({ navigation }) => {
                     const work = ref.workPhone ? `☎️ Work: ${ref.workPhone}` : '';
                     const email = ref.email ? `📧 ${ref.email}` : '';
                     const contactLines = [cell, work, email].filter(Boolean).join('<br/>');
-                    const fallbackContact = (!contactLines && (ref.contact || ref.Contact)) ? (ref.contact || ref.Contact) : contactLines;
 
                     return `
                     <div class="ref-item" style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;">
                         <strong>${ref.name || ref.Name || ''}</strong><br/>
                         ${ref.role || ref.Role || 'Reference'}${ref.company || ref.organization || ref.Organization ? ` at ${ref.company || ref.organization || ref.Organization}` : ''}<br/>
-                        ${fallbackContact}
+                        ${contactLines}
                     </div>
                     `;
                 }).join('')}
