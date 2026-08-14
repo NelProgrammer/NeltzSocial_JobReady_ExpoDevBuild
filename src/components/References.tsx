@@ -1,5 +1,4 @@
-// @ts-nocheck
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { TextInput, Button, Card, IconButton, Divider, Text } from 'react-native-paper';
@@ -10,19 +9,28 @@ interface ReferencesProps {
 }
 
 const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
-    const { resumeData, updateResumeData } = useContext(ResumeContext);
+    const { resumeData, updateResumeData } = useContext(ResumeContext) as any;
+    const [expandedIndex, setExpandedIndex] = useState<number | null>(null); // Collapsed by default
 
-    if (!resumeData) return null;
+    if (!resumeData || !updateResumeData) return null;
 
     const references = resumeData.References || [];
 
     const addReference = () => {
         if (!isEditMode) return;
-        const newRef = { id: `ref_${Date.now()}_${references.length + 1}`, name: "", role: "", company: "", contact: "", visible: true };
+        const newRef = {
+            id: `ref_${Date.now()}_${references.length + 1}`,
+            name: "", Name: "",
+            role: "", Role: "",
+            company: "", organization: "", Organization: "",
+            cellPhone: "", workPhone: "", email: "",
+            contact: "", visible: true
+        };
         updateResumeData({ ...resumeData, References: [...references, newRef] });
+        setExpandedIndex(references.length); // Expand newly added reference
     };
 
-    const removeReference = (index) => {
+    const removeReference = (index: number) => {
         if (!isEditMode) return;
         Alert.alert(
             "Remove Reference",
@@ -36,20 +44,34 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                         const newRef = [...references];
                         newRef.splice(index, 1);
                         updateResumeData({ ...resumeData, References: newRef });
+                        setExpandedIndex(null);
                     }
                 }
             ]
         );
     };
 
-    const updateRef = (index, key, value) => {
+    const updateRef = (index: number, key: string, value: string) => {
         if (!isEditMode) return;
         const newRef = [...references];
-        newRef[index][key] = value;
-        if (key === 'name') newRef[index].Name = value;
-        if (key === 'role') newRef[index].Role = value;
-        if (key === 'company') newRef[index].Organization = value;
-        if (key === 'contact') newRef[index].Contact = value;
+        const currentObj = { ...newRef[index], [key]: value };
+
+        if (key === 'name') currentObj.Name = value;
+        if (key === 'role') currentObj.Role = value;
+        if (key === 'company' || key === 'organization') {
+            currentObj.company = value;
+            currentObj.organization = value;
+            currentObj.Organization = value;
+        }
+
+        // Composite fallback contact string
+        const cell = currentObj.cellPhone || '';
+        const work = currentObj.workPhone || '';
+        const email = currentObj.email || '';
+        currentObj.contact = [cell, work, email].filter(Boolean).join(' | ');
+        currentObj.Contact = currentObj.contact;
+
+        newRef[index] = currentObj;
         updateResumeData({ ...resumeData, References: newRef });
     };
 
@@ -67,53 +89,91 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                     <Text style={styles.emptyText}>ℹ️ No references added yet. Tap "+ Add Reference" to get started.</Text>
                 </View>
             ) : (
-                references.map((ref, index) => {
+                references.map((ref: any, index: number) => {
                     const refName = ref.name || ref.Name || "";
                     const refRole = ref.role || ref.Role || "";
-                    const refCompany = ref.company || ref.Organization || "";
-                    const refContact = ref.contact || ref.Contact || "";
+                    const refCompany = ref.company || ref.organization || ref.Organization || "";
+                    const cellPhone = ref.cellPhone || "";
+                    const workPhone = ref.workPhone || "";
+                    const email = ref.email || "";
+
+                    const isExpanded = expandedIndex === index;
 
                     return (
                         <Card key={ref.id || index} style={styles.card}>
                             <Card.Title
                                 title={refName || "New Reference"}
-                                subtitle={refCompany ? `${refRole} at ${refCompany}` : (refRole || "Reference")}
+                                subtitle={refCompany ? `${refRole} at ${refCompany}` : (refRole || "Reference Details")}
                                 left={(props) => <IconButton {...props} icon="account-badge-outline" />}
                                 right={(props) => (
-                                    isEditMode && <IconButton {...props} icon="delete" onPress={() => removeReference(index)} />
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <IconButton
+                                            {...props}
+                                            icon={isExpanded ? "chevron-up" : "chevron-down"}
+                                            onPress={() => setExpandedIndex(isExpanded ? null : index)}
+                                        />
+                                        {isEditMode && (
+                                            <IconButton {...props} icon="delete" onPress={() => removeReference(index)} />
+                                        )}
+                                    </View>
                                 )}
                             />
-                            <Card.Content>
-                                <Divider style={{ marginBottom: 10 }} />
-                                <TextInput
-                                    label="Full Name"
-                                    value={refName}
-                                    onChangeText={(text) => updateRef(index, 'name', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                                <TextInput
-                                    label="Role / Title"
-                                    value={refRole}
-                                    onChangeText={(text) => updateRef(index, 'role', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                                <TextInput
-                                    label="Company / Organization"
-                                    value={refCompany}
-                                    onChangeText={(text) => updateRef(index, 'company', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                                <TextInput
-                                    label="Contact Number / Email"
-                                    value={refContact}
-                                    onChangeText={(text) => updateRef(index, 'contact', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                            </Card.Content>
+                            {isExpanded && (
+                                <Card.Content>
+                                    <Divider style={{ marginBottom: 10 }} />
+                                    <TextInput
+                                        label="Full Name"
+                                        value={refName}
+                                        onChangeText={(text) => updateRef(index, 'name', text)}
+                                        style={styles.input}
+                                        editable={isEditMode}
+                                    />
+                                    <TextInput
+                                        label="Role / Title"
+                                        value={refRole}
+                                        onChangeText={(text) => updateRef(index, 'role', text)}
+                                        style={styles.input}
+                                        editable={isEditMode}
+                                    />
+                                    <TextInput
+                                        label="Company / Organization"
+                                        value={refCompany}
+                                        onChangeText={(text) => updateRef(index, 'company', text)}
+                                        style={styles.input}
+                                        editable={isEditMode}
+                                    />
+                                    
+                                    <Text style={styles.subHeader}>Contact Details</Text>
+                                    <TextInput
+                                        label="Cell Number"
+                                        value={cellPhone}
+                                        onChangeText={(text) => updateRef(index, 'cellPhone', text)}
+                                        style={styles.input}
+                                        keyboardType="phone-pad"
+                                        placeholder="e.g. 082 123 4567"
+                                        editable={isEditMode}
+                                    />
+                                    <TextInput
+                                        label="Work Number"
+                                        value={workPhone}
+                                        onChangeText={(text) => updateRef(index, 'workPhone', text)}
+                                        style={styles.input}
+                                        keyboardType="phone-pad"
+                                        placeholder="e.g. 011 987 6543"
+                                        editable={isEditMode}
+                                    />
+                                    <TextInput
+                                        label="Email Address"
+                                        value={email}
+                                        onChangeText={(text) => updateRef(index, 'email', text)}
+                                        style={styles.input}
+                                        keyboardType="email-address"
+                                        placeholder="e.g. ref@company.co.za"
+                                        autoCapitalize="none"
+                                        editable={isEditMode}
+                                    />
+                                </Card.Content>
+                            )}
                         </Card>
                     );
                 })
@@ -131,8 +191,9 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     card: { marginBottom: 15 },
-    input: { marginBottom: 10, backgroundColor: '#fff' },
-    addBtn: { marginTop: 10, marginBottom: 20, alignSelf: 'flex-start' },
+    subHeader: { fontWeight: 'bold', fontSize: 13, color: '#475569', marginTop: 6, marginBottom: 8 },
+    input: { marginBottom: 10, backgroundColor: '#F8F9FA' },
+    addBtn: { marginTop: 10, marginBottom: 20, alignSelf: 'flex-start', backgroundColor: '#6200EE' },
     emptyCard: { padding: 14, backgroundColor: '#f0f4f8', borderRadius: 8, marginBottom: 15 },
     emptyText: { color: '#64748b', fontSize: 13 }
 });

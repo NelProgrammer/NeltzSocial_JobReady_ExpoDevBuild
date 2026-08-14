@@ -299,13 +299,21 @@ const PreviewScreen = ({ navigation }) => {
         const refHtml = refList && refList.length > 0 ? `
              ${sectionHeader('References')}
              <div class="ref-grid" style="${Layout === 'minimalist' ? 'text-align: center;' : ''}">
-                ${refList.map(ref => `
+                ${refList.map(ref => {
+                    const cell = ref.cellPhone ? `📱 Cell: ${ref.cellPhone}` : '';
+                    const work = ref.workPhone ? `☎️ Work: ${ref.workPhone}` : '';
+                    const email = ref.email ? `📧 ${ref.email}` : '';
+                    const contactLines = [cell, work, email].filter(Boolean).join('<br/>');
+                    const fallbackContact = (!contactLines && (ref.contact || ref.Contact)) ? (ref.contact || ref.Contact) : contactLines;
+
+                    return `
                     <div class="ref-item" style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;">
                         <strong>${ref.name || ref.Name || ''}</strong><br/>
-                        ${ref.role || ref.Role || 'Reference'}${ref.company || ref.Organization ? ` at ${ref.company || ref.Organization}` : ''}<br/>
-                        ${ref.contact || ref.Contact || ''}
+                        ${ref.role || ref.Role || 'Reference'}${ref.company || ref.organization || ref.Organization ? ` at ${ref.company || ref.organization || ref.Organization}` : ''}<br/>
+                        ${fallbackContact}
                     </div>
-                `).join('')}
+                    `;
+                }).join('')}
              </div>
          ` : '';
 

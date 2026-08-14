@@ -130,10 +130,27 @@ export interface TertiaryEducationItem {
   visible?: boolean;
 }
 
+export interface ReferenceItem {
+  id: string;
+  name?: string;
+  Name?: string;
+  organization?: string;
+  Organization?: string;
+  company?: string;
+  role?: string;
+  Role?: string;
+  cellPhone?: string;
+  workPhone?: string;
+  email?: string;
+  contact?: string;
+  Contact?: string;
+  visible?: boolean;
+}
+
 export interface ResumeData {
-  id?: string;
-  "personal details"?: PersonalDetails;
-  personal?: PersonalDetails;
+  id: string;
+  "personal details"?: any;
+  personal?: any;
   experience?: WorkExperience[];
   education?: {
     tertiary?: TertiaryEducationItem[];
@@ -143,7 +160,7 @@ export interface ResumeData {
   skills?: ResumeSkills;
   Skills?: ResumeSkills;
   "professional summary"?: string;
-  References?: Array<{ id: string; name?: string; Name?: string; organization?: string; Organization?: string; role?: string; Role?: string; contact?: string; Contact?: string; visible?: boolean }>;
+  References?: ReferenceItem[];
 }
 
 export type ResumeType = 'source_of_truth' | 'main' | 'targeted';
