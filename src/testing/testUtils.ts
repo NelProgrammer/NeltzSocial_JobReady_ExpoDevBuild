@@ -16,9 +16,19 @@ export const createMockResumeData = (overrides?: Partial<ResumeData>): ResumeDat
       Email: 'dave@example.com',
       Phone: '+27 82 123 4567',
     },
-    address: {
-      "Home Address": '123 Main Street, Johannesburg',
-    },
+    addresses: [
+      {
+        id: 'addr-test-1',
+        addressType: 'Home / Physical',
+        unitOrHouseNo: 'Flat 4B',
+        streetAddress: '123 Main Street',
+        suburbOrVillage: 'Sandton',
+        cityOrTown: 'Johannesburg',
+        province: 'Gauteng',
+        postalCode: '2000',
+        visible: true,
+      },
+    ],
     identity: {
       idNumber: '9001015000088',
       idMask: false,
@@ -42,16 +52,17 @@ export const createMockResumeData = (overrides?: Partial<ResumeData>): ResumeDat
       "Start Date": '2020',
       "End Date": 'Present',
       "Key Responsibilities": [
-        { id: 'resp-1', text: 'Built scalable cloud backends.' },
-        { id: 'resp-2', text: 'Maintained React Native mobile applications.' },
+        { id: 'resp-1', text: 'Built scalable cloud backends.', visible: true },
+        { id: 'resp-2', text: 'Maintained React Native mobile applications.', visible: true },
       ],
       Achievements: [
-        { id: 'ach-1', text: 'Improved application performance by 40%.' },
+        { id: 'ach-1', text: 'Improved application performance by 40%.', visible: true },
       ],
       "Systems Used": [
-        { id: 'sys-1', name: 'PostgreSQL' },
-        { id: 'sys-2', name: 'React Native' },
+        { id: 'sys-1', name: 'PostgreSQL', visible: true },
+        { id: 'sys-2', name: 'React Native', visible: true },
       ],
+      visible: true,
     },
   ],
   education: {
@@ -61,20 +72,34 @@ export const createMockResumeData = (overrides?: Partial<ResumeData>): ResumeDat
         "Qualification Name": 'BSc Computer Science',
         Institution: 'University of the Witwatersrand',
         Year: '2019',
+        visible: true,
+      },
+    ],
+    professionalCertifications: [
+      {
+        id: 'cert-test-1',
+        name: 'AWS Certified Solutions Architect',
+        institution: 'Amazon Web Services',
+        yearObtained: '2021',
+        certNumber: 'AWS-990812',
+        visible: true,
       },
     ],
   },
   skills: {
     Tech: [
-      { id: 'tech-1', name: 'TypeScript' },
-      { id: 'tech-2', name: 'Python' },
+      { id: 'tech-1', name: 'TypeScript', howObtained: 'Course', yearsInUse: '4', visible: true },
+      { id: 'tech-2', name: 'Python', howObtained: 'Self-Taught', yearsInUse: '5', visible: true },
     ],
     Soft: [
-      { id: 'soft-1', name: 'Problem Solving' },
-      { id: 'soft-2', name: 'Leadership' },
+      { id: 'soft-1', name: 'Problem Solving', visible: true },
+      { id: 'soft-2', name: 'Leadership', visible: true },
     ],
-    Certifications: [
-      { id: 'cert-1', name: 'AWS Certified Solutions Architect' },
+    NonAcadCerts: [
+      { id: 'nonacad-1', name: 'Agile Fundamentals', provider: 'Udemy', yearObtained: '2020', visible: true },
+    ],
+    SystemsUsed: [
+      { id: 'sys-used-1', name: 'Jira', yearsInUse: '3', visible: true },
     ],
   },
   References: [

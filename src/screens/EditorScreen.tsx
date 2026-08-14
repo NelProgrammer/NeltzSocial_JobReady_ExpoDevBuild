@@ -1,17 +1,18 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useContext, useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { Text, Button, Card, IconButton, Portal, Dialog, TextInput } from 'react-native-paper';
+import { Text, Button, Portal, Dialog, RadioButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ResumeContext } from '../context/ResumeContext';
 import PersonalDetails from '../components/PersonalDetails';
-import Experience from '../components/Experience';
 import Education from '../components/Education';
-import Skills from '../components/Skills';
+import Experience from '../components/Experience';
 import References from '../components/References';
+import Skills from '../components/Skills';
 
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeContext } from '../context/ThemeContext';
+import { createMockResumeData } from '../testing/testUtils';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -21,46 +22,89 @@ type EditorScreenProps = {
 };
 
 const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
-  const { resumeId } = route?.params ?? {};
   const resumeCtx = useContext(ResumeContext) as any;
-  const { resumeData, switchResume, updateResumeData, meta, renameResume, duplicateResume } = resumeCtx;
+  const { resumeData, updateResumeData, uiSettings, updateUiSettings } = resumeCtx;
   const { theme } = useThemeContext();
   const insets = useSafeAreaInsets();
 
-  const [renameDialogVisible, setRenameDialogVisible] = useState<boolean>(false);
-  const [newName, setNewName] = useState<string>('');
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [settingsDialogVisible, setSettingsDialogVisible] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (resumeId) {
-      switchResume(resumeId);
-    }
-  }, [resumeId]);
+  const toggleColorScheme = uiSettings?.toggleColorScheme || 'semantic';
 
-  const activeMeta = (meta as any)?.find((m: any) => m.id === resumeId);
-  const resumeName = activeMeta ? activeMeta.name : 'Resume Editor';
+  // Atomic Rollback Guarantee for Reset Career Data
+  const handleResetCareerData = () => {
+    Alert.alert(
+      "Reset Career Data",
+      "Are you sure you want to clear your Source of Truth career data? An empty template will be generated on the spot.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: () => {
+            const backupData = JSON.parse(JSON.stringify(resumeData || {}));
+            try {
+              const emptyTemplate = createMockResumeData({
+                id: resumeData?.id || 'source_of_truth',
+                personal: { names: { firstName: '', Surname: '' }, contact: { Email: '', Phone: '' }, addresses: [] },
+                experience: [],
+                education: { tertiary: [], professionalCertifications: [], highschool: {} },
+                skills: { Tech: [], Soft: [], NonAcadCerts: [], SystemsUsed: [] },
+                References: []
+              });
+              updateResumeData(emptyTemplate);
+              Alert.alert("Success", "Career data reset successfully. Empty template regenerated on the spot.");
+              setSettingsDialogVisible(false);
+            } catch (err) {
+              // ATOMIC ROLLBACK GUARANTEE
+              updateResumeData(backupData);
+              Alert.alert("Error", "Failed to reset career data. Operation rolled back to preserve existing data.");
+            }
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bgDark, paddingTop: Math.max(insets.top, 16) + 8 }]}>
       {/* Header Banner */}
       <View style={[styles.headerBanner, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
         <View style={styles.headerRow}>
-          <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]} onPress={() => navigation.navigate('ResumeHome')} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub')} activeOpacity={0.7}>
             <MaterialCommunityIcons name="arrow-left" size={20} color={theme.textPrimary} />
           </TouchableOpacity>
+          
           <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>{resumeName}</Text>
-            <Text style={{ color: theme.textSecondary, fontSize: 11 }}>Resume Builder & Edit Mode</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Career Data (Source of Truth)</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: 11 }}>
+              {isEditMode ? "📝 Edit Mode — Type fields or manage entries" : "👁 Read Mode — Tap Pencil to unlock inputs"}
+            </Text>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]} onPress={() => { setNewName(resumeName); setRenameDialogVisible(true); }}>
-              <MaterialCommunityIcons name="pencil" size={18} color={theme.textSecondary} />
-            </TouchableOpacity>
-          </View>
+
+          {/* Edit Mode Toggle Button */}
+          <TouchableOpacity
+            style={[
+              styles.navBtn,
+              {
+                backgroundColor: isEditMode ? theme.accent : theme.bgDark,
+                borderColor: isEditMode ? theme.accent : theme.border
+              }
+            ]}
+            onPress={() => setIsEditMode(!isEditMode)}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name={isEditMode ? "pencil-off" : "pencil"} size={18} color="#fff" />
+          </TouchableOpacity>
         </View>
-        <Text style={[styles.subtitleCentered, { color: theme.textSecondary }]}>Edit Personal, Experience, Education, Skills & References</Text>
+
+        <Text style={[styles.subtitleCentered, { color: isEditMode ? theme.accent : theme.textSecondary }]}>
+          {isEditMode ? "Edit Mode Active: Form inputs unlocked for typing" : "Read Mode Active: Inputs locked. Tap Pencil above to edit"}
+        </Text>
       </View>
 
-      {/* Body Card Container wrapping Tab.Navigator */}
+      {/* Body Card Container wrapping Top Tab Navigator */}
       <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border, marginBottom: 60 + Math.max(insets.bottom, 0) }]}>
         <Tab.Navigator
           screenOptions={{
@@ -71,11 +115,22 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
             tabBarStyle: { backgroundColor: theme.bgDark, borderBottomWidth: 1, borderBottomColor: theme.border },
           }}
         >
-          <Tab.Screen name="Personal" component={PersonalDetails} />
-          <Tab.Screen name="Experience" component={Experience} />
-          <Tab.Screen name="Education" component={Education} />
-          <Tab.Screen name="Skills" component={Skills} />
-          <Tab.Screen name="References" component={References} />
+          {/* Exact Tab Order: Personal -> Education -> Experience -> References -> Skills */}
+          <Tab.Screen name="Personal">
+            {() => <PersonalDetails isEditMode={isEditMode} />}
+          </Tab.Screen>
+          <Tab.Screen name="Education">
+            {() => <Education isEditMode={isEditMode} />}
+          </Tab.Screen>
+          <Tab.Screen name="Experience">
+            {() => <Experience isEditMode={isEditMode} />}
+          </Tab.Screen>
+          <Tab.Screen name="References">
+            {() => <References isEditMode={isEditMode} />}
+          </Tab.Screen>
+          <Tab.Screen name="Skills">
+            {() => <Skills isEditMode={isEditMode} />}
+          </Tab.Screen>
         </Tab.Navigator>
       </View>
 
@@ -85,34 +140,52 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
           <MaterialCommunityIcons name="home-outline" size={22} color={theme.textPrimary} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.accent }]} onPress={() => navigation.navigate('Preview', { resumeId })} activeOpacity={0.8}>
-          <MaterialCommunityIcons name="eye" size={18} color="#fff" style={{ marginRight: 6 }} />
-          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13 }}>Preview CV</Text>
+        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.accent }]} onPress={() => navigation.navigate('FieldsSelection')} activeOpacity={0.8}>
+          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13, marginRight: 6 }}>Configure Fields</Text>
+          <MaterialCommunityIcons name="arrow-right" size={18} color="#fff" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub', { openSettings: true })} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => setSettingsDialogVisible(true)} activeOpacity={0.7}>
           <MaterialCommunityIcons name="cog-outline" size={22} color={theme.accent} />
         </TouchableOpacity>
       </View>
 
+      {/* Settings Gear Modal */}
       <Portal>
-        <Dialog visible={renameDialogVisible} onDismiss={() => setRenameDialogVisible(false)}>
-          <Dialog.Title>Rename Resume</Dialog.Title>
+        <Dialog visible={settingsDialogVisible} onDismiss={() => setSettingsDialogVisible(false)}>
+          <Dialog.Title>Resume Builder Settings</Dialog.Title>
           <Dialog.Content>
-            <TextInput label="Resume Name" value={newName} onChangeText={setNewName} mode="outlined" />
+            <Text style={{ fontWeight: 'bold', marginBottom: 8, color: '#334155' }}>Toggle Colour Scheme Preference</Text>
+            <RadioButton.Group
+              onValueChange={value => updateUiSettings && updateUiSettings({ ...uiSettings, toggleColorScheme: value })}
+              value={toggleColorScheme}
+            >
+              <View style={styles.radioRow}>
+                <RadioButton value="semantic" />
+                <Text style={{ fontSize: 13 }}>Semantic (Green = ON, Red = OFF)</Text>
+              </View>
+              <View style={styles.radioRow}>
+                <RadioButton value="paper" />
+                <Text style={{ fontSize: 13 }}>Paper Default (Purple = ON, Grey = OFF)</Text>
+              </View>
+              <View style={styles.radioRow}>
+                <RadioButton value="theme" />
+                <Text style={{ fontSize: 13 }}>Theme Accent (Accent = ON, Dark Grey = OFF)</Text>
+              </View>
+            </RadioButton.Group>
+
+            <View style={{ height: 1, backgroundColor: '#e2e8f0', marginVertical: 15 }} />
+
+            <Text style={{ fontWeight: 'bold', marginBottom: 6, color: '#b91c1c' }}>Career Data Management</Text>
+            <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 10 }}>
+              Clearing Source of Truth career data will regenerate an empty template on the spot with atomic rollback safety.
+            </Text>
+            <Button mode="contained" buttonColor="#ef4444" textColor="#fff" icon="delete-sweep" onPress={handleResetCareerData}>
+              Clear / Reset Career Data
+            </Button>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setRenameDialogVisible(false)}>Cancel</Button>
-            <Button
-              onPress={() => {
-                if (newName.trim()) {
-                  renameResume(resumeId, newName.trim());
-                }
-                setRenameDialogVisible(false);
-              }}
-            >
-              Save
-            </Button>
+            <Button onPress={() => setSettingsDialogVisible(false)}>Done</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -147,6 +220,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 11,
     marginTop: 4,
+    fontWeight: '500',
   },
   bodyCard: {
     flex: 1,
@@ -185,6 +259,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 8,
     borderRadius: 20,
+  },
+  radioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 2,
   },
 });
 

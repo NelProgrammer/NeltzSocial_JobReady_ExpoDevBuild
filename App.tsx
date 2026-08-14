@@ -1,4 +1,3 @@
-
 import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -6,8 +5,8 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { AuthProvider, AuthContext } from './src/context/AuthContext';
 import { ResumeProvider } from './src/context/ResumeContext';
 import HubScreen from './src/screens/HubScreen';
-import HomeScreen from './src/screens/HomeScreen';
 import EditorScreen from './src/screens/EditorScreen';
+import FieldsSelectionScreen from './src/screens/FieldsSelectionScreen';
 import PreviewScreen from './src/screens/PreviewScreen';
 import PDFWorkbenchScreen from './src/screens/PDFWorkbenchScreen';
 import LoginScreen from './src/screens/LoginScreen';
@@ -53,19 +52,19 @@ function NavigationStack() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="ResumeHome"
-        component={HomeScreen}
+        name="Editor"
+        component={EditorScreen}
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="Editor"
-        component={EditorScreen}
-        options={{ title: 'NeltzSocial - JobReady: Resume Editor' }}
+        name="FieldsSelection"
+        component={FieldsSelectionScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="Preview"
         component={PreviewScreen}
-        options={{ title: 'NeltzSocial - JobReady: Preview & Export' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="PDFWorkbench"

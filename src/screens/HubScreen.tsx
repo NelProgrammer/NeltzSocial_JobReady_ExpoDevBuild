@@ -303,7 +303,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
           {/* Success Suite Section */}
           <View style={styles.menuContainer}>
             <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
-            <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color={activeTheme.accent} onPress={() => navigation.navigate('ResumeHome')} />
+            <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color={activeTheme.accent} onPress={() => navigation.navigate('Editor')} />
             <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
           </View>
 
