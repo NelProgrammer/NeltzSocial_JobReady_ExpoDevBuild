@@ -9,19 +9,9 @@ interface ExperienceProps {
     isEditMode?: boolean;
 }
 
-const MONTHS = [
-    { label: 'Jan', value: '01' },
-    { label: 'Feb', value: '02' },
-    { label: 'Mar', value: '03' },
-    { label: 'Apr', value: '04' },
-    { label: 'May', value: '05' },
-    { label: 'Jun', value: '06' },
-    { label: 'Jul', value: '07' },
-    { label: 'Aug', value: '08' },
-    { label: 'Sep', value: '09' },
-    { label: 'Oct', value: '10' },
-    { label: 'Nov', value: '11' },
-    { label: 'Dec', value: '12' },
+const MONTH_NAMES = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
 const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
@@ -32,12 +22,13 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null); // Collapsed by default
     const [expandedSubSections, setExpandedSubSections] = useState<Record<string, boolean>>({});
 
-    // Calendar Modal State
+    // Calendar Modal State for Full Date YYYY-MM-DD
     const [pickerVisible, setPickerVisible] = useState<boolean>(false);
     const [pickerExpIndex, setPickerExpIndex] = useState<number | null>(null);
     const [pickerField, setPickerField] = useState<'Start Date' | 'End Date'>('Start Date');
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
-    const [selectedMonth, setSelectedMonth] = useState<string>('01');
+    const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1); // 1-12
+    const [selectedDay, setSelectedDay] = useState<number>(new Date().getDate()); // 1-31
 
     if (!resumeData || !updateResumeData) return null;
 
@@ -90,32 +81,45 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
         updateResumeData({ ...resumeData, experience: newExp });
     };
 
-    // Open Calendar Picker
+    // Open Full Date Calendar Picker YYYY-MM-DD
     const openCalendarPicker = (index: number, field: 'Start Date' | 'End Date') => {
         if (!isEditMode) return;
         setPickerExpIndex(index);
         setPickerField(field);
 
-        const currentVal = experiences[index]?.[field] || '';
+        const currentVal = String(experiences[index]?.[field] || '').trim();
         if (currentVal && currentVal.includes('-')) {
             const parts = currentVal.split('-');
-            const yearNum = parseInt(parts[0], 10);
-            if (!isNaN(yearNum)) setSelectedYear(yearNum);
-            if (parts[1]) setSelectedMonth(parts[1]);
+            const y = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            const d = parts[2] ? parseInt(parts[2], 10) : 1;
+            if (!isNaN(y)) setSelectedYear(y);
+            if (!isNaN(m) && m >= 1 && m <= 12) setSelectedMonth(m);
+            if (!isNaN(d) && d >= 1 && d <= 31) setSelectedDay(d);
         } else {
-            setSelectedYear(new Date().getFullYear());
-            setSelectedMonth('01');
+            const now = new Date();
+            setSelectedYear(now.getFullYear());
+            setSelectedMonth(now.getMonth() + 1);
+            setSelectedDay(now.getDate());
         }
 
         setPickerVisible(true);
     };
 
-    // Save Calendar Picker Date
-    const applyCalendarDate = (dateVal: string) => {
+    // Save Calendar Picker Date formatted as YYYY-MM-DD
+    const applyFullDate = (year: number, month: number, day: number) => {
+        const mStr = String(month).padStart(2, '0');
+        const dStr = String(day).padStart(2, '0');
+        const fullDateStr = `${year}-${mStr}-${dStr}`;
+
         if (pickerExpIndex !== null) {
-            updateExpField(pickerExpIndex, pickerField, dateVal);
+            updateExpField(pickerExpIndex, pickerField, fullDateStr);
         }
         setPickerVisible(false);
+    };
+
+    const getDaysInMonth = (year: number, month: number) => {
+        return new Date(year, month, 0).getDate();
     };
 
     const getSubList = (exp: WorkExperience, field: SubField, prefix: string): SubExperienceItem[] => {
@@ -250,6 +254,9 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
         );
     };
 
+    const daysCount = getDaysInMonth(selectedYear, selectedMonth);
+    const dayArray = Array.from({ length: daysCount }, (_, i) => i + 1);
+
     return (
         <KeyboardAwareScrollView
             style={styles.container}
@@ -315,7 +322,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                         editable={isEditMode}
                                     />
                                     
-                                    {/* Interactive Calendar Date Fields */}
+                                    {/* Full Date Picker Fields (YYYY-MM-DD) */}
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                                         <TouchableOpacity
                                             style={{ flex: 1, marginRight: 5 }}
@@ -329,7 +336,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                                 style={styles.input}
                                                 left={<TextInput.Icon icon="calendar-start" onPress={() => openCalendarPicker(index, 'Start Date')} />}
                                                 right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker(index, 'Start Date')} />}
-                                                placeholder="YYYY-MM"
+                                                placeholder="YYYY-MM-DD"
                                                 editable={false}
                                                 pointerEvents="none"
                                             />
@@ -347,7 +354,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                                 style={styles.input}
                                                 left={<TextInput.Icon icon="calendar-end" onPress={() => openCalendarPicker(index, 'End Date')} />}
                                                 right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker(index, 'End Date')} />}
-                                                placeholder="YYYY-MM / Present"
+                                                placeholder="YYYY-MM-DD / Present"
                                                 editable={false}
                                                 pointerEvents="none"
                                             />
@@ -379,7 +386,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                 </Button>
             )}
 
-            {/* Interactive Calendar Month-Year Picker Dialog */}
+            {/* Full Date Calendar Picker Dialog (YYYY-MM-DD) */}
             <Portal>
                 <Dialog visible={pickerVisible} onDismiss={() => setPickerVisible(false)}>
                     <Dialog.Title style={{ textAlign: 'center', fontSize: 16 }}>
@@ -390,7 +397,10 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                             <Button
                                 mode="contained-tonal"
                                 icon="clock-outline"
-                                onPress={() => applyCalendarDate('Present')}
+                                onPress={() => {
+                                    if (pickerExpIndex !== null) updateExpField(pickerExpIndex, pickerField, 'Present');
+                                    setPickerVisible(false);
+                                }}
                                 style={{ marginBottom: 15, backgroundColor: '#e0e7ff' }}
                                 labelStyle={{ color: '#1e40af', fontWeight: 'bold' }}
                             >
@@ -398,31 +408,53 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                             </Button>
                         )}
 
-                        {/* Year Selector */}
+                        {/* Month & Year Navigation Header */}
                         <View style={styles.yearSelectorRow}>
-                            <IconButton icon="chevron-left" size={24} onPress={() => setSelectedYear(y => y - 1)} />
-                            <Text style={styles.yearText}>{selectedYear}</Text>
-                            <IconButton icon="chevron-right" size={24} onPress={() => setSelectedYear(y => y + 1)} />
+                            <IconButton icon="chevron-left" size={24} onPress={() => {
+                                if (selectedMonth === 1) {
+                                    setSelectedMonth(12);
+                                    setSelectedYear(y => y - 1);
+                                } else {
+                                    setSelectedMonth(m => m - 1);
+                                }
+                            }} />
+                            <Text style={styles.yearText}>
+                                {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
+                            </Text>
+                            <IconButton icon="chevron-right" size={24} onPress={() => {
+                                if (selectedMonth === 12) {
+                                    setSelectedMonth(1);
+                                    setSelectedYear(y => y + 1);
+                                } else {
+                                    setSelectedMonth(m => m + 1);
+                                }
+                            }} />
                         </View>
 
-                        {/* Month Grid */}
-                        <Text style={styles.monthGridTitle}>Select Month:</Text>
-                        <View style={styles.monthGrid}>
-                            {MONTHS.map(m => {
-                                const isSelected = selectedMonth === m.value;
+                        {/* Year Step Control */}
+                        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10 }}>
+                            <Button compact mode="text" onPress={() => setSelectedYear(y => y - 1)}>‹ Year {selectedYear - 1}</Button>
+                            <Button compact mode="text" onPress={() => setSelectedYear(y => y + 1)}>Year {selectedYear + 1} ›</Button>
+                        </View>
+
+                        {/* Day Grid (1 - 31) */}
+                        <Text style={styles.monthGridTitle}>Select Day (YYYY-MM-DD):</Text>
+                        <View style={styles.dayGrid}>
+                            {dayArray.map(dayNum => {
+                                const isSelected = selectedDay === dayNum;
 
                                 return (
                                     <TouchableOpacity
-                                        key={m.value}
-                                        style={[styles.monthItem, isSelected && styles.selectedMonthItem]}
+                                        key={dayNum}
+                                        style={[styles.dayItem, isSelected && styles.selectedDayItem]}
                                         onPress={() => {
-                                            setSelectedMonth(m.value);
-                                            applyCalendarDate(`${selectedYear}-${m.value}`);
+                                            setSelectedDay(dayNum);
+                                            applyFullDate(selectedYear, selectedMonth, dayNum);
                                         }}
                                         activeOpacity={0.7}
                                     >
-                                        <Text style={[styles.monthText, isSelected && styles.selectedMonthText]}>
-                                            {m.label}
+                                        <Text style={[styles.dayText, isSelected && styles.selectedDayText]}>
+                                            {dayNum}
                                         </Text>
                                     </TouchableOpacity>
                                 );
@@ -449,14 +481,14 @@ const styles = StyleSheet.create({
     emptyCard: { padding: 14, backgroundColor: '#f0f4f8', borderRadius: 8, marginBottom: 15 },
     emptyText: { color: '#64748b', fontSize: 13 },
     emptySubText: { color: '#94a3b8', fontSize: 12, fontStyle: 'italic', marginBottom: 8 },
-    yearSelectorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-    yearText: { fontSize: 18, fontWeight: 'bold', marginHorizontal: 15, color: '#1e293b' },
+    yearSelectorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
+    yearText: { fontSize: 17, fontWeight: 'bold', marginHorizontal: 10, color: '#1e293b' },
     monthGridTitle: { fontSize: 12, fontWeight: 'bold', color: '#64748b', marginBottom: 8, textAlign: 'center' },
-    monthGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-    monthItem: { width: '30%', paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#cbd5e1', alignItems: 'center', marginBottom: 8, backgroundColor: '#f8fafc' },
-    selectedMonthItem: { backgroundColor: '#6200EE', borderColor: '#6200EE' },
-    monthText: { fontSize: 13, fontWeight: 'bold', color: '#334155' },
-    selectedMonthText: { color: '#ffffff' }
+    dayGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' },
+    dayItem: { width: '13%', margin: '0.6%', paddingVertical: 8, borderRadius: 6, borderWidth: 1, borderColor: '#cbd5e1', alignItems: 'center', backgroundColor: '#f8fafc' },
+    selectedDayItem: { backgroundColor: '#6200EE', borderColor: '#6200EE' },
+    dayText: { fontSize: 12, fontWeight: 'bold', color: '#334155' },
+    selectedDayText: { color: '#ffffff' }
 });
 
 export default Experience;
