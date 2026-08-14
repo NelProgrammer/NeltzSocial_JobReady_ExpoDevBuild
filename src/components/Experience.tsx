@@ -1,7 +1,7 @@
 import React, { useContext, useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { TextInput, Button, Card, IconButton, Divider, Text } from 'react-native-paper';
+import { TextInput, Button, Card, IconButton, Divider, Text, Portal, Dialog } from 'react-native-paper';
 import { ResumeContext } from '../context/ResumeContext';
 import { WorkExperience, SubExperienceItem } from '../types/resume';
 
@@ -9,12 +9,35 @@ interface ExperienceProps {
     isEditMode?: boolean;
 }
 
+const MONTHS = [
+    { label: 'Jan', value: '01' },
+    { label: 'Feb', value: '02' },
+    { label: 'Mar', value: '03' },
+    { label: 'Apr', value: '04' },
+    { label: 'May', value: '05' },
+    { label: 'Jun', value: '06' },
+    { label: 'Jul', value: '07' },
+    { label: 'Aug', value: '08' },
+    { label: 'Sep', value: '09' },
+    { label: 'Oct', value: '10' },
+    { label: 'Nov', value: '11' },
+    { label: 'Dec', value: '12' },
+];
+
 const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
     const context = useContext(ResumeContext) as any;
     const resumeData = context?.resumeData;
     const updateResumeData = context?.updateResumeData;
+    
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null); // Collapsed by default
-    const [expandedSubSections, setExpandedSubSections] = useState<Record<string, boolean>>({}); // Nested sub-sections collapsed by default
+    const [expandedSubSections, setExpandedSubSections] = useState<Record<string, boolean>>({});
+
+    // Calendar Modal State
+    const [pickerVisible, setPickerVisible] = useState<boolean>(false);
+    const [pickerExpIndex, setPickerExpIndex] = useState<number | null>(null);
+    const [pickerField, setPickerField] = useState<'Start Date' | 'End Date'>('Start Date');
+    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const [selectedMonth, setSelectedMonth] = useState<string>('01');
 
     if (!resumeData || !updateResumeData) return null;
 
@@ -65,6 +88,34 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
         const newExp = [...experiences];
         (newExp[index] as any)[key] = value;
         updateResumeData({ ...resumeData, experience: newExp });
+    };
+
+    // Open Calendar Picker
+    const openCalendarPicker = (index: number, field: 'Start Date' | 'End Date') => {
+        if (!isEditMode) return;
+        setPickerExpIndex(index);
+        setPickerField(field);
+
+        const currentVal = experiences[index]?.[field] || '';
+        if (currentVal && currentVal.includes('-')) {
+            const parts = currentVal.split('-');
+            const yearNum = parseInt(parts[0], 10);
+            if (!isNaN(yearNum)) setSelectedYear(yearNum);
+            if (parts[1]) setSelectedMonth(parts[1]);
+        } else {
+            setSelectedYear(new Date().getFullYear());
+            setSelectedMonth('01');
+        }
+
+        setPickerVisible(true);
+    };
+
+    // Save Calendar Picker Date
+    const applyCalendarDate = (dateVal: string) => {
+        if (pickerExpIndex !== null) {
+            updateExpField(pickerExpIndex, pickerField, dateVal);
+        }
+        setPickerVisible(false);
     };
 
     const getSubList = (exp: WorkExperience, field: SubField, prefix: string): SubExperienceItem[] => {
@@ -263,25 +314,44 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                         left={<TextInput.Icon icon="sitemap" />}
                                         editable={isEditMode}
                                     />
+                                    
+                                    {/* Interactive Calendar Date Fields */}
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                        <TextInput
-                                            label="Start Date"
-                                            value={exp["Start Date"] || ''}
-                                            onChangeText={(text) => updateExpField(index, 'Start Date', text)}
-                                            style={[styles.input, { flex: 1, marginRight: 5 }]}
-                                            left={<TextInput.Icon icon="calendar-start" />}
-                                            placeholder="YYYY-MM"
-                                            editable={isEditMode}
-                                        />
-                                        <TextInput
-                                            label="End Date"
-                                            value={exp["End Date"] || ''}
-                                            onChangeText={(text) => updateExpField(index, 'End Date', text)}
-                                            style={[styles.input, { flex: 1, marginLeft: 5 }]}
-                                            left={<TextInput.Icon icon="calendar-end" />}
-                                            placeholder="YYYY-MM / Present"
-                                            editable={isEditMode}
-                                        />
+                                        <TouchableOpacity
+                                            style={{ flex: 1, marginRight: 5 }}
+                                            onPress={() => openCalendarPicker(index, 'Start Date')}
+                                            disabled={!isEditMode}
+                                            activeOpacity={0.8}
+                                        >
+                                            <TextInput
+                                                label="Start Date"
+                                                value={exp["Start Date"] || ''}
+                                                style={styles.input}
+                                                left={<TextInput.Icon icon="calendar-start" onPress={() => openCalendarPicker(index, 'Start Date')} />}
+                                                right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker(index, 'Start Date')} />}
+                                                placeholder="YYYY-MM"
+                                                editable={false}
+                                                pointerEvents="none"
+                                            />
+                                        </TouchableOpacity>
+
+                                        <TouchableOpacity
+                                            style={{ flex: 1, marginLeft: 5 }}
+                                            onPress={() => openCalendarPicker(index, 'End Date')}
+                                            disabled={!isEditMode}
+                                            activeOpacity={0.8}
+                                        >
+                                            <TextInput
+                                                label="End Date"
+                                                value={exp["End Date"] || ''}
+                                                style={styles.input}
+                                                left={<TextInput.Icon icon="calendar-end" onPress={() => openCalendarPicker(index, 'End Date')} />}
+                                                right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker(index, 'End Date')} />}
+                                                placeholder="YYYY-MM / Present"
+                                                editable={false}
+                                                pointerEvents="none"
+                                            />
+                                        </TouchableOpacity>
                                     </View>
 
                                     {renderSubSection(index, exp, "Key Responsibilities", "Key Responsibilities", "resp", "clipboard-text-outline")}
@@ -308,6 +378,62 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                     Add Job Experience
                 </Button>
             )}
+
+            {/* Interactive Calendar Month-Year Picker Dialog */}
+            <Portal>
+                <Dialog visible={pickerVisible} onDismiss={() => setPickerVisible(false)}>
+                    <Dialog.Title style={{ textAlign: 'center', fontSize: 16 }}>
+                        📅 Select {pickerField}
+                    </Dialog.Title>
+                    <Dialog.Content>
+                        {pickerField === 'End Date' && (
+                            <Button
+                                mode="contained-tonal"
+                                icon="clock-outline"
+                                onPress={() => applyCalendarDate('Present')}
+                                style={{ marginBottom: 15, backgroundColor: '#e0e7ff' }}
+                                labelStyle={{ color: '#1e40af', fontWeight: 'bold' }}
+                            >
+                                📍 Present (Current Job)
+                            </Button>
+                        )}
+
+                        {/* Year Selector */}
+                        <View style={styles.yearSelectorRow}>
+                            <IconButton icon="chevron-left" size={24} onPress={() => setSelectedYear(y => y - 1)} />
+                            <Text style={styles.yearText}>{selectedYear}</Text>
+                            <IconButton icon="chevron-right" size={24} onPress={() => setSelectedYear(y => y + 1)} />
+                        </View>
+
+                        {/* Month Grid */}
+                        <Text style={styles.monthGridTitle}>Select Month:</Text>
+                        <View style={styles.monthGrid}>
+                            {MONTHS.map(m => {
+                                const isSelected = selectedMonth === m.value;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={m.value}
+                                        style={[styles.monthItem, isSelected && styles.selectedMonthItem]}
+                                        onPress={() => {
+                                            setSelectedMonth(m.value);
+                                            applyCalendarDate(`${selectedYear}-${m.value}`);
+                                        }}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={[styles.monthText, isSelected && styles.selectedMonthText]}>
+                                            {m.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setPickerVisible(false)}>Cancel</Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
         </KeyboardAwareScrollView>
     );
 };
@@ -322,7 +448,15 @@ const styles = StyleSheet.create({
     addBtn: { marginTop: 10, paddingVertical: 4, backgroundColor: '#6200EE', alignSelf: 'flex-start' },
     emptyCard: { padding: 14, backgroundColor: '#f0f4f8', borderRadius: 8, marginBottom: 15 },
     emptyText: { color: '#64748b', fontSize: 13 },
-    emptySubText: { color: '#94a3b8', fontSize: 12, fontStyle: 'italic', marginBottom: 8 }
+    emptySubText: { color: '#94a3b8', fontSize: 12, fontStyle: 'italic', marginBottom: 8 },
+    yearSelectorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+    yearText: { fontSize: 18, fontWeight: 'bold', marginHorizontal: 15, color: '#1e293b' },
+    monthGridTitle: { fontSize: 12, fontWeight: 'bold', color: '#64748b', marginBottom: 8, textAlign: 'center' },
+    monthGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+    monthItem: { width: '30%', paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#cbd5e1', alignItems: 'center', marginBottom: 8, backgroundColor: '#f8fafc' },
+    selectedMonthItem: { backgroundColor: '#6200EE', borderColor: '#6200EE' },
+    monthText: { fontSize: 13, fontWeight: 'bold', color: '#334155' },
+    selectedMonthText: { color: '#ffffff' }
 });
 
 export default Experience;
