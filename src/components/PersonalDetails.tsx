@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -25,11 +24,11 @@ const ADDRESS_TYPES = [
 ];
 
 const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) => {
-    const { resumeData, updateResumeData } = useContext(ResumeContext);
-    const { user, autoUpgradeGuestToLocal } = useContext(AuthContext);
+    const { resumeData, updateResumeData } = useContext(ResumeContext) as any;
+    const { user, autoUpgradeGuestToLocal } = useContext(AuthContext) as any;
     const [expandedSection, setExpandedSection] = useState('Names');
 
-    const toggleSection = (section) => setExpandedSection(expandedSection === section ? null : section);
+    const toggleSection = (section: any) => setExpandedSection(expandedSection === section ? null : section);
 
     if (!resumeData) return null;
 
@@ -42,11 +41,11 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
     const demographics = pd.demographics || {};
     const legal = pd.legal || {};
     const languages = pd.languages || [];
-    const [nationalities, setNationalities] = useState([]);
+    const [nationalities, setNationalities] = useState<any[]>([]);
 
     React.useEffect(() => {
         const nationalitiesData = require('../../assets/data/nationalities_dropdown.json');
-        setNationalities(nationalitiesData.map(n => ({ label: n, value: n })));
+        setNationalities(nationalitiesData.map((n: any) => ({ label: n, value: n })));
     }, []);
 
     React.useEffect(() => {
@@ -58,7 +57,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
         }
     }, []);
 
-    const checkAutoUpgradeTrigger = (updatedPd) => {
+    const checkAutoUpgradeTrigger = (updatedPd: any) => {
         if (!user || !user.isGuest) return;
         const fn = updatedPd.names?.firstName;
         const mn = updatedPd.names?.MiddleName;
@@ -81,7 +80,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
         }
     };
 
-    const updateField = (section, key, value) => {
+    const updateField = (section: any, key: any, value: any) => {
         if (!isEditMode) return;
         const newData = { ...resumeData };
         if (!newData.personal) newData.personal = {};
@@ -610,7 +609,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                 {expandedSection === 'Languages' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10 }} />
-                        {languages.map((lang, index) => (
+                        {languages.map((lang: any, index: number) => (
                             <View key={index} style={styles.repeaterBox}>
                                 <TextInput
                                     label="Language"

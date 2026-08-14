@@ -39,15 +39,15 @@ export const SyncIndicator: React.FC<Props> = ({ resumeId, size = 24 }) => {
     return <ActivityIndicator size="small" color="#ffc107" />;
   }
 
-  let iconName = 'cloud-off-outline';
+  let iconName = 'cloud-off';
   let iconColor = '#9e9e9e';
   switch (state) {
     case 'synced':
-      iconName = 'cloud-done-outline';
+      iconName = 'cloud-done';
       iconColor = '#4caf50';
       break;
     case 'pending':
-      iconName = 'cloud-upload-outline';
+      iconName = 'cloud-upload';
       iconColor = '#ff9800';
       break;
     case 'error':
@@ -56,7 +56,7 @@ export const SyncIndicator: React.FC<Props> = ({ resumeId, size = 24 }) => {
       break;
     case 'offline':
     default:
-      iconName = 'cloud-off-outline';
+      iconName = 'cloud-off';
       iconColor = '#9e9e9e';
   }
 

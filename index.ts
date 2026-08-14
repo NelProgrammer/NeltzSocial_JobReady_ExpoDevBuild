@@ -1,9 +1,3 @@
-// @ts-nocheck
-import * as tslib from 'tslib';
-if (tslib && !tslib.default) {
-  (tslib as any).default = tslib;
-}
-
 import { registerRootComponent } from 'expo';
 import App from './App';
 
