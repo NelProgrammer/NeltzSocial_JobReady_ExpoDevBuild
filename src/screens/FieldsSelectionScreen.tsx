@@ -136,6 +136,10 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
       newData.skills.NonAcadCerts[index].visible = newStatus;
     } else if (category === 'profcert' && newData.education?.professionalCertifications && newData.education.professionalCertifications[index]) {
       newData.education.professionalCertifications[index].visible = newStatus;
+    } else if (category === 'techcert' && newData.education?.technicalCertifications && newData.education.technicalCertifications[index]) {
+      newData.education.technicalCertifications[index].visible = newStatus;
+    } else if (category === 'regcert' && newData.education?.regulatoryCertifications && newData.education.regulatoryCertifications[index]) {
+      newData.education.regulatoryCertifications[index].visible = newStatus;
     } else if (category === 'tertiary' && newData.education?.tertiary && newData.education.tertiary[index]) {
       newData.education.tertiary[index].visible = newStatus;
     } else if (category === 'experience' && newData.experience && newData.experience[index]) {
@@ -157,6 +161,8 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
   const education = resumeData?.education || {};
   const tertiary = education.tertiary || [];
   const profCerts = education.professionalCertifications || [];
+  const techCerts = education.technicalCertifications || [];
+  const regCerts = education.regulatoryCertifications || [];
   const skills = resumeData?.skills || resumeData?.Skills || {};
   const techSkills = skills.Tech || [];
   const softSkills = skills.Soft || [];
@@ -276,6 +282,46 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
                     <Switch
                       value={isVisible(itemId, item)}
                       onValueChange={() => toggleItemVisibility(itemId, 'profcert', idx, item)}
+                      disabled={isMain}
+                      trackColor={switchColors}
+                    />
+                  </View>
+                );
+              })}
+
+              <Divider style={{ marginVertical: 8 }} />
+              <Text style={styles.subHeader}>Technical Certifications</Text>
+              {techCerts.map((item: any, idx: number) => {
+                const itemId = item.id || `techcert_${idx}`;
+                return (
+                  <View key={itemId} style={styles.itemRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.itemTitle}>💻 {item.name || 'Technical Cert'}</Text>
+                      <Text style={styles.itemSub}>{item.provider || ''} ({item.yearObtained || ''})</Text>
+                    </View>
+                    <Switch
+                      value={isVisible(itemId, item)}
+                      onValueChange={() => toggleItemVisibility(itemId, 'techcert', idx, item)}
+                      disabled={isMain}
+                      trackColor={switchColors}
+                    />
+                  </View>
+                );
+              })}
+
+              <Divider style={{ marginVertical: 8 }} />
+              <Text style={styles.subHeader}>Regulatory & Statutory Certifications</Text>
+              {regCerts.map((item: any, idx: number) => {
+                const itemId = item.id || `regcert_${idx}`;
+                return (
+                  <View key={itemId} style={styles.itemRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.itemTitle}>⚖️ {item.name || 'Regulatory Cert'}</Text>
+                      <Text style={styles.itemSub}>{item.issuingBody || ''} ({item.yearObtained || ''})</Text>
+                    </View>
+                    <Switch
+                      value={isVisible(itemId, item)}
+                      onValueChange={() => toggleItemVisibility(itemId, 'regcert', idx, item)}
                       disabled={isMain}
                       trackColor={switchColors}
                     />

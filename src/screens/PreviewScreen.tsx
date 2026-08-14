@@ -258,9 +258,14 @@ const PreviewScreen = ({ navigation }) => {
         ` : '';
 
         const visibleTertiary = (eduList?.tertiary || []).filter(edu => edu.visible !== false);
+        const visibleTechCerts = (eduList?.technicalCertifications || []).filter(cert => cert.visible !== false);
+        const visibleRegCerts = (eduList?.regulatoryCertifications || []).filter(cert => cert.visible !== false);
         const hasHighschool = eduList?.highschool?.["Year Completed"] && eduList?.highschool?.visible !== false;
-        const eduHtml = (visibleTertiary.length > 0 || hasHighschool) ? `
-            ${sectionHeader('Education')}
+
+        const hasEducationContent = visibleTertiary.length > 0 || visibleTechCerts.length > 0 || visibleRegCerts.length > 0 || hasHighschool;
+
+        const eduHtml = hasEducationContent ? `
+            ${sectionHeader('Education & Certifications')}
             ${visibleTertiary.map(edu => `
                  <div class="edu-item" style="margin-bottom: 15px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
@@ -270,13 +275,31 @@ const PreviewScreen = ({ navigation }) => {
                     <div>${edu["Qualification Name"]}</div>
                 </div>
             `).join('')}
+            ${visibleTechCerts.map(cert => `
+                 <div class="edu-item" style="margin-bottom: 12px;">
+                    <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
+                        <span>💻 ${cert.name}</span>
+                        <span>${cert.yearObtained || ''}</span>
+                    </div>
+                    <div style="font-size: 13px; color: #555;">${cert.provider ? `Provider: ${cert.provider}` : ''}${cert.certNumber ? ` (ID: ${cert.certNumber})` : ''}</div>
+                </div>
+            `).join('')}
+            ${visibleRegCerts.map(cert => `
+                 <div class="edu-item" style="margin-bottom: 12px;">
+                    <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
+                        <span>⚖️ ${cert.name}</span>
+                        <span>${cert.yearObtained || ''}</span>
+                    </div>
+                    <div style="font-size: 13px; color: #555;">${cert.issuingBody ? `Authority: ${cert.issuingBody}` : ''}${cert.licenseNumber ? ` (License: ${cert.licenseNumber})` : ''}</div>
+                </div>
+            `).join('')}
             ${hasHighschool ? `
                 <div class="edu-item" style="margin-bottom: 15px;">
                      <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
-                        <span>${eduList.highschool["Province Department"]}</span>
+                        <span>🏫 ${eduList.highschool["Province Department"]}</span>
                         <span>${eduList.highschool["Year Completed"]}</span>
                     </div>
-                    <div>${eduList.highschool["Highest Grade/Std"]}</div>
+                    <div>${eduList.highschool["Highest Grade Passed"] || eduList.highschool["Highest Grade/Std"] || ''}</div>
                 </div>
             ` : ''}
         ` : '';

@@ -128,7 +128,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
         return joined.length > 70 ? `${joined.substring(0, 67)}...` : joined;
     };
 
-    const renderSubSection = (expIndex: number, exp: WorkExperience, label: string, field: SubField, prefix: string) => {
+    const renderSubSection = (expIndex: number, exp: WorkExperience, label: string, field: SubField, prefix: string, iconName: string) => {
         const subItems = getSubList(exp, field, prefix);
         const subKey = `${expIndex}_${field}`;
         const isSubExpanded = !!expandedSubSections[subKey];
@@ -142,6 +142,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                     subtitleNumberOfLines={2}
                     titleStyle={{ fontSize: 13, fontWeight: 'bold' }}
                     subtitleStyle={{ fontSize: 11, color: '#64748b' }}
+                    left={(props) => <IconButton {...props} icon={iconName} size={20} />}
                     right={(props) => (
                         <IconButton
                             {...props}
@@ -163,6 +164,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                         value={item.text || item.name || ''}
                                         onChangeText={(text) => updateSubItemText(expIndex, field, prefix, subIndex, text)}
                                         style={[styles.input, { flex: 1 }]}
+                                        left={<TextInput.Icon icon="format-list-bulleted" />}
                                         placeholder={`Describe ${label.toLowerCase()} item...`}
                                         editable={isEditMode}
                                     />
@@ -219,7 +221,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                             <Card.Title
                                 title={exp.Organization || "New Job"}
                                 subtitle={exp.Role ? `${exp.Role}${exp.Department ? ` (${exp.Department})` : ''}` : "Role & Organization"}
-                                left={(props) => <IconButton {...props} icon="briefcase-outline" />}
+                                left={(props) => <IconButton {...props} icon="briefcase-clock-outline" size={24} />}
                                 right={(props) => (
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <IconButton
@@ -242,6 +244,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                         value={exp.Organization || ''}
                                         onChangeText={(text) => updateExpField(index, 'Organization', text)}
                                         style={styles.input}
+                                        left={<TextInput.Icon icon="domain" />}
                                         editable={isEditMode}
                                     />
                                     <TextInput
@@ -249,6 +252,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                         value={exp.Role || ''}
                                         onChangeText={(text) => updateExpField(index, 'Role', text)}
                                         style={styles.input}
+                                        left={<TextInput.Icon icon="account-tie" />}
                                         editable={isEditMode}
                                     />
                                     <TextInput
@@ -256,6 +260,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                         value={exp.Department || ''}
                                         onChangeText={(text) => updateExpField(index, 'Department', text)}
                                         style={styles.input}
+                                        left={<TextInput.Icon icon="sitemap" />}
                                         editable={isEditMode}
                                     />
                                     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -264,6 +269,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                             value={exp["Start Date"] || ''}
                                             onChangeText={(text) => updateExpField(index, 'Start Date', text)}
                                             style={[styles.input, { flex: 1, marginRight: 5 }]}
+                                            left={<TextInput.Icon icon="calendar-start" />}
                                             placeholder="YYYY-MM"
                                             editable={isEditMode}
                                         />
@@ -272,20 +278,22 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                             value={exp["End Date"] || ''}
                                             onChangeText={(text) => updateExpField(index, 'End Date', text)}
                                             style={[styles.input, { flex: 1, marginLeft: 5 }]}
+                                            left={<TextInput.Icon icon="calendar-end" />}
                                             placeholder="YYYY-MM / Present"
                                             editable={isEditMode}
                                         />
                                     </View>
 
-                                    {renderSubSection(index, exp, "Key Responsibilities", "Key Responsibilities", "resp")}
-                                    {renderSubSection(index, exp, "Key Achievements", "Achievements", "ach")}
-                                    {renderSubSection(index, exp, "Systems & Tools Used", "Systems Used", "sys")}
+                                    {renderSubSection(index, exp, "Key Responsibilities", "Key Responsibilities", "resp", "clipboard-text-outline")}
+                                    {renderSubSection(index, exp, "Key Achievements", "Achievements", "ach", "trophy-outline")}
+                                    {renderSubSection(index, exp, "Systems & Tools Used", "Systems Used", "sys", "wrench-clock")}
 
                                     <TextInput
                                         label="Reason for Leaving"
                                         value={exp["Reason for Leaving"] || ''}
                                         onChangeText={(text) => updateExpField(index, 'Reason for Leaving', text)}
                                         style={styles.input}
+                                        left={<TextInput.Icon icon="exit-to-app" />}
                                         editable={isEditMode}
                                     />
                                 </Card.Content>

@@ -90,7 +90,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                             <Card.Title
                                 title={refName || "New Reference"}
                                 subtitle={refCompany ? `${refRole} at ${refCompany}` : (refRole || "Reference Details")}
-                                left={(props) => <IconButton {...props} icon="account-badge-outline" />}
+                                left={(props) => <IconButton {...props} icon="account-star-outline" size={24} />}
                                 right={(props) => (
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <IconButton
@@ -112,6 +112,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                                         value={refName}
                                         onChangeText={(text) => updateRef(index, 'name', text)}
                                         style={styles.input}
+                                        left={<TextInput.Icon icon="account" />}
                                         editable={isEditMode}
                                     />
                                     <TextInput
@@ -119,6 +120,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                                         value={refRole}
                                         onChangeText={(text) => updateRef(index, 'role', text)}
                                         style={styles.input}
+                                        left={<TextInput.Icon icon="briefcase-outline" />}
                                         editable={isEditMode}
                                     />
                                     <TextInput
@@ -126,6 +128,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                                         value={refCompany}
                                         onChangeText={(text) => updateRef(index, 'company', text)}
                                         style={styles.input}
+                                        left={<TextInput.Icon icon="domain" />}
                                         editable={isEditMode}
                                     />
                                     
@@ -135,6 +138,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                                         value={cellPhone}
                                         onChangeText={(text) => updateRef(index, 'cellPhone', text)}
                                         style={styles.input}
+                                        left={<TextInput.Icon icon="cellphone" />}
                                         keyboardType="phone-pad"
                                         placeholder="e.g. 082 123 4567"
                                         editable={isEditMode}
@@ -144,6 +148,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                                         value={workPhone}
                                         onChangeText={(text) => updateRef(index, 'workPhone', text)}
                                         style={styles.input}
+                                        left={<TextInput.Icon icon="phone-classic" />}
                                         keyboardType="phone-pad"
                                         placeholder="e.g. 011 987 6543"
                                         editable={isEditMode}
@@ -153,6 +158,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                                         value={email}
                                         onChangeText={(text) => updateRef(index, 'email', text)}
                                         style={styles.input}
+                                        left={<TextInput.Icon icon="email-outline" />}
                                         keyboardType="email-address"
                                         placeholder="e.g. ref@company.co.za"
                                         autoCapitalize="none"
@@ -176,8 +182,8 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    card: { marginBottom: 15 },
-    subHeader: { fontWeight: 'bold', fontSize: 13, color: '#475569', marginTop: 6, marginBottom: 8 },
+    card: { marginBottom: 15, backgroundColor: '#ffffff' },
+    subHeader: { fontWeight: 'bold', fontSize: 13, color: '#475569', marginTop: 8, marginBottom: 8 },
     input: { marginBottom: 10, backgroundColor: '#F8F9FA' },
     addBtn: { marginTop: 10, marginBottom: 20, alignSelf: 'flex-start', backgroundColor: '#6200EE' },
     emptyCard: { padding: 14, backgroundColor: '#f0f4f8', borderRadius: 8, marginBottom: 15 },

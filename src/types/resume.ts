@@ -130,6 +130,25 @@ export interface TertiaryEducationItem {
   visible?: boolean;
 }
 
+export interface TechCertItem {
+  id: string;
+  name: string;
+  provider?: string;
+  yearObtained?: string | number;
+  certNumber?: string;
+  visible?: boolean;
+}
+
+export interface RegulatoryCertItem {
+  id: string;
+  name: string;
+  issuingBody?: string;
+  licenseNumber?: string;
+  yearObtained?: string | number;
+  expiryYear?: string | number;
+  visible?: boolean;
+}
+
 export interface ReferenceItem {
   id: string;
   name?: string;
@@ -153,7 +172,9 @@ export interface ResumeData {
   education?: {
     tertiary?: TertiaryEducationItem[];
     professionalCertifications?: ProfessionalCertItem[];
-    highschool?: { "Year Completed"?: number | string; "Highest Grade Passed"?: string; "Province Department"?: string };
+    technicalCertifications?: TechCertItem[];
+    regulatoryCertifications?: RegulatoryCertItem[];
+    highschool?: { "Year Completed"?: number | string; "Highest Grade Passed"?: string; "Province Department"?: string; visible?: boolean };
   };
   skills?: ResumeSkills;
   Skills?: ResumeSkills;
