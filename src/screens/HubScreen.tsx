@@ -349,8 +349,8 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
         )}
       </LinearGradient>
 
-      {/* 2. Middle Body Container (flex: 1; strictly bounded between Header & Footer without overlap) */}
-      <View style={{ flex: 1, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4, overflow: 'hidden' }}>
+      {/* 2. Middle Body Container (flex: 1; elevated above sticky footer via paddingBottom) */}
+      <View style={{ flex: 1, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 56 + Math.max(insets.bottom, 0) + 6, overflow: 'hidden' }}>
         {/* Suites Standalone Body Card Container */}
         <Surface style={[styles.suitesCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, flex: 1 }]} elevation={2}>
           <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 4 }}>
