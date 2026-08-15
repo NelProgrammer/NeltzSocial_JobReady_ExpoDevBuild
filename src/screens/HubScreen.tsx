@@ -49,6 +49,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
   // Active Carousel Slide State & References for 1st Capabilities AppCard in Suites
   const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
   const [containerWidth, setContainerWidth] = useState<number>(width - 48);
+  const [isCarouselVisible, setIsCarouselVisible] = useState<boolean>(true);
   const carouselRef = useRef<ScrollView>(null);
 
   // Auto-play Carousel Timer (advances active slide item every 5.0s for uniform stay duration across all 6 slides)
@@ -323,34 +324,72 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
         {/* Suites Standalone Body Card Container */}
         <Surface style={[styles.suitesCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, flex: 1 }]} elevation={2}>
           <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, paddingBottom: 4 }}>
-            <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <Text variant="titleLarge" style={[styles.sectionTitle, { marginBottom: 0 }]}>Suites</Text>
+              {!isCarouselVisible && (
+                <TouchableOpacity
+                  onPress={() => setIsCarouselVisible(true)}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 4,
+                    backgroundColor: `${activeTheme.accent}18`,
+                    borderColor: `${activeTheme.accent}44`,
+                    borderWidth: 1,
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 8
+                  }}
+                >
+                  <MaterialCommunityIcons name="eye-outline" size={13} color={activeTheme.accent} />
+                  <Text style={{ color: activeTheme.accent, fontSize: 10, fontWeight: 'bold' }}>Show Highlights</Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
-            {/* Suites Capabilities Carousel AppCard Tile (1ST IN LIST - Active Carousel Sync & Dynamic Uncapped Flex Expansion) */}
-            {(() => {
+            {/* Suites Capabilities Carousel AppCard Tile (1ST IN LIST - Active Carousel Sync & Dismissable Close Button) */}
+            {isCarouselVisible && (() => {
               const activeSlide = capabilitiesSlides[activeSlideIndex];
               return (
-                <View style={[styles.cardContainer, { flex: 1, minHeight: 144, marginBottom: 12 }]}>
-                  <Surface style={[styles.appCard, { flex: 1, flexDirection: 'column', alignItems: 'stretch', justifyContent: 'space-between', padding: 14 }]} elevation={2}>
-                    {/* Active Slide Header - Dynamically updates to show title, icon, color & tag badge of active carousel item */}
+                <View style={[styles.cardContainer, { minHeight: 180, marginBottom: 12 }]}>
+                  <Surface style={[styles.appCard, { flexDirection: 'column', alignItems: 'stretch', justifyContent: 'space-between', padding: 14 }]} elevation={2}>
+                    {/* Active Slide Header - Dynamically updates to show title, icon, color, tag badge & top-right close 'x' button */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                       <LinearGradient colors={[activeSlide.color, `${activeSlide.color}99`]} style={[styles.iconContainer, { width: 44, height: 44, borderRadius: 12, marginRight: 12 }]}>
                         <MaterialCommunityIcons name={activeSlide.icon} size={24} color="#fff" />
                       </LinearGradient>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'space-between' }}>
-                          <Text variant="titleMedium" style={[styles.cardTitle, { fontSize: 13, flex: 1, marginRight: 6 }]} numberOfLines={1}>
+                          <Text variant="titleMedium" style={[styles.cardTitle, { fontSize: 13, flex: 1, marginRight: 4 }]} numberOfLines={1}>
                             Automations: {activeSlide.title}
                           </Text>
                           <View style={{ backgroundColor: `${activeSlide.color}22`, borderColor: `${activeSlide.color}55`, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, flexShrink: 0 }}>
                             <Text style={{ color: activeSlide.color, fontSize: 9, fontWeight: 'bold' }}>{activeSlide.tag}</Text>
                           </View>
+                          <TouchableOpacity
+                            onPress={() => setIsCarouselVisible(false)}
+                            activeOpacity={0.7}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            style={{
+                              backgroundColor: '#1e293b',
+                              padding: 4,
+                              borderRadius: 12,
+                              borderWidth: 1,
+                              borderColor: 'rgba(255,255,255,0.1)',
+                              marginLeft: 4
+                            }}
+                          >
+                            <MaterialCommunityIcons name="close" size={14} color="#94a3b8" />
+                          </TouchableOpacity>
                         </View>
                         <Text variant="bodySmall" style={[styles.cardDesc, { fontSize: 11, color: '#94a3b8', marginTop: 2 }]} numberOfLines={2}>{activeSlide.subtitle}</Text>
                       </View>
                     </View>
 
                     {/* Rich Feature Highlights Inset Panel (Utilizes Available Space for Feature Context) */}
-                    <View style={{ backgroundColor: '#0f172a', borderRadius: 10, padding: 10, marginVertical: 6, borderWidth: 1, borderColor: '#334155', gap: 6, flex: 1, justifyContent: 'center' }}>
+                    <View style={{ backgroundColor: '#0f172a', borderRadius: 10, padding: 10, marginVertical: 6, borderWidth: 1, borderColor: '#334155', gap: 6, justifyContent: 'center' }}>
                       {activeSlide.highlights.map((h: string, hIdx: number) => (
                         <View key={hIdx} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
                           <MaterialCommunityIcons name="check-circle-outline" size={14} color={activeSlide.color} style={{ marginTop: 2 }} />
