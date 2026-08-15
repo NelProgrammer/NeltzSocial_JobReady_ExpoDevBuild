@@ -299,70 +299,69 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
           )}
         </LinearGradient>
 
-        {/* Unified Body Card Container */}
-        <Surface style={[styles.bodyCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, marginBottom: 60 + Math.max(insets.bottom, 0) }]} elevation={2}>
-          {/* Success Suite Section */}
-          <View style={styles.menuContainer}>
+        {/* Suites Standalone Body Card Container */}
+        <Surface style={[styles.suitesCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} elevation={2}>
+          <View style={{ flex: 1 }}>
             <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
             <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color={activeTheme.accent} onPress={() => navigation.navigate('Editor')} />
             <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
           </View>
+        </Surface>
 
-          {/* Upcoming Tools Section (Collapsible Accordion) */}
-          <View style={[styles.menuContainer, { marginTop: 16 }]}>
-            <TouchableOpacity
-              style={styles.upcomingHeaderBar}
-              onPress={() => setUpcomingCollapsed(!upcomingCollapsed)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.upcomingHeaderLeft}>
-                <Text variant="titleLarge" style={styles.sectionTitleNoMargin}>Upcoming Tools</Text>
-                <View style={styles.upcomingBadge}>
-                  <Text style={styles.upcomingBadgeText}>3 Coming Soon</Text>
-                </View>
+        {/* Upcoming Tools Standalone Body Card Container */}
+        <Surface style={[styles.upcomingCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, marginBottom: 60 + Math.max(insets.bottom, 0) }]} elevation={2}>
+          <TouchableOpacity
+            style={styles.upcomingHeaderBar}
+            onPress={() => setUpcomingCollapsed(!upcomingCollapsed)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.upcomingHeaderLeft}>
+              <Text variant="titleLarge" style={styles.sectionTitleNoMargin}>Upcoming Tools</Text>
+              <View style={styles.upcomingBadge}>
+                <Text style={styles.upcomingBadgeText}>3 Coming Soon</Text>
               </View>
-              <MaterialCommunityIcons
-                name={upcomingCollapsed ? 'chevron-down' : 'chevron-up'}
-                size={22}
-                color="#94a3b8"
+            </View>
+            <MaterialCommunityIcons
+              name={upcomingCollapsed ? 'chevron-down' : 'chevron-up'}
+              size={22}
+              color="#94a3b8"
+            />
+          </TouchableOpacity>
+
+          {!upcomingCollapsed && (
+            <ScrollView nestedScrollEnabled style={{ maxHeight: 220, marginTop: 12 }}>
+              <UpcomingAppCard
+                title="Publish for Review"
+                description="Expert HR & Manager resume evaluation."
+                icon="check-decagram"
+                color="#10b981"
+                onPress={() => navigation.navigate('PublishReview')}
               />
-            </TouchableOpacity>
-
-            {!upcomingCollapsed && (
-              <View style={{ marginTop: 12 }}>
-                <UpcomingAppCard
-                  title="Publish for Review"
-                  description="Expert HR & Manager resume evaluation."
-                  icon="check-decagram"
-                  color="#10b981"
-                  onPress={() => navigation.navigate('PublishReview')}
-                />
-                <UpcomingAppCard
-                  title="Travel to Interview"
-                  description="Commute route planning & taxi safety."
-                  icon="taxi"
-                  color="#3b82f6"
-                  onPress={() => navigation.navigate('Taxi')}
-                />
-                <UpcomingAppCard
-                  title="Publish to Reviewers"
-                  description="Human-reviewed talent pool for recruiters."
-                  icon="account-group"
-                  color="#a855f7"
-                  onPress={() => setPreviewItem({
-                    title: "Publish to Reviewers",
-                    subtitle: "Human-reviewed talent pool for recruiters.",
-                    icon: "account-group",
-                    color: "#a855f7",
-                    gistParagraphs: [
-                      "Allows recruitment agencies and vetted employers to request anonymized candidate qualifications and work experience data.",
-                      "Recruiters can filter for expert-reviewed and rated candidate profiles, drastically reducing recruitment overhead while protecting deserving candidates from flawed ATS algorithm filters."
-                    ]
-                  })}
-                />
-              </View>
-            )}
-          </View>
+              <UpcomingAppCard
+                title="Travel to Interview"
+                description="Commute route planning & taxi safety."
+                icon="taxi"
+                color="#3b82f6"
+                onPress={() => navigation.navigate('Taxi')}
+              />
+              <UpcomingAppCard
+                title="Publish to Reviewers"
+                description="Human-reviewed talent pool for recruiters."
+                icon="account-group"
+                color="#a855f7"
+                onPress={() => setPreviewItem({
+                  title: "Publish to Reviewers",
+                  subtitle: "Human-reviewed talent pool for recruiters.",
+                  icon: "account-group",
+                  color: "#a855f7",
+                  gistParagraphs: [
+                    "Allows recruitment agencies and vetted employers to request anonymized candidate qualifications and work experience data.",
+                    "Recruiters can filter for expert-reviewed and rated candidate profiles, drastically reducing recruitment overhead while protecting deserving candidates from flawed ATS algorithm filters."
+                  ]
+                })}
+              />
+            </ScrollView>
+          )}
         </Surface>
       </ScrollView>
 
@@ -843,6 +842,8 @@ const styles = StyleSheet.create({
   connText: { color: '#cbd5e1', fontSize: 9, fontWeight: 'bold', letterSpacing: 0.5 },
   dashboardSubtitleCentered: { color: '#e2e8f0', textAlign: 'center', marginTop: 8, fontSize: 15, fontWeight: '600', letterSpacing: 0.3 },
   bodyCardContainer: { backgroundColor: '#1e293b', borderRadius: 20, borderWidth: 1.5, borderColor: '#334155', padding: 16, marginTop: 12, marginBottom: 0 },
+  suitesCardContainer: { flex: 1, backgroundColor: '#1e293b', borderRadius: 20, borderWidth: 1.5, borderColor: '#334155', padding: 16, marginTop: 12 },
+  upcomingCardContainer: { backgroundColor: '#1e293b', borderRadius: 20, borderWidth: 1.5, borderColor: '#334155', padding: 12, marginTop: 12 },
   footerCard: { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#0f172a', borderTopWidth: 1.5, borderColor: '#334155', paddingTop: 10, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 100, elevation: 10 },
   burgerBtn: { backgroundColor: '#1e293b', padding: 8, borderRadius: 10, borderWidth: 1, borderColor: '#334155' },
   footerTitleCol: { alignItems: 'center', justifyContent: 'center' },
