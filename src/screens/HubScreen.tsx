@@ -358,8 +358,8 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
             {(() => {
               const activeSlide = capabilitiesSlides[activeSlideIndex];
               return (
-                <View style={[styles.cardContainer, { flexShrink: 1, marginBottom: 12 }]}>
-                  <Surface style={[styles.appCard, { flexDirection: 'column', alignItems: 'stretch', padding: 12 }]} elevation={2}>
+                <View style={[styles.cardContainer, { flex: 1, minHeight: 144, marginBottom: 12 }]}>
+                  <Surface style={[styles.appCard, { flex: 1, flexDirection: 'column', alignItems: 'stretch', justifyContent: 'space-between', padding: 14 }]} elevation={2}>
                     {/* Active Slide Header - Dynamically updates to show title, icon, color & tag badge of active carousel item */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                       <LinearGradient colors={[activeSlide.color, `${activeSlide.color}99`]} style={[styles.iconContainer, { width: 36, height: 36, borderRadius: 10, marginRight: 10 }]}>
@@ -994,7 +994,7 @@ const styles = StyleSheet.create({
   showcasePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, gap: 6 },
   showcasePillText: { color: '#e2e8f0', fontSize: 11, fontWeight: '600' },
   cardContainer: { marginBottom: 12 },
-  appCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, backgroundColor: '#1e293b' },
+  appCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#475569' },
   iconContainer: { width: 50, height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
   cardText: { flex: 1 },
   cardTitle: { color: '#fff', fontWeight: 'bold' },
