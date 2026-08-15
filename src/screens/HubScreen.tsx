@@ -363,7 +363,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                       ref={carouselRef}
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={[styles.showcaseScrollContent, { paddingLeft: 0, paddingRight: 16 }]}
+                      contentContainerStyle={[styles.showcaseScrollContent, { paddingLeft: 0, paddingRight: 32 }]}
                       onMomentumScrollEnd={(e) => {
                         const x = e.nativeEvent.contentOffset.x;
                         const newIdx = Math.min(capabilitiesSlides.length - 1, Math.max(0, Math.round(x / 140)));
@@ -371,24 +371,29 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                       }}
                       scrollEventThrottle={16}
                     >
-                      {capabilitiesSlides.map((slide, idx) => (
-                        <TouchableOpacity
-                          key={idx}
-                          onPress={() => {
-                            setActiveSlideIndex(idx);
-                            carouselRef.current?.scrollTo({ x: idx * 140, animated: true });
-                          }}
-                          activeOpacity={0.8}
-                          style={[
-                            styles.showcasePill,
-                            { borderColor: idx === activeSlideIndex ? slide.color : 'rgba(255,255,255,0.1)' },
-                            idx === activeSlideIndex && { backgroundColor: `${slide.color}15` }
-                          ]}
-                        >
-                          <MaterialCommunityIcons name={slide.icon} size={13} color={idx === activeSlideIndex ? slide.color : '#94a3b8'} />
-                          <Text style={[styles.showcasePillText, idx === activeSlideIndex && { color: '#fff', fontWeight: 'bold' }]} numberOfLines={2}>{slide.title}</Text>
-                        </TouchableOpacity>
-                      ))}
+                      {capabilitiesSlides.map((slide, idx) => {
+                        const isActive = idx === activeSlideIndex;
+                        return (
+                          <TouchableOpacity
+                            key={idx}
+                            onPress={() => {
+                              setActiveSlideIndex(idx);
+                              carouselRef.current?.scrollTo({ x: idx * 140, animated: true });
+                            }}
+                            activeOpacity={0.8}
+                            style={[
+                              styles.showcasePill,
+                              { borderColor: isActive ? slide.color : 'rgba(255,255,255,0.1)' },
+                              isActive && { backgroundColor: `${slide.color}15` }
+                            ]}
+                          >
+                            <MaterialCommunityIcons name={slide.icon} size={13} color={isActive ? slide.color : '#94a3b8'} />
+                            <Text style={[styles.showcasePillText, isActive && { color: '#fff', fontWeight: 'bold' }]} numberOfLines={isActive ? 2 : 1}>
+                              {slide.title}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
                     </ScrollView>
 
                     {/* Carousel Pagination Dots */}
@@ -989,7 +994,7 @@ const styles = StyleSheet.create({
   upcomingBadge: { backgroundColor: 'rgba(99, 102, 241, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(99, 102, 241, 0.3)' },
   upcomingBadgeText: { color: '#818cf8', fontSize: 10, fontWeight: 'bold' },
   showcaseScrollContent: { gap: 8, alignItems: 'center' },
-  showcasePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, gap: 6 },
+  showcasePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, gap: 6, flexShrink: 0 },
   showcasePillText: { color: '#e2e8f0', fontSize: 11, fontWeight: '600' },
   cardContainer: { marginBottom: 12 },
   appCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#475569' },
