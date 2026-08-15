@@ -277,11 +277,6 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
     <View style={[styles.container, { backgroundColor: activeTheme.bgDark }]}>
       {/* 1. Persistent Fixed Header Banner (Fixed at top; never scrolls offscreen) */}
       <LinearGradient colors={activeTheme.headerGrad} style={[styles.header, { paddingTop: Math.max(insets.top, 16) + 12 }] }>
-        <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
-          <MaterialCommunityIcons name="power" size={16} color="#fff" />
-          <Text style={styles.exitBtnTopLeftText}>Exit App</Text>
-        </TouchableOpacity>
-
         <View style={styles.headerTop}>
           {/* Avatar + User Name & Email Column (Taps -> Profile Mgmt Modal) */}
           <TouchableOpacity
@@ -327,11 +322,6 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
             </View>
           </View>
         </View>
-
-        {/* Centered Dashboard Subtitle Banner */}
-        <Text style={styles.dashboardSubtitleCentered}>
-          Your career dashboard is ready.
-        </Text>
 
         {/* DOB Password Countdown Warning Banner */}
         {user && user.passwordChangeCountdown !== undefined && user.passwordChangeCountdown > 0 && (
@@ -715,6 +705,21 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                     Logout Profile
                   </Button>
                 )}
+
+                {/* Prominent Exit App Action Button inside Menu Drawer */}
+                <Button
+                  mode="contained"
+                  buttonColor="#dc2626"
+                  style={{ marginBottom: 12, marginTop: 4 }}
+                  labelStyle={{ fontSize: 12, fontWeight: 'bold' }}
+                  icon="power"
+                  onPress={() => {
+                    setModalVisible(false);
+                    showExitConfirmation();
+                  }}
+                >
+                  Exit App
+                </Button>
 
                 {/* Profile Switcher Header */}
                 <Text style={{ color: '#fff', fontWeight: 'bold', marginTop: 8, marginBottom: 4, fontSize: 12 }}>
