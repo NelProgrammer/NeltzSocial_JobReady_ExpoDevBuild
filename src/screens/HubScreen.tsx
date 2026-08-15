@@ -41,6 +41,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(true);
   const [upcomingCollapsed, setUpcomingCollapsed] = useState<boolean>(true);
+  const [bodyHeight, setBodyHeight] = useState<number>(0);
   const [previewItem, setPreviewItem] = useState<{ title: string; subtitle: string; icon: string; color: string; gistParagraphs: string[] } | null>(null);
 
   // Active Carousel Slide State & References for 1st Capabilities AppCard in Suites
@@ -349,8 +350,14 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
         )}
       </LinearGradient>
 
-      {/* 2. Middle Body Container (flex: 1; elevated above sticky footer via paddingBottom) */}
-      <View style={{ flex: 1, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 56 + Math.max(insets.bottom, 0) + 6, overflow: 'hidden' }}>
+      {/* 2. Middle Body Container (flex: 1; elevated above sticky footer via paddingBottom; measures physical bodyHeight) */}
+      <View
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          if (h > 0 && Math.abs(h - bodyHeight) > 2) setBodyHeight(h);
+        }}
+        style={{ flex: 1, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 56 + Math.max(insets.bottom, 0) + 6, overflow: 'hidden' }}
+      >
         {/* Suites Standalone Body Card Container */}
         <Surface style={[styles.suitesCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, flex: 1 }]} elevation={2}>
           <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 4 }}>
@@ -457,8 +464,10 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
             />
           </TouchableOpacity>
 
-          {!upcomingCollapsed && (
-            <ScrollView nestedScrollEnabled style={{ maxHeight: 220, marginTop: 12 }}>
+          {!upcomingCollapsed && (() => {
+            const maxUpcomingScrollHeight = bodyHeight > 0 ? Math.min(180, Math.max(90, bodyHeight * 0.40 - 56)) : 140;
+            return (
+              <ScrollView nestedScrollEnabled style={{ maxHeight: maxUpcomingScrollHeight, marginTop: 8 }}>
               <UpcomingAppCard
                 title="Publish for Review"
                 description="Expert HR & Manager resume evaluation."
@@ -490,7 +499,8 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                 })}
               />
             </ScrollView>
-          )}
+            );
+          })()}
         </Surface>
       </View>
 
