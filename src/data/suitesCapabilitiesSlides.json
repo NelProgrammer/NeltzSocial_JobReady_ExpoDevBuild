@@ -8,7 +8,9 @@
     "tag": "CV BUILDER",
     "highlights": [
       "Auto-structures master CV payload into ATS-friendly layouts.",
-      "Enforces YYYY-MM-DD dates & South African SAQA qualifications."
+      "Enforces YYYY-MM-DD dates & South African SAQA qualifications.",
+      "Automated keyword matching for targeted job application roles.",
+      "Export clean PDF formats compliant with SA recruitment standards."
     ]
   },
   {
@@ -20,7 +22,9 @@
     "tag": "PDF ENGINE",
     "highlights": [
       "100% Client-side offline PDF page merging & splitting engine.",
-      "Fast local processing with zero server dependencies."
+      "Fast local processing with zero server dependencies.",
+      "Reorder, rotate, or remove individual PDF pages effortlessly.",
+      "Zero data usage: processing runs locally in mobile memory."
     ]
   },
   {
@@ -32,7 +36,9 @@
     "tag": "CV BUILDER",
     "highlights": [
       "Built-in RSA ID number format validation & YYYY-MM-DD date pickers.",
-      "Native support for SA IDs, driver licenses & references."
+      "Native support for SA IDs, driver licenses & references.",
+      "Tailored layouts for SA tech, mining, finance & trade sectors.",
+      "One-tap export to standardized professional CV formats."
     ]
   },
   {
@@ -44,7 +50,9 @@
     "tag": "PDF ENGINE",
     "highlights": [
       "POPIA compliant data protection & local file safety.",
-      "Atomic data purging & full user data ownership."
+      "Atomic data purging & full user data ownership.",
+      "Encrypted local document storage with no external telemetry.",
+      "Instant 1-click DSAR export for personal data requests."
     ]
   },
   {
@@ -56,7 +64,9 @@
     "tag": "CV BUILDER",
     "highlights": [
       "Smooth 2-level collapsible section management.",
-      "Drag & reorder section items with instant preview."
+      "Drag & reorder section items with instant preview.",
+      "Rich skills matrix with proficiency rating indicators.",
+      "Customizable sections for certifications, publications & awards."
     ]
   },
   {
@@ -68,7 +78,9 @@
     "tag": "PDF ENGINE",
     "highlights": [
       "Real-time portrait & landscape A4 page view.",
-      "Instant page order verification & layout preview."
+      "Instant page order verification & layout preview.",
+      "High-definition rendering with zoom & pan inspection.",
+      "Multi-document thumbnail ribbon for quick page swapping."
     ]
   }
 ]

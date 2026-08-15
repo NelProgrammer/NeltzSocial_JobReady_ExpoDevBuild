@@ -77,30 +77,30 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
           </TouchableOpacity>
           
           <View style={{ alignItems: 'center' }}>
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Career Data (Source of Truth)</Text>
-            <Text style={{ color: theme.textSecondary, fontSize: 11 }}>
-              {isEditMode ? "📝 Edit Mode — Type fields or manage entries" : "👁 Read Mode — Tap Pencil to unlock inputs"}
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>Career Data</Text>
+            <Text style={{ color: isEditMode ? '#10b981' : '#f87171', fontSize: 11, fontWeight: '600' }}>
+              {isEditMode ? "📝 Edit Mode — Type fields or manage entries" : "🔒 Read Only Mode — Tap Pencil to unlock inputs"}
             </Text>
           </View>
 
-          {/* Edit Mode Toggle Button */}
+          {/* Edit Mode Toggle Button (Green = Edit Mode Unlocked / Red = Read Only Locked) */}
           <TouchableOpacity
             style={[
               styles.navBtn,
               {
-                backgroundColor: isEditMode ? theme.accent : theme.bgDark,
-                borderColor: isEditMode ? theme.accent : theme.border
+                backgroundColor: isEditMode ? '#10b981' : '#ef4444',
+                borderColor: isEditMode ? '#059669' : '#dc2626'
               }
             ]}
             onPress={() => setIsEditMode(!isEditMode)}
             activeOpacity={0.7}
           >
-            <MaterialCommunityIcons name={isEditMode ? "pencil-off" : "pencil"} size={18} color="#fff" />
+            <MaterialCommunityIcons name={isEditMode ? "pencil" : "pencil-off"} size={18} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.subtitleCentered, { color: isEditMode ? theme.accent : theme.textSecondary }]}>
-          {isEditMode ? "Edit Mode Active: Form inputs unlocked for typing" : "Read Mode Active: Inputs locked. Tap Pencil above to edit"}
+        <Text style={[styles.subtitleCentered, { color: isEditMode ? '#10b981' : '#f87171', fontWeight: 'bold' }]}>
+          {isEditMode ? "Edit Mode Active: Form inputs unlocked for typing" : "Read Only Mode Active: Inputs locked. Tap Pencil above to edit"}
         </Text>
       </View>
 

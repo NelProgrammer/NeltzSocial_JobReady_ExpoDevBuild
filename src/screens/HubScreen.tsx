@@ -23,6 +23,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
   const theme = useTheme();
   const { theme: activeTheme, themeId, setThemeId, themes } = useThemeContext();
   const insets = useSafeAreaInsets();
+  const { width, height } = Dimensions.get('window');
   const netInfo = useNetInfo();
   const isConnected = netInfo.isConnected ?? true;
   const authCtx = useContext(AuthContext) as any;
@@ -50,7 +51,33 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
   const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
   const [containerWidth, setContainerWidth] = useState<number>(width - 48);
   const [isCarouselVisible, setIsCarouselVisible] = useState<boolean>(true);
+  const [suitesHeight, setSuitesHeight] = useState<number>(500);
   const carouselRef = useRef<ScrollView>(null);
+
+  // Screen height category & 4-step responsive limited-space compression calculation
+  const isSmallScreen = height < 750;
+  const isLargeScreen = height >= 750;
+  const isSpaceConstrained = !upcomingCollapsed || suitesHeight < 340;
+
+  // Step 1: Reduce wasted space around AppCards AND around Suites Card
+  const suitesPaddingHoriz = isSpaceConstrained ? 6 : 12;
+  const suitesPaddingVert = isSpaceConstrained ? 4 : 8;
+  const appCardPadding = isSpaceConstrained ? 8 : 14;
+  const appCardMarginBottom = isSpaceConstrained ? 6 : 12;
+
+  // Step 2: Scale AppCard text sizes (80% Large Phones / Max 90% Small Phones)
+  const textScale = isSpaceConstrained ? (isLargeScreen ? 0.80 : 0.90) : 1.0;
+  const cardTitleFontSize = Math.round(14 * textScale);
+  const cardDescFontSize = Math.round(11 * textScale);
+
+  // Step 3: Reduce slide feature bullets iteratively (4 -> 3 -> 2 -> 1)
+  const maxHighlightsCount = !isSpaceConstrained || suitesHeight >= 420
+    ? 4
+    : suitesHeight >= 360
+      ? 3
+      : suitesHeight >= 300
+        ? 2
+        : 1;
 
   // Auto-play Carousel Timer (advances active slide item every 5.0s for uniform stay duration across all 6 slides)
   useEffect(() => {
@@ -322,9 +349,25 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
         style={{ flex: 1, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 56 + Math.max(insets.bottom, 0) + 6, overflow: 'hidden' }}
       >
         {/* Suites Standalone Body Card Container */}
-        <Surface style={[styles.suitesCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, flex: 1 }]} elevation={2}>
+        <Surface
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            if (h > 0 && Math.abs(h - suitesHeight) > 2) setSuitesHeight(h);
+          }}
+          style={[
+            styles.suitesCardContainer,
+            {
+              backgroundColor: activeTheme.bgSurface,
+              borderColor: activeTheme.border,
+              flex: 1,
+              paddingHorizontal: suitesPaddingHoriz,
+              paddingVertical: suitesPaddingVert
+            }
+          ]}
+          elevation={2}
+        >
           <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, paddingBottom: 4 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: isSpaceConstrained ? 6 : 12 }}>
               <Text variant="titleLarge" style={[styles.sectionTitle, { marginBottom: 0 }]}>Suites</Text>
               {!isCarouselVisible && (
                 <TouchableOpacity
@@ -349,24 +392,25 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
               )}
             </View>
 
-            {/* Suites Capabilities Carousel AppCard Tile (1ST IN LIST - Active Carousel Sync & Dismissable Close Button) */}
+            {/* Suites Capabilities Carousel AppCard Tile (1ST IN LIST - 4-Step Responsive Compression & Dynamic Flex Expansion) */}
             {isCarouselVisible && (() => {
               const activeSlide = capabilitiesSlides[activeSlideIndex];
+              const visibleHighlights = activeSlide.highlights.slice(0, maxHighlightsCount);
               return (
-                <View style={[styles.cardContainer, { minHeight: 180, marginBottom: 12 }]}>
-                  <Surface style={[styles.appCard, { flexDirection: 'column', alignItems: 'stretch', justifyContent: 'space-between', padding: 14 }]} elevation={2}>
+                <View style={[styles.cardContainer, isSpaceConstrained ? { minHeight: 160, marginBottom: appCardMarginBottom } : { flex: 1, minHeight: 180, marginBottom: appCardMarginBottom }]}>
+                  <Surface style={[styles.appCard, { flex: isSpaceConstrained ? undefined : 1, flexDirection: 'column', alignItems: 'stretch', justifyContent: 'space-between', padding: appCardPadding }]} elevation={2}>
                     {/* Active Slide Header - Dynamically updates to show title, icon, color, tag badge & top-right close 'x' button */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                      <LinearGradient colors={[activeSlide.color, `${activeSlide.color}99`]} style={[styles.iconContainer, { width: 44, height: 44, borderRadius: 12, marginRight: 12 }]}>
-                        <MaterialCommunityIcons name={activeSlide.icon} size={24} color="#fff" />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: isSpaceConstrained ? 4 : 8 }}>
+                      <LinearGradient colors={[activeSlide.color, `${activeSlide.color}99`]} style={[styles.iconContainer, { width: isSpaceConstrained ? 36 : 44, height: isSpaceConstrained ? 36 : 44, borderRadius: 12, marginRight: 10 }]}>
+                        <MaterialCommunityIcons name={activeSlide.icon} size={isSpaceConstrained ? 20 : 24} color="#fff" />
                       </LinearGradient>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'space-between' }}>
-                          <Text variant="titleMedium" style={[styles.cardTitle, { fontSize: 13, flex: 1, marginRight: 4 }]} numberOfLines={1}>
+                          <Text variant="titleMedium" style={[styles.cardTitle, { fontSize: cardTitleFontSize, flex: 1, marginRight: 4 }]} numberOfLines={1}>
                             Automations: {activeSlide.title}
                           </Text>
                           <View style={{ backgroundColor: `${activeSlide.color}22`, borderColor: `${activeSlide.color}55`, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, flexShrink: 0 }}>
-                            <Text style={{ color: activeSlide.color, fontSize: 9, fontWeight: 'bold' }}>{activeSlide.tag}</Text>
+                            <Text style={{ color: activeSlide.color, fontSize: isSpaceConstrained ? 8 : 9, fontWeight: 'bold' }}>{activeSlide.tag}</Text>
                           </View>
                           <TouchableOpacity
                             onPress={() => setIsCarouselVisible(false)}
@@ -381,19 +425,19 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                               marginLeft: 4
                             }}
                           >
-                            <MaterialCommunityIcons name="close" size={14} color="#94a3b8" />
+                            <MaterialCommunityIcons name="close" size={isSpaceConstrained ? 12 : 14} color="#94a3b8" />
                           </TouchableOpacity>
                         </View>
-                        <Text variant="bodySmall" style={[styles.cardDesc, { fontSize: 11, color: '#94a3b8', marginTop: 2 }]} numberOfLines={2}>{activeSlide.subtitle}</Text>
+                        <Text variant="bodySmall" style={[styles.cardDesc, { fontSize: cardDescFontSize, color: '#94a3b8', marginTop: 2 }]} numberOfLines={2}>{activeSlide.subtitle}</Text>
                       </View>
                     </View>
 
-                    {/* Rich Feature Highlights Inset Panel (Utilizes Available Space for Feature Context) */}
-                    <View style={{ backgroundColor: '#0f172a', borderRadius: 10, padding: 10, marginVertical: 6, borderWidth: 1, borderColor: '#334155', gap: 6, justifyContent: 'center' }}>
-                      {activeSlide.highlights.map((h: string, hIdx: number) => (
-                        <View key={hIdx} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-                          <MaterialCommunityIcons name="check-circle-outline" size={14} color={activeSlide.color} style={{ marginTop: 2 }} />
-                          <Text style={{ color: '#cbd5e1', fontSize: 11, flex: 1, flexWrap: 'wrap' }}>{h}</Text>
+                    {/* Rich Feature Highlights Inset Panel (Iteratively displaying 4 -> 3 -> 2 -> 1 bullets based on space) */}
+                    <View style={{ backgroundColor: '#0f172a', borderRadius: 10, padding: isSpaceConstrained ? 6 : 10, marginVertical: isSpaceConstrained ? 4 : 6, borderWidth: 1, borderColor: '#334155', gap: isSpaceConstrained ? 4 : 6, flex: isSpaceConstrained ? undefined : 1, justifyContent: 'center' }}>
+                      {visibleHighlights.map((h: string, hIdx: number) => (
+                        <View key={hIdx} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
+                          <MaterialCommunityIcons name="check-circle-outline" size={isSpaceConstrained ? 12 : 14} color={activeSlide.color} style={{ marginTop: 2 }} />
+                          <Text style={{ color: '#cbd5e1', fontSize: cardDescFontSize, flex: 1, flexWrap: 'wrap' }}>{h}</Text>
                         </View>
                       ))}
                     </View>

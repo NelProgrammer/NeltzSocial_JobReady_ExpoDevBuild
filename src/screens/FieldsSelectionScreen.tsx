@@ -207,42 +207,131 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
       <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border, marginBottom: 60 + Math.max(insets.bottom, 0) }]}>
         <ScrollView contentContainerStyle={{ padding: 10, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
           
-          {/* Section 1: Personal Details */}
+          {/* Section 1: Personal Details (Ultra-Granular Sub-Group Toggles) */}
           <Card style={styles.sectionCard}>
             <Card.Title title="Personal Details" left={(props) => <IconButton {...props} icon="account-details" />} />
             <Card.Content>
+              {/* Cohesive Names Sub-Group */}
+              <View style={{ backgroundColor: '#0f172a', padding: 10, borderRadius: 10, marginBottom: 10, borderWidth: 1, borderColor: '#334155' }}>
+                <Text style={{ color: theme.accent, fontSize: 12, fontWeight: 'bold', marginBottom: 6 }}>👤 Names Configuration</Text>
+                <View style={styles.itemRow}>
+                  <Text style={[styles.itemTitle, { fontSize: 12, flex: 1 }]}>First Name: {names.firstName || 'First Name'}</Text>
+                  <Switch value={isVisible('pd_name_first')} onValueChange={() => toggleItemVisibility('pd_name_first', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+                </View>
+                <View style={styles.itemRow}>
+                  <Text style={[styles.itemTitle, { fontSize: 12, flex: 1 }]}>Middle Name: {names.middleName || 'N/A'}</Text>
+                  <Switch value={isVisible('pd_name_middle')} onValueChange={() => toggleItemVisibility('pd_name_middle', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+                </View>
+                <View style={styles.itemRow}>
+                  <Text style={[styles.itemTitle, { fontSize: 12, flex: 1 }]}>Surname: {names.Surname || 'Surname'}</Text>
+                  <Switch value={isVisible('pd_name_surname')} onValueChange={() => toggleItemVisibility('pd_name_surname', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+                </View>
+              </View>
+
+              {/* Contact Info Toggle */}
               <View style={styles.itemRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.itemTitle}>{names.firstName || 'First Name'} {names.Surname || 'Surname'}</Text>
+                  <Text style={styles.itemTitle}>✉️ Contact Details</Text>
                   <Text style={styles.itemSub}>{contact.Email || 'No email'} · {contact.Phone || 'No phone'}</Text>
                 </View>
-                <Switch value={isVisible('pd_names')} onValueChange={() => toggleItemVisibility('pd_names', 'names', 0)} disabled={isMain} trackColor={switchColors} />
+                <Switch value={isVisible('pd_contact')} onValueChange={() => toggleItemVisibility('pd_contact', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
               </View>
-              {identity.idNumber && (
-                <View style={styles.itemRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.itemTitle}>ID Number: {identity.idMask !== false ? `${identity.idNumber.substring(0, 6)} **** ***` : identity.idNumber}</Text>
-                  </View>
-                  <Switch value={isVisible('pd_id')} onValueChange={() => toggleItemVisibility('pd_id', 'identity', 0)} disabled={isMain} trackColor={switchColors} />
+
+              {/* RSA Identity Number Masking Switch */}
+              <View style={styles.itemRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.itemTitle}>🆔 RSA ID Number Masking</Text>
+                  <Text style={styles.itemSub}>{isVisible('pd_id_mask') ? 'Masked (940101 **** ***)' : 'Full Unmasked (940101 5082 087)'}</Text>
                 </View>
-              )}
-              {addresses.map((addr: any, idx: number) => {
-                const itemId = addr.id || `addr_${idx}`;
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 10, color: '#94a3b8' }}>{isVisible('pd_id_mask') ? 'Masked' : 'Unmasked'}</Text>
+                  <Switch value={!isVisible('pd_id_mask')} onValueChange={() => toggleItemVisibility('pd_id_mask', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+                </View>
+              </View>
+
+              {/* Address Settings (Home Address ON by Default / Others OFF by Default / Street Masking) */}
+              <Divider style={{ marginVertical: 8 }} />
+              <Text style={styles.subHeader}>📍 Addresses (Home ON by Default, Others OFF by Default)</Text>
+              {(addresses.length > 0 ? addresses : [{ addressType: 'Physical Address', streetAddress: 'Fumana High Street', cityOrTown: 'Johannesburg', province: 'Gauteng' }]).map((addr: any, idx: number) => {
+                const isHome = idx === 0 || (addr.addressType && addr.addressType.toLowerCase().includes('physical'));
+                const addressVisKey = `pd_addr_vis_${idx}`;
+                const addressMaskKey = `pd_addr_mask_${idx}`;
+                const isVis = isMain ? true : (activeConfig.visibility?.[addressVisKey] !== undefined ? activeConfig.visibility[addressVisKey] : isHome);
+                const isMasked = isMain ? false : (activeConfig.visibility?.[addressMaskKey] !== false);
+
                 return (
-                  <View key={itemId} style={styles.itemRow}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.itemTitle}>📍 {addr.addressType || 'Address'}: {addr.streetAddress || ''}</Text>
-                      <Text style={styles.itemSub}>{addr.cityOrTown || ''}, {addr.province || ''}</Text>
+                  <View key={idx} style={{ backgroundColor: '#1e293b', padding: 8, borderRadius: 8, marginVertical: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}>
+                    <View style={styles.itemRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.itemTitle}>
+                          {isHome ? '🏠' : '📮'} {addr.addressType || (isHome ? 'Home / Physical Address' : 'Postal Address')} {isHome && <Text style={{ color: '#10b981', fontSize: 10 }}>(Default ON)</Text>}
+                        </Text>
+                        <Text style={styles.itemSub}>{addr.cityOrTown || 'City'}, {addr.province || 'Province'} {addr.postalCode || ''}</Text>
+                      </View>
+                      <Switch
+                        value={isVis}
+                        onValueChange={() => {
+                          const currentMap = activeConfig.visibility || {};
+                          const updatedMap = { ...currentMap, [addressVisKey]: !isVis };
+                          setConfigurations(configurations.map(c => c.id === selectedConfigId ? { ...c, visibility: updatedMap } : c));
+                        }}
+                        disabled={isMain}
+                        trackColor={switchColors}
+                      />
                     </View>
-                    <Switch
-                      value={isVisible(itemId, addr)}
-                      onValueChange={() => toggleItemVisibility(itemId, 'address', idx, addr)}
-                      disabled={isMain}
-                      trackColor={switchColors}
-                    />
+                    {isVis && (
+                      <View style={[styles.itemRow, { marginTop: 4, paddingTop: 4, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)' }]}>
+                        <Text style={{ fontSize: 11, color: '#94a3b8', flex: 1 }}>Street Line: {isMasked ? '***** Street Address' : (addr.streetAddress || 'Full Street Address')}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Text style={{ fontSize: 9, color: '#64748b' }}>{isMasked ? 'Mask Street' : 'Full Street'}</Text>
+                          <Switch
+                            value={!isMasked}
+                            onValueChange={() => {
+                              const currentMap = activeConfig.visibility || {};
+                              const updatedMap = { ...currentMap, [addressMaskKey]: !isMasked };
+                              setConfigurations(configurations.map(c => c.id === selectedConfigId ? { ...c, visibility: updatedMap } : c));
+                            }}
+                            disabled={isMain}
+                            trackColor={switchColors}
+                          />
+                        </View>
+                      </View>
+                    )}
                   </View>
                 );
               })}
+
+              {/* Dedicated Licensing Toggles */}
+              <Divider style={{ marginVertical: 8 }} />
+              <Text style={styles.subHeader}>🚗 Licensing Controls</Text>
+              <View style={styles.itemRow}>
+                <Text style={[styles.itemTitle, { flex: 1 }]}>🚙 Motor Vehicle License (Code B / EB)</Text>
+                <Switch value={isVisible('pd_lic_vehicle')} onValueChange={() => toggleItemVisibility('pd_lic_vehicle', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+              </View>
+              <View style={styles.itemRow}>
+                <Text style={[styles.itemTitle, { flex: 1 }]}>🏍️ Motorbike License (Code A / A1)</Text>
+                <Switch value={isVisible('pd_lic_motorbike')} onValueChange={() => toggleItemVisibility('pd_lic_motorbike', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+              </View>
+
+              {/* Individual Demographic Toggles */}
+              <Divider style={{ marginVertical: 8 }} />
+              <Text style={styles.subHeader}>📊 Demographic Toggles</Text>
+              <View style={styles.itemRow}>
+                <Text style={[styles.itemTitle, { flex: 1 }]}>👤 Gender</Text>
+                <Switch value={isVisible('pd_demo_gender')} onValueChange={() => toggleItemVisibility('pd_demo_gender', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+              </View>
+              <View style={styles.itemRow}>
+                <Text style={[styles.itemTitle, { flex: 1 }]}>🌍 Nationality / Citizenship</Text>
+                <Switch value={isVisible('pd_demo_nationality')} onValueChange={() => toggleItemVisibility('pd_demo_nationality', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+              </View>
+              <View style={styles.itemRow}>
+                <Text style={[styles.itemTitle, { flex: 1 }]}>💍 Marital Status</Text>
+                <Switch value={isVisible('pd_demo_marital')} onValueChange={() => toggleItemVisibility('pd_demo_marital', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+              </View>
+              <View style={styles.itemRow}>
+                <Text style={[styles.itemTitle, { flex: 1 }]}>♿ Disability / Equity Status</Text>
+                <Switch value={isVisible('pd_demo_disability')} onValueChange={() => toggleItemVisibility('pd_demo_disability', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+              </View>
             </Card.Content>
           </Card>
 
@@ -424,27 +513,93 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
             </Card.Content>
           </Card>
 
-          {/* Section 6: Document Output Format Settings */}
+          {/* Section 6: Document Output Format Settings (5 Slide Switches) */}
           <Card style={[styles.sectionCard, { backgroundColor: '#f8fafc' }]}>
             <Card.Title title="Document Format Settings" left={(props) => <IconButton {...props} icon="format-list-bulleted" />} />
             <Card.Content>
+              {/* Technical Skills Format Slide Switch */}
               <View style={styles.itemRow}>
-                <Text style={{ fontSize: 13, flex: 1 }}>Technical Skills Format</Text>
-                <Button mode="outlined" compact onPress={() => updateUiSettings({ ...uiSettings, TechFormat: uiSettings?.TechFormat === 'comma' ? 'list' : 'comma' })}>
-                  {uiSettings?.TechFormat === 'comma' ? 'Comma Paragraph' : 'Bulleted List'}
-                </Button>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: 'bold' }}>Technical Skills Format</Text>
+                  <Text style={{ fontSize: 10, color: '#64748b' }}>{uiSettings?.TechFormat === 'comma' ? 'Comma Paragraph' : 'Bulleted List'}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 10, color: uiSettings?.TechFormat !== 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.TechFormat !== 'comma' ? 'bold' : 'normal' }}>Bulleted List</Text>
+                  <Switch
+                    value={uiSettings?.TechFormat === 'comma'}
+                    onValueChange={(val) => updateUiSettings({ ...uiSettings, TechFormat: val ? 'comma' : 'list' })}
+                    trackColor={switchColors}
+                  />
+                  <Text style={{ fontSize: 10, color: uiSettings?.TechFormat === 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.TechFormat === 'comma' ? 'bold' : 'normal' }}>Comma</Text>
+                </View>
               </View>
+
+              {/* Soft Skills Format Slide Switch */}
               <View style={styles.itemRow}>
-                <Text style={{ fontSize: 13, flex: 1 }}>Soft Skills Format</Text>
-                <Button mode="outlined" compact onPress={() => updateUiSettings({ ...uiSettings, SoftFormat: uiSettings?.SoftFormat === 'comma' ? 'list' : 'comma' })}>
-                  {uiSettings?.SoftFormat === 'comma' ? 'Comma Paragraph' : 'Bulleted List'}
-                </Button>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: 'bold' }}>Soft Skills Format</Text>
+                  <Text style={{ fontSize: 10, color: '#64748b' }}>{uiSettings?.SoftFormat === 'comma' ? 'Comma Paragraph' : 'Bulleted List'}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 10, color: uiSettings?.SoftFormat !== 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.SoftFormat !== 'comma' ? 'bold' : 'normal' }}>Bulleted List</Text>
+                  <Switch
+                    value={uiSettings?.SoftFormat === 'comma'}
+                    onValueChange={(val) => updateUiSettings({ ...uiSettings, SoftFormat: val ? 'comma' : 'list' })}
+                    trackColor={switchColors}
+                  />
+                  <Text style={{ fontSize: 10, color: uiSettings?.SoftFormat === 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.SoftFormat === 'comma' ? 'bold' : 'normal' }}>Comma</Text>
+                </View>
               </View>
+
+              {/* Responsibilities Format Slide Switch */}
               <View style={styles.itemRow}>
-                <Text style={{ fontSize: 13, flex: 1 }}>Responsibilities Format</Text>
-                <Button mode="outlined" compact onPress={() => updateUiSettings({ ...uiSettings, RespFormat: uiSettings?.RespFormat === 'comma' ? 'list' : 'comma' })}>
-                  {uiSettings?.RespFormat === 'comma' ? 'Comma Paragraph' : 'Bulleted List'}
-                </Button>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: 'bold' }}>Responsibilities Format</Text>
+                  <Text style={{ fontSize: 10, color: '#64748b' }}>{uiSettings?.RespFormat === 'comma' ? 'Comma Paragraph' : 'Bulleted List'}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 10, color: uiSettings?.RespFormat !== 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.RespFormat !== 'comma' ? 'bold' : 'normal' }}>Bulleted List</Text>
+                  <Switch
+                    value={uiSettings?.RespFormat === 'comma'}
+                    onValueChange={(val) => updateUiSettings({ ...uiSettings, RespFormat: val ? 'comma' : 'list' })}
+                    trackColor={switchColors}
+                  />
+                  <Text style={{ fontSize: 10, color: uiSettings?.RespFormat === 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.RespFormat === 'comma' ? 'bold' : 'normal' }}>Comma</Text>
+                </View>
+              </View>
+
+              {/* Addresses Format Slide Switch */}
+              <View style={styles.itemRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: 'bold' }}>Addresses Layout Format</Text>
+                  <Text style={{ fontSize: 10, color: '#64748b' }}>{uiSettings?.AddressFormat === 'multi' ? 'Multi-Line Block' : 'Single Line'}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 10, color: uiSettings?.AddressFormat !== 'multi' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.AddressFormat !== 'multi' ? 'bold' : 'normal' }}>Single Line</Text>
+                  <Switch
+                    value={uiSettings?.AddressFormat === 'multi'}
+                    onValueChange={(val) => updateUiSettings({ ...uiSettings, AddressFormat: val ? 'multi' : 'single' })}
+                    trackColor={switchColors}
+                  />
+                  <Text style={{ fontSize: 10, color: uiSettings?.AddressFormat === 'multi' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.AddressFormat === 'multi' ? 'bold' : 'normal' }}>Multi-Line</Text>
+                </View>
+              </View>
+
+              {/* Demographics Format Slide Switch */}
+              <View style={styles.itemRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 13, fontWeight: 'bold' }}>Demographics Layout Format</Text>
+                  <Text style={{ fontSize: 10, color: '#64748b' }}>{uiSettings?.DemoFormat === 'grid' ? 'Key-Value Grid' : 'Inline Summary'}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text style={{ fontSize: 10, color: uiSettings?.DemoFormat !== 'grid' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.DemoFormat !== 'grid' ? 'bold' : 'normal' }}>Inline</Text>
+                  <Switch
+                    value={uiSettings?.DemoFormat === 'grid'}
+                    onValueChange={(val) => updateUiSettings({ ...uiSettings, DemoFormat: val ? 'grid' : 'inline' })}
+                    trackColor={switchColors}
+                  />
+                  <Text style={{ fontSize: 10, color: uiSettings?.DemoFormat === 'grid' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.DemoFormat === 'grid' ? 'bold' : 'normal' }}>Grid</Text>
+                </View>
               </View>
             </Card.Content>
           </Card>
