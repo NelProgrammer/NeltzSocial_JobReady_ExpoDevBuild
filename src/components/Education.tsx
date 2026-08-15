@@ -145,7 +145,11 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     const updateTertiary = (index: number, key: string, value: any) => {
         if (!isEditMode) return;
         const newList = [...tertiary];
-        newList[index] = { ...newList[index], [key]: value };
+        if (key === 'Year' || key === 'date_obtained') {
+            newList[index] = { ...newList[index], Year: value, date_obtained: value, dateObtained: value };
+        } else {
+            newList[index] = { ...newList[index], [key]: value };
+        }
         updateResumeData({ ...resumeData, education: { ...education, tertiary: newList } });
     };
 
@@ -154,7 +158,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
         if (!isEditMode) return;
         const itemId = `edu_prof_${Date.now()}_${profCerts.length + 1}`;
         const newCert: ProfessionalCertItem = {
-            id: itemId, name: '', institution: '', yearObtained: '', certNumber: '', visible: true
+            id: itemId, name: '', institution: '', yearObtained: '', date_obtained: '', certNumber: '', visible: true
         };
         updateResumeData({ ...resumeData, education: { ...education, professionalCertifications: [...profCerts, newCert] } });
         setExpandedCategories(prev => ({ ...prev, professional: true }));
@@ -179,7 +183,13 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     const updateProfCert = (index: number, key: string, value: any) => {
         if (!isEditMode) return;
         const newList = [...profCerts];
-        newList[index] = { ...newList[index], [key]: value };
+        if (key === 'yearObtained' || key === 'date_obtained') {
+            newList[index] = { ...newList[index], yearObtained: value, date_obtained: value, dateObtained: value };
+        } else if (key === 'expiryYear' || key === 'expiry_date') {
+            newList[index] = { ...newList[index], expiryYear: value, expiry_date: value, expiryDate: value };
+        } else {
+            newList[index] = { ...newList[index], [key]: value };
+        }
         updateResumeData({ ...resumeData, education: { ...education, professionalCertifications: newList } });
     };
 
@@ -188,7 +198,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
         if (!isEditMode) return;
         const itemId = `edu_tech_${Date.now()}_${techCerts.length + 1}`;
         const newCert: TechCertItem = {
-            id: itemId, name: '', provider: '', yearObtained: '', certNumber: '', visible: true
+            id: itemId, name: '', provider: '', yearObtained: '', date_obtained: '', certNumber: '', visible: true
         };
         updateResumeData({ ...resumeData, education: { ...education, technicalCertifications: [...techCerts, newCert] } });
         setExpandedCategories(prev => ({ ...prev, technical: true }));
@@ -213,7 +223,11 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     const updateTechCert = (index: number, key: string, value: any) => {
         if (!isEditMode) return;
         const newList = [...techCerts];
-        newList[index] = { ...newList[index], [key]: value };
+        if (key === 'yearObtained' || key === 'date_obtained') {
+            newList[index] = { ...newList[index], yearObtained: value, date_obtained: value, dateObtained: value };
+        } else {
+            newList[index] = { ...newList[index], [key]: value };
+        }
         updateResumeData({ ...resumeData, education: { ...education, technicalCertifications: newList } });
     };
 
@@ -222,7 +236,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
         if (!isEditMode) return;
         const itemId = `edu_reg_${Date.now()}_${regCerts.length + 1}`;
         const newCert: RegulatoryCertItem = {
-            id: itemId, name: '', issuingBody: '', licenseNumber: '', yearObtained: '', expiryYear: '', visible: true
+            id: itemId, name: '', issuingBody: '', licenseNumber: '', yearObtained: '', date_obtained: '', expiryYear: '', expiry_date: '', visible: true
         };
         updateResumeData({ ...resumeData, education: { ...education, regulatoryCertifications: [...regCerts, newCert] } });
         setExpandedCategories(prev => ({ ...prev, regulatory: true }));
@@ -247,7 +261,13 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     const updateRegCert = (index: number, key: string, value: any) => {
         if (!isEditMode) return;
         const newList = [...regCerts];
-        newList[index] = { ...newList[index], [key]: value };
+        if (key === 'yearObtained' || key === 'date_obtained') {
+            newList[index] = { ...newList[index], yearObtained: value, date_obtained: value, dateObtained: value };
+        } else if (key === 'expiryYear' || key === 'expiry_date') {
+            newList[index] = { ...newList[index], expiryYear: value, expiry_date: value, expiryDate: value };
+        } else {
+            newList[index] = { ...newList[index], [key]: value };
+        }
         updateResumeData({ ...resumeData, education: { ...education, regulatoryCertifications: newList } });
     };
 

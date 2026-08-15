@@ -51,9 +51,13 @@ export interface ProfessionalCertItem {
   id: string;
   name: string;
   institution: string;
-  yearObtained: string;
+  yearObtained?: string | number;
+  date_obtained?: string;
+  dateObtained?: string;
   certNumber?: string;
-  expiryYear?: string;
+  expiryYear?: string | number;
+  expiry_date?: string;
+  expiryDate?: string;
   visible?: boolean;
 }
 
@@ -71,6 +75,8 @@ export interface WorkExperience {
   Department?: string;
   "Start Date": string;
   "End Date": string;
+  start_date?: string;
+  end_date?: string;
   "Key Responsibilities": SubExperienceItem[] | string;
   "Achievements"?: SubExperienceItem[] | string;
   "Systems Used"?: SubExperienceItem[] | string;
@@ -123,7 +129,9 @@ export interface TertiaryEducationItem {
   id: string;
   Institution: string;
   "Qualification Name": string;
-  Year: number | string;
+  Year?: number | string;
+  date_obtained?: string;
+  dateObtained?: string;
   "NQF Level"?: string;
   Completed?: boolean;
   "Key Modules"?: string[];
@@ -135,6 +143,8 @@ export interface TechCertItem {
   name: string;
   provider?: string;
   yearObtained?: string | number;
+  date_obtained?: string;
+  dateObtained?: string;
   certNumber?: string;
   visible?: boolean;
 }
@@ -145,7 +155,11 @@ export interface RegulatoryCertItem {
   issuingBody?: string;
   licenseNumber?: string;
   yearObtained?: string | number;
+  date_obtained?: string;
+  dateObtained?: string;
   expiryYear?: string | number;
+  expiry_date?: string;
+  expiryDate?: string;
   visible?: boolean;
 }
 

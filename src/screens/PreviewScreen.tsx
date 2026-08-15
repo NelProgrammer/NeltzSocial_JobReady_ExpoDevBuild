@@ -270,7 +270,7 @@ const PreviewScreen = ({ navigation }) => {
                  <div class="edu-item" style="margin-bottom: 15px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
                         <span>${edu.Institution}</span>
-                        <span>${edu.Year}</span>
+                        <span>${edu.date_obtained || edu.dateObtained || edu.Year || ''}</span>
                     </div>
                     <div>${edu["Qualification Name"]}</div>
                 </div>
@@ -279,7 +279,7 @@ const PreviewScreen = ({ navigation }) => {
                  <div class="edu-item" style="margin-bottom: 12px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
                         <span>💻 ${cert.name}</span>
-                        <span>${cert.yearObtained || ''}</span>
+                        <span>${cert.date_obtained || cert.dateObtained || cert.yearObtained || ''}</span>
                     </div>
                     <div style="font-size: 13px; color: #555;">${cert.provider ? `Provider: ${cert.provider}` : ''}${cert.certNumber ? ` (ID: ${cert.certNumber})` : ''}</div>
                 </div>
@@ -288,7 +288,7 @@ const PreviewScreen = ({ navigation }) => {
                  <div class="edu-item" style="margin-bottom: 12px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
                         <span>⚖️ ${cert.name}</span>
-                        <span>${cert.yearObtained || ''}</span>
+                        <span>${cert.date_obtained || cert.dateObtained || cert.yearObtained || ''}</span>
                     </div>
                     <div style="font-size: 13px; color: #555;">${cert.issuingBody ? `Authority: ${cert.issuingBody}` : ''}${cert.licenseNumber ? ` (License: ${cert.licenseNumber})` : ''}</div>
                 </div>

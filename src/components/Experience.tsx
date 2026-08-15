@@ -77,7 +77,13 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
     const updateExpField = (index: number, key: string, value: any) => {
         if (!isEditMode) return;
         const newExp = [...experiences];
-        (newExp[index] as any)[key] = value;
+        if (key === 'Start Date' || key === 'start_date') {
+            newExp[index] = { ...newExp[index], "Start Date": value, start_date: value };
+        } else if (key === 'End Date' || key === 'end_date') {
+            newExp[index] = { ...newExp[index], "End Date": value, end_date: value };
+        } else {
+            (newExp[index] as any)[key] = value;
+        }
         updateResumeData({ ...resumeData, experience: newExp });
     };
 
