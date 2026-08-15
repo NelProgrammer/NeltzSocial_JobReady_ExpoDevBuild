@@ -48,6 +48,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
 
   // Active Carousel Slide State & References for 1st Capabilities AppCard in Suites
   const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
+  const [containerWidth, setContainerWidth] = useState<number>(width - 48);
   const carouselRef = useRef<ScrollView>(null);
 
   // Auto-play Carousel Timer (advances active slide item every 5.0s for uniform stay duration across all 6 slides)
@@ -363,6 +364,10 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                       ref={carouselRef}
                       horizontal
                       showsHorizontalScrollIndicator={false}
+                      onLayout={(e) => {
+                        const w = e.nativeEvent.layout.width;
+                        if (w > 0 && Math.abs(w - containerWidth) > 2) setContainerWidth(w);
+                      }}
                       contentContainerStyle={[styles.showcaseScrollContent, { paddingLeft: 0, paddingRight: 32 }]}
                       onMomentumScrollEnd={(e) => {
                         const x = e.nativeEvent.contentOffset.x;
@@ -373,6 +378,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                     >
                       {capabilitiesSlides.map((slide, idx) => {
                         const isActive = idx === activeSlideIndex;
+                        const touchesRightEdge = isActive && slide.title.length > 25;
                         return (
                           <TouchableOpacity
                             key={idx}
@@ -384,13 +390,14 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                             style={[
                               styles.showcasePill,
                               { borderColor: isActive ? slide.color : 'rgba(255,255,255,0.1)' },
-                              isActive && { backgroundColor: `${slide.color}22`, maxWidth: 150 }
+                              isActive && { backgroundColor: `${slide.color}22` },
+                              touchesRightEdge && { maxWidth: Math.max(140, containerWidth - 24) }
                             ]}
                           >
                             <MaterialCommunityIcons name={slide.icon} size={13} color={isActive ? slide.color : '#94a3b8'} />
                             <Text
                               style={[styles.showcasePillText, isActive && { color: '#fff', fontWeight: 'bold', flexShrink: 1 }]}
-                              numberOfLines={isActive ? 2 : 1}
+                              numberOfLines={touchesRightEdge ? 2 : 1}
                             >
                               {slide.title}
                             </Text>
