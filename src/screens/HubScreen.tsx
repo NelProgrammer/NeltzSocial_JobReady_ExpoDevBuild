@@ -43,6 +43,53 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
   const [upcomingCollapsed, setUpcomingCollapsed] = useState<boolean>(true);
   const [previewItem, setPreviewItem] = useState<{ title: string; subtitle: string; icon: string; color: string; gistParagraphs: string[] } | null>(null);
 
+  // Active Carousel Slide State & References for 1st Capabilities AppCard in Suites
+  const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
+  const carouselRef = useRef<ScrollView>(null);
+
+  const capabilitiesSlides = [
+    {
+      icon: 'file-account',
+      color: '#818cf8',
+      title: 'Smart ATS Resume Engine',
+      subtitle: 'Auto-formats sections for ATS algorithms with South African context rules.',
+      tag: 'CV BUILDER'
+    },
+    {
+      icon: 'file-pdf-box',
+      color: '#f59e0b',
+      title: 'Offline A4 PDF Workbench',
+      subtitle: 'Merge, split pages, & reorder A4 documents with 100% client-side isolation.',
+      tag: 'PDF ENGINE'
+    },
+    {
+      icon: 'flag',
+      color: '#10b981',
+      title: 'SA Context & ID Verification',
+      subtitle: 'Built-in RSA ID number format validation & YYYY-MM-DD date pickers.',
+      tag: 'LOCALIZED'
+    },
+    {
+      icon: 'shield-lock-outline',
+      color: '#c084fc',
+      title: 'POPIA Client Data Isolation',
+      subtitle: 'Zero server upload for PDF engine; full user data ownership & DSAR support.',
+      tag: 'SECURITY'
+    }
+  ];
+
+  // Auto-play Carousel Timer (advances active slide item every 3.2s)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveSlideIndex((prev) => {
+        const next = (prev + 1) % capabilitiesSlides.length;
+        carouselRef.current?.scrollTo({ x: next * 180, animated: true });
+        return next;
+      });
+    }, 3200);
+    return () => clearInterval(timer);
+  }, []);
+
   const currentScrollTop = useRef(0);
   const profileListRef = useRef<ScrollView>(null);
 
@@ -307,40 +354,81 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
           <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 4 }}>
             <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
 
-            {/* Suites Capabilities AppCard Tile (1ST IN LIST) */}
-            <View style={[styles.cardContainer, { flexShrink: 1, marginBottom: 12 }]}>
-              <Surface style={[styles.appCard, { flexDirection: 'column', alignItems: 'stretch', padding: 12 }]} elevation={2}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <LinearGradient colors={['#818cf8', '#6366f1']} style={[styles.iconContainer, { width: 36, height: 36, borderRadius: 10, marginRight: 10 }]}>
-                    <MaterialCommunityIcons name="auto-fix" size={20} color="#fff" />
-                  </LinearGradient>
-                  <View style={{ flex: 1 }}>
-                    <Text variant="titleMedium" style={[styles.cardTitle, { fontSize: 14 }]}>Suites Capabilities & Automations</Text>
-                    <Text variant="bodySmall" style={[styles.cardDesc, { fontSize: 10 }]}>Auto-layout PDF engine, SA ID verification, & client-isolated storage.</Text>
-                  </View>
-                </View>
+            {/* Suites Capabilities Carousel AppCard Tile (1ST IN LIST - Active Carousel Sync) */}
+            {(() => {
+              const activeSlide = capabilitiesSlides[activeSlideIndex];
+              return (
+                <View style={[styles.cardContainer, { flexShrink: 1, marginBottom: 12 }]}>
+                  <Surface style={[styles.appCard, { flexDirection: 'column', alignItems: 'stretch', padding: 12 }]} elevation={2}>
+                    {/* Active Slide Header - Dynamically updates to show title, icon, color & tag badge of active carousel item */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                      <LinearGradient colors={[activeSlide.color, `${activeSlide.color}99`]} style={[styles.iconContainer, { width: 36, height: 36, borderRadius: 10, marginRight: 10 }]}>
+                        <MaterialCommunityIcons name={activeSlide.icon} size={20} color="#fff" />
+                      </LinearGradient>
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'space-between' }}>
+                          <Text variant="titleMedium" style={[styles.cardTitle, { fontSize: 13, flex: 1 }]} numberOfLines={1}>
+                            Automations: {activeSlide.title}
+                          </Text>
+                          <View style={{ backgroundColor: `${activeSlide.color}22`, borderColor: `${activeSlide.color}55`, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6 }}>
+                            <Text style={{ color: activeSlide.color, fontSize: 8, fontWeight: 'bold' }}>{activeSlide.tag}</Text>
+                          </View>
+                        </View>
+                        <Text variant="bodySmall" style={[styles.cardDesc, { fontSize: 10 }]} numberOfLines={1}>{activeSlide.subtitle}</Text>
+                      </View>
+                    </View>
 
-                {/* Horizontal Feature Badges with Active Scroll Bar */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={styles.showcaseScrollContent}>
-                  <View style={[styles.showcasePill, { borderColor: 'rgba(99, 102, 241, 0.4)' }]}>
-                    <MaterialCommunityIcons name="file-account" size={13} color="#818cf8" />
-                    <Text style={styles.showcasePillText}>Smart ATS CV Engine</Text>
-                  </View>
-                  <View style={[styles.showcasePill, { borderColor: 'rgba(245, 158, 11, 0.4)' }]}>
-                    <MaterialCommunityIcons name="file-pdf-box" size={13} color="#f59e0b" />
-                    <Text style={styles.showcasePillText}>Offline A4 PDF Merge & Split</Text>
-                  </View>
-                  <View style={[styles.showcasePill, { borderColor: 'rgba(16, 185, 129, 0.4)' }]}>
-                    <MaterialCommunityIcons name="flag" size={13} color="#10b981" />
-                    <Text style={styles.showcasePillText}>South African Context Formats</Text>
-                  </View>
-                  <View style={[styles.showcasePill, { borderColor: 'rgba(168, 85, 247, 0.4)' }]}>
-                    <MaterialCommunityIcons name="shield-lock-outline" size={13} color="#c084fc" />
-                    <Text style={styles.showcasePillText}>POPIA Client Isolation</Text>
-                  </View>
-                </ScrollView>
-              </Surface>
-            </View>
+                    {/* Horizontal Feature Carousel with Pagination Dots */}
+                    <ScrollView
+                      ref={carouselRef}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.showcaseScrollContent}
+                      onMomentumScrollEnd={(e) => {
+                        const x = e.nativeEvent.contentOffset.x;
+                        const newIdx = Math.min(capabilitiesSlides.length - 1, Math.max(0, Math.floor((x + 60) / 180)));
+                        if (newIdx !== activeSlideIndex) setActiveSlideIndex(newIdx);
+                      }}
+                      scrollEventThrottle={16}
+                    >
+                      {capabilitiesSlides.map((slide, idx) => (
+                        <TouchableOpacity
+                          key={idx}
+                          onPress={() => {
+                            setActiveSlideIndex(idx);
+                            carouselRef.current?.scrollTo({ x: idx * 180, animated: true });
+                          }}
+                          activeOpacity={0.8}
+                          style={[
+                            styles.showcasePill,
+                            { borderColor: idx === activeSlideIndex ? slide.color : 'rgba(255,255,255,0.1)' },
+                            idx === activeSlideIndex && { backgroundColor: `${slide.color}15` }
+                          ]}
+                        >
+                          <MaterialCommunityIcons name={slide.icon} size={13} color={idx === activeSlideIndex ? slide.color : '#94a3b8'} />
+                          <Text style={[styles.showcasePillText, idx === activeSlideIndex && { color: '#fff', fontWeight: 'bold' }]}>{slide.title}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+
+                    {/* Carousel Pagination Dots */}
+                    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                      {capabilitiesSlides.map((slide, idx) => (
+                        <View
+                          key={idx}
+                          style={{
+                            width: idx === activeSlideIndex ? 14 : 5,
+                            height: 5,
+                            borderRadius: 2.5,
+                            backgroundColor: idx === activeSlideIndex ? slide.color : '#475569'
+                          }}
+                        />
+                      ))}
+                    </View>
+                  </Surface>
+                </View>
+              );
+            })()}
 
             <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color={activeTheme.accent} onPress={() => navigation.navigate('Editor')} />
             <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
