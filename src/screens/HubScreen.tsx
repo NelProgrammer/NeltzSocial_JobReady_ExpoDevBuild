@@ -351,9 +351,9 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                     {/* Rich Feature Highlights Inset Panel (Utilizes Available Space for Feature Context) */}
                     <View style={{ backgroundColor: '#0f172a', borderRadius: 10, padding: 10, marginVertical: 6, borderWidth: 1, borderColor: '#334155', gap: 6, flex: 1, justifyContent: 'center' }}>
                       {activeSlide.highlights.map((h: string, hIdx: number) => (
-                        <View key={hIdx} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <MaterialCommunityIcons name="check-circle-outline" size={14} color={activeSlide.color} />
-                          <Text style={{ color: '#cbd5e1', fontSize: 11, flex: 1 }} numberOfLines={2}>{h}</Text>
+                        <View key={hIdx} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                          <MaterialCommunityIcons name="check-circle-outline" size={14} color={activeSlide.color} style={{ marginTop: 2 }} />
+                          <Text style={{ color: '#cbd5e1', fontSize: 11, flex: 1, flexWrap: 'wrap' }}>{h}</Text>
                         </View>
                       ))}
                     </View>
@@ -362,8 +362,9 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                     <ScrollView
                       ref={carouselRef}
                       horizontal
+                      centerContent={true}
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={[styles.showcaseScrollContent, { paddingLeft: 12, paddingRight: 12 }]}
+                      contentContainerStyle={[styles.showcaseScrollContent, { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 14 }]}
                       onMomentumScrollEnd={(e) => {
                         const x = e.nativeEvent.contentOffset.x;
                         const newIdx = Math.min(capabilitiesSlides.length - 1, Math.max(0, Math.round(x / 140)));
@@ -989,7 +990,7 @@ const styles = StyleSheet.create({
   upcomingBadge: { backgroundColor: 'rgba(99, 102, 241, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(99, 102, 241, 0.3)' },
   upcomingBadgeText: { color: '#818cf8', fontSize: 10, fontWeight: 'bold' },
   showcaseScrollContent: { gap: 8, alignItems: 'center' },
-  showcasePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, gap: 6 },
+  showcasePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1, gap: 6 },
   showcasePillText: { color: '#e2e8f0', fontSize: 11, fontWeight: '600' },
   cardContainer: { marginBottom: 12 },
   appCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, backgroundColor: '#1e293b', borderWidth: 1, borderColor: '#475569' },
