@@ -227,7 +227,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
 
   return (
     <View style={[styles.container, { backgroundColor: activeTheme.bgDark }]}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { flexGrow: 1, paddingBottom: 80 + insets.bottom }]}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { flexGrow: 1, paddingBottom: 68 + insets.bottom }]}>
         <LinearGradient colors={activeTheme.headerGrad} style={[styles.header, { paddingTop: Math.max(insets.top, 16) + 12 }] }>
           <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
             <MaterialCommunityIcons name="power" size={16} color="#fff" />
@@ -258,19 +258,22 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                 style={[styles.stagePill, { backgroundColor: stageInfo.color }]}
                 onPress={() => {
                   if (user?.isGuest) {
-                    setInputName(user?.name || '');
                     setMode('CREATE_LOCAL');
-                  } else {
+                    setModalVisible(true);
+                  } else if (user?.isLocal) {
                     setMode('UPGRADE_ONLINE');
+                    setModalVisible(true);
+                  } else {
+                    setMode('VIEW');
+                    setModalVisible(true);
                   }
-                  setModalVisible(true);
                 }}
                 activeOpacity={0.8}
               >
                 <Text style={styles.stagePillText}>{stageInfo.label}</Text>
               </TouchableOpacity>
 
-              <View style={[styles.connPill, { backgroundColor: activeTheme.bgDark, borderColor: activeTheme.border }]}>
+              <View style={styles.connPill}>
                 <View style={[styles.connDot, { backgroundColor: isConnected ? '#10b981' : '#ef4444' }]} />
                 <Text style={styles.connText}>{isConnected ? 'CONNECTED' : 'DISCONNECTED'}</Text>
               </View>
@@ -301,15 +304,36 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
 
         {/* Suites Standalone Body Card Container */}
         <Surface style={[styles.suitesCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} elevation={2}>
-          <View style={{ flex: 1 }}>
+          <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 8 }}>
             <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
             <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color={activeTheme.accent} onPress={() => navigation.navigate('Editor')} />
             <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
-          </View>
+
+            {/* Quick Action Feature Chips (Manages extra vertical space when available) */}
+            <View style={styles.quickActionsContainer}>
+              <Text style={styles.quickActionsTitle}>Quick Shortcuts & Status</Text>
+              <View style={styles.quickChipsRow}>
+                <TouchableOpacity style={styles.quickChipBtn} onPress={() => navigation.navigate('Editor')}>
+                  <MaterialCommunityIcons name="lightning-bolt" size={14} color="#f59e0b" />
+                  <Text style={styles.quickChipText}>Quick Edit</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.quickChipBtn} onPress={() => navigation.navigate('Preview')}>
+                  <MaterialCommunityIcons name="eye-outline" size={14} color="#3b82f6" />
+                  <Text style={styles.quickChipText}>Preview CV</Text>
+                </TouchableOpacity>
+
+                <View style={styles.quickChipStatus}>
+                  <MaterialCommunityIcons name="shield-check" size={14} color="#10b981" />
+                  <Text style={styles.quickChipStatusText}>100% Offline PDF</Text>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
         </Surface>
 
         {/* Upcoming Tools Standalone Body Card Container */}
-        <Surface style={[styles.upcomingCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, marginBottom: 60 + Math.max(insets.bottom, 0) }]} elevation={2}>
+        <Surface style={[styles.upcomingCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, marginBottom: 8 }]} elevation={2}>
           <TouchableOpacity
             style={styles.upcomingHeaderBar}
             onPress={() => setUpcomingCollapsed(!upcomingCollapsed)}
@@ -863,6 +887,13 @@ const styles = StyleSheet.create({
   sectionTitleNoMargin: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   upcomingBadge: { backgroundColor: 'rgba(99, 102, 241, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(99, 102, 241, 0.3)' },
   upcomingBadgeText: { color: '#818cf8', fontSize: 10, fontWeight: 'bold' },
+  quickActionsContainer: { marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  quickActionsTitle: { color: '#94a3b8', fontSize: 11, fontWeight: 'bold', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+  quickChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
+  quickChipBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: '#334155', gap: 5 },
+  quickChipText: { color: '#e2e8f0', fontSize: 11, fontWeight: '600' },
+  quickChipStatus: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(16, 185, 129, 0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.25)', gap: 5 },
+  quickChipStatusText: { color: '#34d399', fontSize: 11, fontWeight: '600' },
   cardContainer: { marginBottom: 12 },
   appCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, backgroundColor: '#1e293b' },
   iconContainer: { width: 50, height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
