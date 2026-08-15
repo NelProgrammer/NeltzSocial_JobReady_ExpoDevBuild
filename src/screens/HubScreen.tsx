@@ -78,7 +78,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
     }
   ];
 
-  // Auto-play Carousel Timer (advances active slide item every 3.2s)
+  // Auto-play Carousel Timer (advances active slide item every 7.0s for comfortable reading)
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlideIndex((prev) => {
@@ -86,7 +86,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
         carouselRef.current?.scrollTo({ x: next * 180, animated: true });
         return next;
       });
-    }, 3200);
+    }, 7000);
     return () => clearInterval(timer);
   }, []);
 
@@ -274,83 +274,85 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
 
   return (
     <View style={[styles.container, { backgroundColor: activeTheme.bgDark }]}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { flexGrow: 1, paddingBottom: 68 + insets.bottom }]}>
-        <LinearGradient colors={activeTheme.headerGrad} style={[styles.header, { paddingTop: Math.max(insets.top, 16) + 12 }] }>
-          <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
-            <MaterialCommunityIcons name="power" size={16} color="#fff" />
-            <Text style={styles.exitBtnTopLeftText}>Exit App</Text>
+      {/* 1. Persistent Fixed Header Banner (Fixed at top; never scrolls offscreen) */}
+      <LinearGradient colors={activeTheme.headerGrad} style={[styles.header, { paddingTop: Math.max(insets.top, 16) + 12 }] }>
+        <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
+          <MaterialCommunityIcons name="power" size={16} color="#fff" />
+          <Text style={styles.exitBtnTopLeftText}>Exit App</Text>
+        </TouchableOpacity>
+
+        <View style={styles.headerTop}>
+          {/* Avatar + User Name & Email Column (Taps -> Profile Mgmt Modal) */}
+          <TouchableOpacity
+            style={styles.avatarUserColumn}
+            onPress={() => { setMode('VIEW'); setModalVisible(true); }}
+            activeOpacity={0.7}
+          >
+            {user?.avatar ? (
+              <Avatar.Image size={46} source={{ uri: user.avatar }} />
+            ) : (
+              <Avatar.Text size={46} label={getInitials(user?.name)} style={[styles.avatarFallback, { backgroundColor: activeTheme.accent }]} />
+            )}
+            <View style={styles.userInfoTextCol}>
+              <Text variant="headlineSmall" style={styles.userNameText}>{user?.name || 'Guest'}</Text>
+              <Text variant="bodyMedium" style={styles.userEmailText}>{user?.email || (user?.isGuest ? 'Guest Sandbox Session' : `ID: ${user?.id}`)}</Text>
+            </View>
           </TouchableOpacity>
 
-          <View style={styles.headerTop}>
-            {/* Avatar + User Name & Email Column (Taps -> Profile Mgmt Modal) */}
+          {/* Right Controls: Upgrade Status Pill (Taps -> Upgrade Flow) + Connectivity Status Pill */}
+          <View style={styles.rightControlsCol}>
             <TouchableOpacity
-              style={styles.avatarUserColumn}
-              onPress={() => { setMode('VIEW'); setModalVisible(true); }}
-              activeOpacity={0.7}
+              style={[styles.stagePill, { backgroundColor: stageInfo.color }]}
+              onPress={() => {
+                if (user?.isGuest) {
+                  setMode('CREATE_LOCAL');
+                  setModalVisible(true);
+                } else if (user?.isLocal) {
+                  setMode('UPGRADE_ONLINE');
+                  setModalVisible(true);
+                } else {
+                  setMode('VIEW');
+                  setModalVisible(true);
+                }
+              }}
+              activeOpacity={0.8}
             >
-              {user?.avatar ? (
-                <Avatar.Image size={46} source={{ uri: user.avatar }} />
-              ) : (
-                <Avatar.Text size={46} label={getInitials(user?.name)} style={[styles.avatarFallback, { backgroundColor: activeTheme.accent }]} />
-              )}
-              <View style={styles.userInfoTextCol}>
-                <Text variant="headlineSmall" style={styles.userNameText}>{user?.name || 'Guest'}</Text>
-                <Text variant="bodyMedium" style={styles.userEmailText}>{user?.email || (user?.isGuest ? 'Guest Sandbox Session' : `ID: ${user?.id}`)}</Text>
-              </View>
+              <Text style={styles.stagePillText}>{stageInfo.label}</Text>
             </TouchableOpacity>
 
-            {/* Right Controls: Upgrade Status Pill (Taps -> Upgrade Flow) + Connectivity Status Pill */}
-            <View style={styles.rightControlsCol}>
-              <TouchableOpacity
-                style={[styles.stagePill, { backgroundColor: stageInfo.color }]}
-                onPress={() => {
-                  if (user?.isGuest) {
-                    setMode('CREATE_LOCAL');
-                    setModalVisible(true);
-                  } else if (user?.isLocal) {
-                    setMode('UPGRADE_ONLINE');
-                    setModalVisible(true);
-                  } else {
-                    setMode('VIEW');
-                    setModalVisible(true);
-                  }
-                }}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.stagePillText}>{stageInfo.label}</Text>
-              </TouchableOpacity>
-
-              <View style={styles.connPill}>
-                <View style={[styles.connDot, { backgroundColor: isConnected ? '#10b981' : '#ef4444' }]} />
-                <Text style={styles.connText}>{isConnected ? 'CONNECTED' : 'DISCONNECTED'}</Text>
-              </View>
+            <View style={styles.connPill}>
+              <View style={[styles.connDot, { backgroundColor: isConnected ? '#10b981' : '#ef4444' }]} />
+              <Text style={styles.connText}>{isConnected ? 'CONNECTED' : 'DISCONNECTED'}</Text>
             </View>
           </View>
+        </View>
 
-          {/* Centered Dashboard Subtitle Banner */}
-          <Text style={styles.dashboardSubtitleCentered}>
-            Your career dashboard is ready.
-          </Text>
+        {/* Centered Dashboard Subtitle Banner */}
+        <Text style={styles.dashboardSubtitleCentered}>
+          Your career dashboard is ready.
+        </Text>
 
-          {/* DOB Password Countdown Warning Banner */}
-          {user && user.passwordChangeCountdown !== undefined && user.passwordChangeCountdown > 0 && (
-            <Surface style={styles.warningBanner} elevation={3}>
-              <MaterialCommunityIcons name="clock-alert-outline" size={24} color="#f59e0b" style={{ marginRight: 10 }} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.warningTitle}>Security Warning: DOB Password</Text>
-                <Text style={styles.warningDesc}>
-                  Please change default password ({user.passwordChangeCountdown} logins remaining)
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.changePassBtn} onPress={() => { setMode('CHANGE_PASSWORD'); setModalVisible(true); }}>
-                <Text style={styles.changePassBtnText}>Change</Text>
-              </TouchableOpacity>
-            </Surface>
-          )}
-        </LinearGradient>
+        {/* DOB Password Countdown Warning Banner */}
+        {user && user.passwordChangeCountdown !== undefined && user.passwordChangeCountdown > 0 && (
+          <Surface style={styles.warningBanner} elevation={3}>
+            <MaterialCommunityIcons name="clock-alert-outline" size={24} color="#f59e0b" style={{ marginRight: 10 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.warningTitle}>Security Warning: DOB Password</Text>
+              <Text style={styles.warningDesc}>
+                Please change default password ({user.passwordChangeCountdown} logins remaining)
+              </Text>
+            </View>
+            <TouchableOpacity style={styles.changePassBtn} onPress={() => { setMode('CHANGE_PASSWORD'); setModalVisible(true); }}>
+              <Text style={styles.changePassBtnText}>Change</Text>
+            </TouchableOpacity>
+          </Surface>
+        )}
+      </LinearGradient>
 
+      {/* 2. Middle Body Container (flex: 1; strictly bounded between Header & Footer without overlap) */}
+      <View style={{ flex: 1, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4, overflow: 'hidden' }}>
         {/* Suites Standalone Body Card Container */}
-        <Surface style={[styles.suitesCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} elevation={2}>
+        <Surface style={[styles.suitesCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, flex: 1 }]} elevation={2}>
           <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 4 }}>
             <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
 
@@ -436,7 +438,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
         </Surface>
 
         {/* Upcoming Tools Standalone Body Card Container */}
-        <Surface style={[styles.upcomingCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, marginBottom: 8 }]} elevation={2}>
+        <Surface style={[styles.upcomingCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, marginTop: 6, marginBottom: 2 }]} elevation={2}>
           <TouchableOpacity
             style={styles.upcomingHeaderBar}
             onPress={() => setUpcomingCollapsed(!upcomingCollapsed)}
@@ -490,9 +492,9 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
             </ScrollView>
           )}
         </Surface>
-      </ScrollView>
+      </View>
 
-      {/* Persistent Sticky Footer Card */}
+      {/* 3. Persistent Sticky Footer Card (Fixed at bottom) */}
       <Surface style={[styles.footerCard, { backgroundColor: activeTheme.bgDark, borderColor: activeTheme.border, height: 56 + Math.max(insets.bottom, 0), paddingBottom: Math.max(insets.bottom, 4) }]} elevation={5}>
         <TouchableOpacity style={[styles.burgerBtn, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} onPress={() => { setMode('VIEW'); setModalVisible(true); }} activeOpacity={0.7}>
           <MaterialCommunityIcons name="menu" size={24} color="#fff" />
