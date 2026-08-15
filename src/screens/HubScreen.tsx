@@ -92,6 +92,28 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
         'POPIA compliant data protection & atomic data purging.',
         'DSAR export tool for full candidate data portability.'
       ]
+    },
+    {
+      icon: 'car-back',
+      color: '#06b6d4',
+      title: 'Taxi 2 Interview Commute',
+      subtitle: 'Commute planning, safe route buffer estimates & taxi fare safety calculation.',
+      tag: 'COMMUTE',
+      highlights: [
+        'Calculates safe taxi fare routes & interview arrival buffers.',
+        'Real-time commuter safety alerts & route mapping.'
+      ]
+    },
+    {
+      icon: 'account-group',
+      color: '#ec4899',
+      title: 'Publish & Peer Review Queue',
+      subtitle: 'Peer review submission queue for candidate feedback & recruitment share links.',
+      tag: 'REVIEWS',
+      highlights: [
+        'Peer review submission queue for CV feedback & ratings.',
+        '14-day secure recruitment sharing links.'
+      ]
     }
   ];
 
@@ -408,7 +430,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                       ref={carouselRef}
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={styles.showcaseScrollContent}
+                      contentContainerStyle={[styles.showcaseScrollContent, { paddingHorizontal: 6 }]}
                       onMomentumScrollEnd={(e) => {
                         const x = e.nativeEvent.contentOffset.x;
                         const newIdx = Math.min(capabilitiesSlides.length - 1, Math.max(0, Math.floor((x + 60) / 180)));
