@@ -120,7 +120,18 @@ export interface PersonalDetails {
   addresses?: CompositeAddressItem[];
   identity?: { idNumber?: string; idMask?: boolean };
   licensing?: { Drivers?: string; DriversVisible?: boolean; Motorcycle?: string; MotorVisible?: boolean };
-  demographics?: { Nationality?: string; Gender?: string; Race?: string };
+  demographics?: {
+    Nationality?: string;
+    Gender?: string;
+    Race?: string;
+    Disability?: string;
+    MaritalStatus?: string;
+    nationality?: string;
+    gender?: string;
+    race?: string;
+    disability?: string;
+    maritalStatus?: string;
+  };
   legal?: { "Criminal Record"?: boolean; Details?: string };
   languages?: Array<{ Language: string; proficiency: string; visible?: boolean }>;
 }

@@ -329,7 +329,11 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
                 <Switch value={isVisible('pd_demo_marital')} onValueChange={() => toggleItemVisibility('pd_demo_marital', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
               </View>
               <View style={styles.itemRow}>
-                <Text style={[styles.itemTitle, { flex: 1 }]}>♿ Disability / Equity Status</Text>
+                <Text style={[styles.itemTitle, { flex: 1 }]}>🧬 Race</Text>
+                <Switch value={isVisible('pd_demo_race')} onValueChange={() => toggleItemVisibility('pd_demo_race', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+              </View>
+              <View style={styles.itemRow}>
+                <Text style={[styles.itemTitle, { flex: 1 }]}>♿ Disability Status</Text>
                 <Switch value={isVisible('pd_demo_disability')} onValueChange={() => toggleItemVisibility('pd_demo_disability', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
               </View>
             </Card.Content>
@@ -568,37 +572,37 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
                 </View>
               </View>
 
-              {/* Addresses Format Slide Switch */}
+              {/* Addresses Format Slide Switch (Left = Bulleted / Right = Comma) */}
               <View style={styles.itemRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13, fontWeight: 'bold' }}>Addresses Layout Format</Text>
-                  <Text style={{ fontSize: 10, color: '#64748b' }}>{uiSettings?.AddressFormat === 'multi' ? 'Multi-Line Block' : 'Single Line'}</Text>
+                  <Text style={{ fontSize: 10, color: '#64748b' }}>{uiSettings?.AddressFormat === 'comma' ? 'Comma Paragraph (Single Line)' : 'Bulleted List (Multi-Line)'}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={{ fontSize: 10, color: uiSettings?.AddressFormat !== 'multi' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.AddressFormat !== 'multi' ? 'bold' : 'normal' }}>Single Line</Text>
+                  <Text style={{ fontSize: 10, color: uiSettings?.AddressFormat !== 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.AddressFormat !== 'comma' ? 'bold' : 'normal' }}>Bulleted List</Text>
                   <Switch
-                    value={uiSettings?.AddressFormat === 'multi'}
-                    onValueChange={(val) => updateUiSettings({ ...uiSettings, AddressFormat: val ? 'multi' : 'single' })}
+                    value={uiSettings?.AddressFormat === 'comma'}
+                    onValueChange={(val) => updateUiSettings({ ...uiSettings, AddressFormat: val ? 'comma' : 'list' })}
                     trackColor={switchColors}
                   />
-                  <Text style={{ fontSize: 10, color: uiSettings?.AddressFormat === 'multi' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.AddressFormat === 'multi' ? 'bold' : 'normal' }}>Multi-Line</Text>
+                  <Text style={{ fontSize: 10, color: uiSettings?.AddressFormat === 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.AddressFormat === 'comma' ? 'bold' : 'normal' }}>Comma</Text>
                 </View>
               </View>
 
-              {/* Demographics Format Slide Switch */}
+              {/* Demographics Format Slide Switch (Left = Bulleted / Right = Comma) */}
               <View style={styles.itemRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13, fontWeight: 'bold' }}>Demographics Layout Format</Text>
-                  <Text style={{ fontSize: 10, color: '#64748b' }}>{uiSettings?.DemoFormat === 'grid' ? 'Key-Value Grid' : 'Inline Summary'}</Text>
+                  <Text style={{ fontSize: 10, color: '#64748b' }}>{uiSettings?.DemoFormat === 'comma' ? 'Comma Paragraph (Inline Pairs)' : 'Bulleted List (Key-Value Lines)'}</Text>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text style={{ fontSize: 10, color: uiSettings?.DemoFormat !== 'grid' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.DemoFormat !== 'grid' ? 'bold' : 'normal' }}>Inline</Text>
+                  <Text style={{ fontSize: 10, color: uiSettings?.DemoFormat !== 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.DemoFormat !== 'comma' ? 'bold' : 'normal' }}>Bulleted List</Text>
                   <Switch
-                    value={uiSettings?.DemoFormat === 'grid'}
-                    onValueChange={(val) => updateUiSettings({ ...uiSettings, DemoFormat: val ? 'grid' : 'inline' })}
+                    value={uiSettings?.DemoFormat === 'comma'}
+                    onValueChange={(val) => updateUiSettings({ ...uiSettings, DemoFormat: val ? 'comma' : 'list' })}
                     trackColor={switchColors}
                   />
-                  <Text style={{ fontSize: 10, color: uiSettings?.DemoFormat === 'grid' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.DemoFormat === 'grid' ? 'bold' : 'normal' }}>Grid</Text>
+                  <Text style={{ fontSize: 10, color: uiSettings?.DemoFormat === 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.DemoFormat === 'comma' ? 'bold' : 'normal' }}>Comma</Text>
                 </View>
               </View>
             </Card.Content>

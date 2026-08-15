@@ -466,9 +466,17 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             labelField="label"
                             valueField="value"
                             placeholder="Select Race"
-                            value={demographics.Race || 'Other'}
+                            value={demographics.Race || 'African'}
                             onChange={item => updateField('demographics', 'Race', item.value)}
                             disable={!isEditMode}
+                        />
+                        <TextInput
+                            label="Disability Status"
+                            placeholder="e.g. None, Physical, Visual, Hearing"
+                            value={demographics.Disability || demographics.disability || ''}
+                            onChangeText={(text) => updateField('demographics', 'Disability', text)}
+                            style={styles.input}
+                            editable={isEditMode}
                         />
                         <Text style={styles.label}>Nationality</Text>
                         <Dropdown
