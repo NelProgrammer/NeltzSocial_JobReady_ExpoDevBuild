@@ -55,7 +55,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
     const timer = setInterval(() => {
       setActiveSlideIndex((prev) => {
         const next = (prev + 1) % capabilitiesSlides.length;
-        carouselRef.current?.scrollTo({ x: 0, animated: true });
+        carouselRef.current?.scrollTo({ x: next * 140, animated: true });
         return next;
       });
     }, 5000);
@@ -371,38 +371,32 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                       }}
                       scrollEventThrottle={16}
                     >
-                      {(() => {
-                        const activeSlideItem = capabilitiesSlides[activeSlideIndex];
-                        const otherSlideItems = capabilitiesSlides.filter((_, i) => i !== activeSlideIndex);
-                        const displaySlides = [activeSlideItem, ...otherSlideItems];
-                        return displaySlides.map((slide, idx) => {
-                          const isActive = idx === 0;
-                          const origIdx = capabilitiesSlides.findIndex((s) => s.title === slide.title);
-                          return (
-                            <TouchableOpacity
-                              key={slide.title}
-                              onPress={() => {
-                                setActiveSlideIndex(origIdx);
-                                carouselRef.current?.scrollTo({ x: 0, animated: true });
-                              }}
-                              activeOpacity={0.8}
-                              style={[
-                                styles.showcasePill,
-                                { borderColor: isActive ? slide.color : 'rgba(255,255,255,0.1)' },
-                                isActive && { backgroundColor: `${slide.color}22`, maxWidth: 150 }
-                              ]}
+                      {capabilitiesSlides.map((slide, idx) => {
+                        const isActive = idx === activeSlideIndex;
+                        return (
+                          <TouchableOpacity
+                            key={idx}
+                            onPress={() => {
+                              setActiveSlideIndex(idx);
+                              carouselRef.current?.scrollTo({ x: idx * 140, animated: true });
+                            }}
+                            activeOpacity={0.8}
+                            style={[
+                              styles.showcasePill,
+                              { borderColor: isActive ? slide.color : 'rgba(255,255,255,0.1)' },
+                              isActive && { backgroundColor: `${slide.color}22`, maxWidth: 150 }
+                            ]}
+                          >
+                            <MaterialCommunityIcons name={slide.icon} size={13} color={isActive ? slide.color : '#94a3b8'} />
+                            <Text
+                              style={[styles.showcasePillText, isActive && { color: '#fff', fontWeight: 'bold', flexShrink: 1 }]}
+                              numberOfLines={isActive ? 2 : 1}
                             >
-                              <MaterialCommunityIcons name={slide.icon} size={13} color={isActive ? slide.color : '#94a3b8'} />
-                              <Text
-                                style={[styles.showcasePillText, isActive && { color: '#fff', fontWeight: 'bold', flexShrink: 1 }]}
-                                numberOfLines={isActive ? 2 : 1}
-                              >
-                                {slide.title}
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        });
-                      })()}
+                              {slide.title}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
                     </ScrollView>
 
                     {/* Carousel Pagination Dots */}
