@@ -40,6 +40,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(true);
+  const [upcomingCollapsed, setUpcomingCollapsed] = useState<boolean>(true);
   const [previewItem, setPreviewItem] = useState<{ title: string; subtitle: string; icon: string; color: string; gistParagraphs: string[] } | null>(null);
 
   const currentScrollTop = useRef(0);
@@ -307,39 +308,60 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
             <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
           </View>
 
-          {/* Upcoming Tools Section */}
+          {/* Upcoming Tools Section (Collapsible Accordion) */}
           <View style={[styles.menuContainer, { marginTop: 16 }]}>
-            <Text variant="titleLarge" style={styles.sectionTitle}>Upcoming Tools (Coming Soon)</Text>
-            <UpcomingAppCard
-              title="Publish for Review"
-              description="Expert HR & Manager resume evaluation."
-              icon="check-decagram"
-              color="#10b981"
-              onPress={() => navigation.navigate('PublishReview')}
-            />
-            <UpcomingAppCard
-              title="Travel to Interview"
-              description="Commute route planning & taxi safety."
-              icon="taxi"
-              color="#3b82f6"
-              onPress={() => navigation.navigate('Taxi')}
-            />
-            <UpcomingAppCard
-              title="Publish to Reviewers"
-              description="Human-reviewed talent pool for recruiters."
-              icon="account-group"
-              color="#a855f7"
-              onPress={() => setPreviewItem({
-                title: "Publish to Reviewers",
-                subtitle: "Human-reviewed talent pool for recruiters.",
-                icon: "account-group",
-                color: "#a855f7",
-                gistParagraphs: [
-                  "Allows recruitment agencies and vetted employers to request anonymized candidate qualifications and work experience data.",
-                  "Recruiters can filter for expert-reviewed and rated candidate profiles, drastically reducing recruitment overhead while protecting deserving candidates from flawed ATS algorithm filters."
-                ]
-              })}
-            />
+            <TouchableOpacity
+              style={styles.upcomingHeaderBar}
+              onPress={() => setUpcomingCollapsed(!upcomingCollapsed)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.upcomingHeaderLeft}>
+                <Text variant="titleLarge" style={styles.sectionTitleNoMargin}>Upcoming Tools</Text>
+                <View style={styles.upcomingBadge}>
+                  <Text style={styles.upcomingBadgeText}>3 Coming Soon</Text>
+                </View>
+              </View>
+              <MaterialCommunityIcons
+                name={upcomingCollapsed ? 'chevron-down' : 'chevron-up'}
+                size={22}
+                color="#94a3b8"
+              />
+            </TouchableOpacity>
+
+            {!upcomingCollapsed && (
+              <View style={{ marginTop: 12 }}>
+                <UpcomingAppCard
+                  title="Publish for Review"
+                  description="Expert HR & Manager resume evaluation."
+                  icon="check-decagram"
+                  color="#10b981"
+                  onPress={() => navigation.navigate('PublishReview')}
+                />
+                <UpcomingAppCard
+                  title="Travel to Interview"
+                  description="Commute route planning & taxi safety."
+                  icon="taxi"
+                  color="#3b82f6"
+                  onPress={() => navigation.navigate('Taxi')}
+                />
+                <UpcomingAppCard
+                  title="Publish to Reviewers"
+                  description="Human-reviewed talent pool for recruiters."
+                  icon="account-group"
+                  color="#a855f7"
+                  onPress={() => setPreviewItem({
+                    title: "Publish to Reviewers",
+                    subtitle: "Human-reviewed talent pool for recruiters.",
+                    icon: "account-group",
+                    color: "#a855f7",
+                    gistParagraphs: [
+                      "Allows recruitment agencies and vetted employers to request anonymized candidate qualifications and work experience data.",
+                      "Recruiters can filter for expert-reviewed and rated candidate profiles, drastically reducing recruitment overhead while protecting deserving candidates from flawed ATS algorithm filters."
+                    ]
+                  })}
+                />
+              </View>
+            )}
           </View>
         </Surface>
       </ScrollView>
@@ -835,6 +857,11 @@ const styles = StyleSheet.create({
   changePassBtnText: { color: '#0f172a', fontSize: 10, fontWeight: 'bold' },
   menuContainer: { marginTop: 20 },
   sectionTitle: { color: '#fff', fontWeight: 'bold', marginBottom: 12, fontSize: 18 },
+  upcomingHeaderBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0f172a', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: '#334155' },
+  upcomingHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  sectionTitleNoMargin: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  upcomingBadge: { backgroundColor: 'rgba(99, 102, 241, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(99, 102, 241, 0.3)' },
+  upcomingBadgeText: { color: '#818cf8', fontSize: 10, fontWeight: 'bold' },
   cardContainer: { marginBottom: 12 },
   appCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, backgroundColor: '#1e293b' },
   iconContainer: { width: 50, height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
