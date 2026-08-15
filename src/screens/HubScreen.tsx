@@ -350,14 +350,14 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
       >
         {/* Suites Standalone Body Card Container */}
         <Surface style={[styles.suitesCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border, flex: 1 }]} elevation={2}>
-          <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 4 }}>
+          <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1, paddingBottom: 4 }}>
             <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
 
-            {/* Suites Capabilities Carousel AppCard Tile (1ST IN LIST - Active Carousel Sync) */}
+            {/* Suites Capabilities Carousel AppCard Tile (1ST IN LIST - Active Carousel Sync & Dynamic Uncapped Flex Expansion) */}
             {(() => {
               const activeSlide = capabilitiesSlides[activeSlideIndex];
               return (
-                <View style={[styles.cardContainer, { flex: upcomingCollapsed ? 2 : 1, minHeight: 144, maxHeight: upcomingCollapsed ? 288 : 160, marginBottom: 12 }]}>
+                <View style={[styles.cardContainer, { flex: 1, minHeight: 144, marginBottom: 12 }]}>
                   <Surface style={[styles.appCard, { flex: 1, flexDirection: 'column', alignItems: 'stretch', justifyContent: 'space-between', padding: 14 }]} elevation={2}>
                     {/* Active Slide Header - Dynamically updates to show title, icon, color & tag badge of active carousel item */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
