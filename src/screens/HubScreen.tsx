@@ -304,32 +304,62 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
 
         {/* Suites Standalone Body Card Container */}
         <Surface style={[styles.suitesCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} elevation={2}>
-          <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 8 }}>
+          <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 4 }}>
+            {/* Dynamic Suites Functionality Showcase Subcard */}
+            <View style={styles.showcaseSubcard}>
+              <View style={styles.showcaseSubcardHeader}>
+                <MaterialCommunityIcons name="auto-fix" size={14} color="#818cf8" />
+                <Text style={styles.showcaseSubcardTitle}>SUITES CAPABILITIES & AUTOMATIONS</Text>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.showcaseScrollContent}
+              >
+                <View style={[styles.showcasePill, { borderColor: 'rgba(99, 102, 241, 0.4)' }]}>
+                  <MaterialCommunityIcons name="file-account" size={14} color="#818cf8" />
+                  <Text style={styles.showcasePillText}>Smart ATS CV Engine</Text>
+                </View>
+                <View style={[styles.showcasePill, { borderColor: 'rgba(245, 158, 11, 0.4)' }]}>
+                  <MaterialCommunityIcons name="file-pdf-box" size={14} color="#f59e0b" />
+                  <Text style={styles.showcasePillText}>Offline A4 PDF Merge & Split</Text>
+                </View>
+                <View style={[styles.showcasePill, { borderColor: 'rgba(16, 185, 129, 0.4)' }]}>
+                  <MaterialCommunityIcons name="flag" size={14} color="#10b981" />
+                  <Text style={styles.showcasePillText}>South African Context Formats</Text>
+                </View>
+                <View style={[styles.showcasePill, { borderColor: 'rgba(168, 85, 247, 0.4)' }]}>
+                  <MaterialCommunityIcons name="shield-lock-outline" size={14} color="#c084fc" />
+                  <Text style={styles.showcasePillText}>POPIA Client Isolation</Text>
+                </View>
+              </ScrollView>
+            </View>
+
             <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
             <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color={activeTheme.accent} onPress={() => navigation.navigate('Editor')} />
             <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
-
-            {/* Quick Action Feature Chips (Manages extra vertical space when available) */}
-            <View style={styles.quickActionsContainer}>
-              <Text style={styles.quickActionsTitle}>Quick Shortcuts & Status</Text>
-              <View style={styles.quickChipsRow}>
-                <TouchableOpacity style={styles.quickChipBtn} onPress={() => navigation.navigate('Editor')}>
-                  <MaterialCommunityIcons name="lightning-bolt" size={14} color="#f59e0b" />
-                  <Text style={styles.quickChipText}>Quick Edit</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.quickChipBtn} onPress={() => navigation.navigate('Preview')}>
-                  <MaterialCommunityIcons name="eye-outline" size={14} color="#3b82f6" />
-                  <Text style={styles.quickChipText}>Preview CV</Text>
-                </TouchableOpacity>
-
-                <View style={styles.quickChipStatus}>
-                  <MaterialCommunityIcons name="shield-check" size={14} color="#10b981" />
-                  <Text style={styles.quickChipStatusText}>100% Offline PDF</Text>
-                </View>
-              </View>
-            </View>
           </ScrollView>
+        </Surface>
+
+        {/* Standalone Quick Shortcuts Surface Card Container */}
+        <Surface style={[styles.quickShortcutsCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} elevation={2}>
+          <Text style={styles.quickShortcutsHeaderTitle}>QUICK SHORTCUTS & STATUS</Text>
+          <View style={styles.quickChipsRow}>
+            <TouchableOpacity style={styles.quickChipBtn} onPress={() => navigation.navigate('Editor')}>
+              <MaterialCommunityIcons name="lightning-bolt" size={14} color="#f59e0b" />
+              <Text style={styles.quickChipText}>Quick Edit</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.quickChipBtn} onPress={() => navigation.navigate('Preview')}>
+              <MaterialCommunityIcons name="eye-outline" size={14} color="#3b82f6" />
+              <Text style={styles.quickChipText}>Preview CV</Text>
+            </TouchableOpacity>
+
+            <View style={styles.quickChipStatus}>
+              <MaterialCommunityIcons name="shield-check" size={14} color="#10b981" />
+              <Text style={styles.quickChipStatusText}>100% Offline</Text>
+            </View>
+          </View>
         </Surface>
 
         {/* Upcoming Tools Standalone Body Card Container */}
@@ -894,6 +924,14 @@ const styles = StyleSheet.create({
   quickChipText: { color: '#e2e8f0', fontSize: 11, fontWeight: '600' },
   quickChipStatus: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(16, 185, 129, 0.1)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.25)', gap: 5 },
   quickChipStatusText: { color: '#34d399', fontSize: 11, fontWeight: '600' },
+  showcaseSubcard: { backgroundColor: '#0f172a', borderRadius: 14, borderWidth: 1, borderColor: '#334155', padding: 10, marginBottom: 14, flexShrink: 1 },
+  showcaseSubcardHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  showcaseSubcardTitle: { color: '#94a3b8', fontSize: 10, fontWeight: 'bold', letterSpacing: 0.5 },
+  showcaseScrollContent: { gap: 8, alignItems: 'center' },
+  showcasePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1e293b', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10, borderWidth: 1, gap: 6 },
+  showcasePillText: { color: '#e2e8f0', fontSize: 11, fontWeight: '600' },
+  quickShortcutsCardContainer: { backgroundColor: '#1e293b', borderRadius: 20, borderWidth: 1.5, borderColor: '#334155', padding: 12, marginTop: 10, marginBottom: 0 },
+  quickShortcutsHeaderTitle: { color: '#94a3b8', fontSize: 10, fontWeight: 'bold', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
   cardContainer: { marginBottom: 12 },
   appCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, backgroundColor: '#1e293b' },
   iconContainer: { width: 50, height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
