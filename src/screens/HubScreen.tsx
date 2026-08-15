@@ -306,11 +306,9 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
         <Surface style={[styles.suitesCardContainer, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} elevation={2}>
           <ScrollView nestedScrollEnabled style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 4 }}>
             <Text variant="titleLarge" style={styles.sectionTitle}>Suites</Text>
-            <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color={activeTheme.accent} onPress={() => navigation.navigate('Editor')} />
-            <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
 
-            {/* Suites Capabilities AppCard Tile */}
-            <View style={[styles.cardContainer, { flexShrink: 1, marginTop: 4 }]}>
+            {/* Suites Capabilities AppCard Tile (1ST IN LIST) */}
+            <View style={[styles.cardContainer, { flexShrink: 1, marginBottom: 12 }]}>
               <Surface style={[styles.appCard, { flexDirection: 'column', alignItems: 'stretch', padding: 12 }]} elevation={2}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                   <LinearGradient colors={['#818cf8', '#6366f1']} style={[styles.iconContainer, { width: 36, height: 36, borderRadius: 10, marginRight: 10 }]}>
@@ -322,8 +320,8 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                   </View>
                 </View>
 
-                {/* Horizontal Feature Badges */}
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.showcaseScrollContent}>
+                {/* Horizontal Feature Badges with Active Scroll Bar */}
+                <ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={styles.showcaseScrollContent}>
                   <View style={[styles.showcasePill, { borderColor: 'rgba(99, 102, 241, 0.4)' }]}>
                     <MaterialCommunityIcons name="file-account" size={13} color="#818cf8" />
                     <Text style={styles.showcasePillText}>Smart ATS CV Engine</Text>
@@ -343,6 +341,9 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                 </ScrollView>
               </Surface>
             </View>
+
+            <AppCard title="Resume Builder" description="Professional templates & South African context features." icon="file-document-edit" color={activeTheme.accent} onPress={() => navigation.navigate('Editor')} />
+            <AppCard title="PDF Workbench" description="Merge documents, split pages, and reorder files." icon="file-pdf-box" color="#f59e0b" onPress={() => navigation.navigate('PDFWorkbench')} />
           </ScrollView>
         </Surface>
 
