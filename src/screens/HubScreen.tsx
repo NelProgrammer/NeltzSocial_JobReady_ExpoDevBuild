@@ -52,8 +52,8 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
     {
       icon: 'file-account',
       color: '#818cf8',
-      title: 'Smart ATS Resume Engine',
-      subtitle: 'Auto-formats sections for ATS algorithms with South African context rules.',
+      title: 'ATS Optimization & SAQA Rules',
+      subtitle: 'Auto-formats master CV payload for ATS algorithms with SAQA date validation.',
       tag: 'CV BUILDER',
       highlights: [
         'Auto-structures master CV payload into ATS-friendly layouts.',
@@ -61,25 +61,36 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
       ]
     },
     {
+      icon: 'flag',
+      color: '#10b981',
+      title: 'Localized Industry Templates',
+      subtitle: 'Tailored templates for SA tech, mining, finance & trade industries.',
+      tag: 'CV BUILDER',
+      highlights: [
+        'Built-in RSA ID number format validation & YYYY-MM-DD date pickers.',
+        'Native support for SA IDs, driver licenses & references.'
+      ]
+    },
+    {
+      icon: 'file-document-edit',
+      color: '#6366f1',
+      title: 'Multi-Section Editor',
+      subtitle: '2-level collapsibles for Experience, Education, Skills & Projects.',
+      tag: 'CV BUILDER',
+      highlights: [
+        'Smooth 2-level collapsible section management.',
+        'Drag & reorder section items with instant preview.'
+      ]
+    },
+    {
       icon: 'file-pdf-box',
       color: '#f59e0b',
-      title: 'Offline A4 PDF Workbench',
+      title: 'Offline A4 Page Merger & Splitter',
       subtitle: 'Merge, split pages, & reorder A4 documents with 100% client-side isolation.',
       tag: 'PDF ENGINE',
       highlights: [
         '100% Client-side offline PDF page merging & splitting engine.',
-        'Zero server uploads — total privacy & data isolation.'
-      ]
-    },
-    {
-      icon: 'flag',
-      color: '#10b981',
-      title: 'SA Context & ID Verification',
-      subtitle: 'Built-in RSA ID number format validation & YYYY-MM-DD date pickers.',
-      tag: 'LOCALIZED',
-      highlights: [
-        'Tailored templates for SA tech, mining, finance & trade industries.',
-        'Native support for SA IDs, driver licenses & references.'
+        'Fast local processing with zero server dependencies.'
       ]
     },
     {
@@ -87,32 +98,21 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
       color: '#c084fc',
       title: 'POPIA Client Data Isolation',
       subtitle: 'Zero server upload for PDF engine; full user data ownership & DSAR support.',
-      tag: 'SECURITY',
+      tag: 'PDF ENGINE',
       highlights: [
-        'POPIA compliant data protection & atomic data purging.',
-        'DSAR export tool for full candidate data portability.'
+        'POPIA compliant data protection & local file safety.',
+        'Atomic data purging & full user data ownership.'
       ]
     },
     {
-      icon: 'car-back',
-      color: '#06b6d4',
-      title: 'Taxi 2 Interview Commute',
-      subtitle: 'Commute planning, safe route buffer estimates & taxi fare safety calculation.',
-      tag: 'COMMUTE',
+      icon: 'page-layout-body',
+      color: '#3b82f6',
+      title: 'A4 Page Previewer & Quality Check',
+      subtitle: 'Real-time portrait & landscape A4 previewer with page order controls.',
+      tag: 'PDF ENGINE',
       highlights: [
-        'Calculates safe taxi fare routes & interview arrival buffers.',
-        'Real-time commuter safety alerts & route mapping.'
-      ]
-    },
-    {
-      icon: 'account-group',
-      color: '#ec4899',
-      title: 'Publish & Peer Review Queue',
-      subtitle: 'Peer review submission queue for candidate feedback & recruitment share links.',
-      tag: 'REVIEWS',
-      highlights: [
-        'Peer review submission queue for CV feedback & ratings.',
-        '14-day secure recruitment sharing links.'
+        'Real-time portrait & landscape A4 page view.',
+        'Instant page order verification & layout preview.'
       ]
     }
   ];
