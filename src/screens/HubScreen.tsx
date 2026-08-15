@@ -12,6 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useThemeContext } from '../context/ThemeContext';
 
+import capabilitiesSlides from '../data/suitesCapabilitiesSlides.json';
+
 const { width } = Dimensions.get('window');
 
 type Navigation = NavigationProp<any>;
@@ -48,84 +50,15 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
   const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
   const carouselRef = useRef<ScrollView>(null);
 
-  const capabilitiesSlides = [
-    {
-      icon: 'file-account',
-      color: '#818cf8',
-      title: 'ATS Optimization & SAQA Rules',
-      subtitle: 'Auto-formats master CV payload for ATS algorithms with SAQA date validation.',
-      tag: 'CV BUILDER',
-      highlights: [
-        'Auto-structures master CV payload into ATS-friendly layouts.',
-        'Enforces YYYY-MM-DD dates & South African SAQA qualifications.'
-      ]
-    },
-    {
-      icon: 'flag',
-      color: '#10b981',
-      title: 'Localized Industry Templates',
-      subtitle: 'Tailored templates for SA tech, mining, finance & trade industries.',
-      tag: 'CV BUILDER',
-      highlights: [
-        'Built-in RSA ID number format validation & YYYY-MM-DD date pickers.',
-        'Native support for SA IDs, driver licenses & references.'
-      ]
-    },
-    {
-      icon: 'file-document-edit',
-      color: '#6366f1',
-      title: 'Multi-Section Editor',
-      subtitle: '2-level collapsibles for Experience, Education, Skills & Projects.',
-      tag: 'CV BUILDER',
-      highlights: [
-        'Smooth 2-level collapsible section management.',
-        'Drag & reorder section items with instant preview.'
-      ]
-    },
-    {
-      icon: 'file-pdf-box',
-      color: '#f59e0b',
-      title: 'Offline A4 Page Merger & Splitter',
-      subtitle: 'Merge, split pages, & reorder A4 documents with 100% client-side isolation.',
-      tag: 'PDF ENGINE',
-      highlights: [
-        '100% Client-side offline PDF page merging & splitting engine.',
-        'Fast local processing with zero server dependencies.'
-      ]
-    },
-    {
-      icon: 'shield-lock-outline',
-      color: '#c084fc',
-      title: 'POPIA Client Data Isolation',
-      subtitle: 'Zero server upload for PDF engine; full user data ownership & DSAR support.',
-      tag: 'PDF ENGINE',
-      highlights: [
-        'POPIA compliant data protection & local file safety.',
-        'Atomic data purging & full user data ownership.'
-      ]
-    },
-    {
-      icon: 'page-layout-body',
-      color: '#3b82f6',
-      title: 'A4 Page Previewer & Quality Check',
-      subtitle: 'Real-time portrait & landscape A4 previewer with page order controls.',
-      tag: 'PDF ENGINE',
-      highlights: [
-        'Real-time portrait & landscape A4 page view.',
-        'Instant page order verification & layout preview.'
-      ]
-    }
-  ];
-
-  // Auto-play Carousel Timer (advances active slide item every 7.0s for comfortable reading)
+  // Auto-play Carousel Timer (advances active slide item every 5.0s for uniform stay duration across all 6 slides)
   useEffect(() => {
     const timer = setInterval(() => {
       setActiveSlideIndex((prev) => {
         const next = (prev + 1) % capabilitiesSlides.length;
-        carouselRef.current?.scrollTo({ x: next * 180, animated: true });
+        carouselRef.current?.scrollTo({ x: next * 140, animated: true });
         return next;
       });
-    }, 7000);
+    }, 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -404,10 +337,10 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                       </LinearGradient>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'space-between' }}>
-                          <Text variant="titleMedium" style={[styles.cardTitle, { fontSize: 14, flex: 1 }]} numberOfLines={1}>
+                          <Text variant="titleMedium" style={[styles.cardTitle, { fontSize: 13, flex: 1, marginRight: 6 }]} numberOfLines={1}>
                             Automations: {activeSlide.title}
                           </Text>
-                          <View style={{ backgroundColor: `${activeSlide.color}22`, borderColor: `${activeSlide.color}55`, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                          <View style={{ backgroundColor: `${activeSlide.color}22`, borderColor: `${activeSlide.color}55`, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, flexShrink: 0 }}>
                             <Text style={{ color: activeSlide.color, fontSize: 9, fontWeight: 'bold' }}>{activeSlide.tag}</Text>
                           </View>
                         </View>
@@ -430,10 +363,10 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                       ref={carouselRef}
                       horizontal
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={[styles.showcaseScrollContent, { paddingHorizontal: 6 }]}
+                      contentContainerStyle={[styles.showcaseScrollContent, { paddingLeft: 12, paddingRight: 12 }]}
                       onMomentumScrollEnd={(e) => {
                         const x = e.nativeEvent.contentOffset.x;
-                        const newIdx = Math.min(capabilitiesSlides.length - 1, Math.max(0, Math.floor((x + 60) / 180)));
+                        const newIdx = Math.min(capabilitiesSlides.length - 1, Math.max(0, Math.round(x / 140)));
                         if (newIdx !== activeSlideIndex) setActiveSlideIndex(newIdx);
                       }}
                       scrollEventThrottle={16}
@@ -443,7 +376,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                           key={idx}
                           onPress={() => {
                             setActiveSlideIndex(idx);
-                            carouselRef.current?.scrollTo({ x: idx * 180, animated: true });
+                            carouselRef.current?.scrollTo({ x: idx * 140, animated: true });
                           }}
                           activeOpacity={0.8}
                           style={[

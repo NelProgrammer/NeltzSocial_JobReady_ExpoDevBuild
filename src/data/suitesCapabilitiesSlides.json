@@ -1,0 +1,74 @@
+[
+  {
+    "id": "cv-ats-saqa",
+    "icon": "file-account",
+    "color": "#818cf8",
+    "title": "ATS Optimization & SAQA Rules",
+    "subtitle": "Auto-formats master CV payload for ATS algorithms with SAQA date validation.",
+    "tag": "CV BUILDER",
+    "highlights": [
+      "Auto-structures master CV payload into ATS-friendly layouts.",
+      "Enforces YYYY-MM-DD dates & South African SAQA qualifications."
+    ]
+  },
+  {
+    "id": "pdf-offline-merger",
+    "icon": "file-pdf-box",
+    "color": "#f59e0b",
+    "title": "Offline A4 Page Merger & Splitter",
+    "subtitle": "Merge, split pages, & reorder A4 documents with 100% client-side isolation.",
+    "tag": "PDF ENGINE",
+    "highlights": [
+      "100% Client-side offline PDF page merging & splitting engine.",
+      "Fast local processing with zero server dependencies."
+    ]
+  },
+  {
+    "id": "cv-localized-templates",
+    "icon": "flag",
+    "color": "#10b981",
+    "title": "Localized Industry Templates",
+    "subtitle": "Tailored templates for SA tech, mining, finance & trade industries.",
+    "tag": "CV BUILDER",
+    "highlights": [
+      "Built-in RSA ID number format validation & YYYY-MM-DD date pickers.",
+      "Native support for SA IDs, driver licenses & references."
+    ]
+  },
+  {
+    "id": "pdf-popia-isolation",
+    "icon": "shield-lock-outline",
+    "color": "#c084fc",
+    "title": "POPIA Client Data Isolation",
+    "subtitle": "Zero server upload for PDF engine; full user data ownership & DSAR support.",
+    "tag": "PDF ENGINE",
+    "highlights": [
+      "POPIA compliant data protection & local file safety.",
+      "Atomic data purging & full user data ownership."
+    ]
+  },
+  {
+    "id": "cv-multisection-editor",
+    "icon": "file-document-edit",
+    "color": "#6366f1",
+    "title": "Multi-Section Editor",
+    "subtitle": "2-level collapsibles for Experience, Education, Skills & Projects.",
+    "tag": "CV BUILDER",
+    "highlights": [
+      "Smooth 2-level collapsible section management.",
+      "Drag & reorder section items with instant preview."
+    ]
+  },
+  {
+    "id": "pdf-a4-previewer",
+    "icon": "page-layout-body",
+    "color": "#3b82f6",
+    "title": "A4 Page Previewer & Quality Check",
+    "subtitle": "Real-time portrait & landscape A4 previewer with page order controls.",
+    "tag": "PDF ENGINE",
+    "highlights": [
+      "Real-time portrait & landscape A4 page view.",
+      "Instant page order verification & layout preview."
+    ]
+  }
+]
