@@ -54,28 +54,44 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
       color: '#818cf8',
       title: 'Smart ATS Resume Engine',
       subtitle: 'Auto-formats sections for ATS algorithms with South African context rules.',
-      tag: 'CV BUILDER'
+      tag: 'CV BUILDER',
+      highlights: [
+        'Auto-structures master CV payload into ATS-friendly layouts.',
+        'Enforces YYYY-MM-DD dates & South African SAQA qualifications.'
+      ]
     },
     {
       icon: 'file-pdf-box',
       color: '#f59e0b',
       title: 'Offline A4 PDF Workbench',
       subtitle: 'Merge, split pages, & reorder A4 documents with 100% client-side isolation.',
-      tag: 'PDF ENGINE'
+      tag: 'PDF ENGINE',
+      highlights: [
+        '100% Client-side offline PDF page merging & splitting engine.',
+        'Zero server uploads — total privacy & data isolation.'
+      ]
     },
     {
       icon: 'flag',
       color: '#10b981',
       title: 'SA Context & ID Verification',
       subtitle: 'Built-in RSA ID number format validation & YYYY-MM-DD date pickers.',
-      tag: 'LOCALIZED'
+      tag: 'LOCALIZED',
+      highlights: [
+        'Tailored templates for SA tech, mining, finance & trade industries.',
+        'Native support for SA IDs, driver licenses & references.'
+      ]
     },
     {
       icon: 'shield-lock-outline',
       color: '#c084fc',
       title: 'POPIA Client Data Isolation',
       subtitle: 'Zero server upload for PDF engine; full user data ownership & DSAR support.',
-      tag: 'SECURITY'
+      tag: 'SECURITY',
+      highlights: [
+        'POPIA compliant data protection & atomic data purging.',
+        'DSAR export tool for full candidate data portability.'
+      ]
     }
   ];
 
@@ -361,20 +377,30 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                   <Surface style={[styles.appCard, { flex: 1, flexDirection: 'column', alignItems: 'stretch', justifyContent: 'space-between', padding: 14 }]} elevation={2}>
                     {/* Active Slide Header - Dynamically updates to show title, icon, color & tag badge of active carousel item */}
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                      <LinearGradient colors={[activeSlide.color, `${activeSlide.color}99`]} style={[styles.iconContainer, { width: 36, height: 36, borderRadius: 10, marginRight: 10 }]}>
-                        <MaterialCommunityIcons name={activeSlide.icon} size={20} color="#fff" />
+                      <LinearGradient colors={[activeSlide.color, `${activeSlide.color}99`]} style={[styles.iconContainer, { width: 44, height: 44, borderRadius: 12, marginRight: 12 }]}>
+                        <MaterialCommunityIcons name={activeSlide.icon} size={24} color="#fff" />
                       </LinearGradient>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, justifyContent: 'space-between' }}>
-                          <Text variant="titleMedium" style={[styles.cardTitle, { fontSize: 13, flex: 1 }]} numberOfLines={1}>
+                          <Text variant="titleMedium" style={[styles.cardTitle, { fontSize: 14, flex: 1 }]} numberOfLines={1}>
                             Automations: {activeSlide.title}
                           </Text>
-                          <View style={{ backgroundColor: `${activeSlide.color}22`, borderColor: `${activeSlide.color}55`, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6 }}>
-                            <Text style={{ color: activeSlide.color, fontSize: 8, fontWeight: 'bold' }}>{activeSlide.tag}</Text>
+                          <View style={{ backgroundColor: `${activeSlide.color}22`, borderColor: `${activeSlide.color}55`, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                            <Text style={{ color: activeSlide.color, fontSize: 9, fontWeight: 'bold' }}>{activeSlide.tag}</Text>
                           </View>
                         </View>
-                        <Text variant="bodySmall" style={[styles.cardDesc, { fontSize: 10 }]} numberOfLines={1}>{activeSlide.subtitle}</Text>
+                        <Text variant="bodySmall" style={[styles.cardDesc, { fontSize: 11, color: '#94a3b8', marginTop: 2 }]} numberOfLines={2}>{activeSlide.subtitle}</Text>
                       </View>
+                    </View>
+
+                    {/* Rich Feature Highlights Inset Panel (Utilizes Available Space for Feature Context) */}
+                    <View style={{ backgroundColor: '#0f172a', borderRadius: 10, padding: 10, marginVertical: 6, borderWidth: 1, borderColor: '#334155', gap: 6, flex: 1, justifyContent: 'center' }}>
+                      {activeSlide.highlights.map((h: string, hIdx: number) => (
+                        <View key={hIdx} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                          <MaterialCommunityIcons name="check-circle-outline" size={14} color={activeSlide.color} />
+                          <Text style={{ color: '#cbd5e1', fontSize: 11, flex: 1 }} numberOfLines={2}>{h}</Text>
+                        </View>
+                      ))}
                     </View>
 
                     {/* Horizontal Feature Carousel with Pagination Dots */}
