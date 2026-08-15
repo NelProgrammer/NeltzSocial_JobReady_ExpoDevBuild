@@ -362,9 +362,8 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                     <ScrollView
                       ref={carouselRef}
                       horizontal
-                      centerContent={true}
                       showsHorizontalScrollIndicator={false}
-                      contentContainerStyle={[styles.showcaseScrollContent, { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 14 }]}
+                      contentContainerStyle={[styles.showcaseScrollContent, { paddingLeft: 0, paddingRight: 16 }]}
                       onMomentumScrollEnd={(e) => {
                         const x = e.nativeEvent.contentOffset.x;
                         const newIdx = Math.min(capabilitiesSlides.length - 1, Math.max(0, Math.round(x / 140)));
@@ -387,7 +386,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                           ]}
                         >
                           <MaterialCommunityIcons name={slide.icon} size={13} color={idx === activeSlideIndex ? slide.color : '#94a3b8'} />
-                          <Text style={[styles.showcasePillText, idx === activeSlideIndex && { color: '#fff', fontWeight: 'bold' }]}>{slide.title}</Text>
+                          <Text style={[styles.showcasePillText, idx === activeSlideIndex && { color: '#fff', fontWeight: 'bold' }]} numberOfLines={2}>{slide.title}</Text>
                         </TouchableOpacity>
                       ))}
                     </ScrollView>
