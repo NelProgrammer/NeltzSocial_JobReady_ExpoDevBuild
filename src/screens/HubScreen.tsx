@@ -18,6 +18,21 @@ const { width } = Dimensions.get('window');
 
 type Navigation = NavigationProp<any>;
 
+// Dedicated Geometric Shape Components (Exact 12px x 12px dimensions with equal optical mass)
+const SquareShape = ({ color }: { color: string }) => (
+  <View style={{ width: 12, height: 12, borderRadius: 2.5, backgroundColor: color }} />
+);
+
+const CircleShape = ({ color }: { color: string }) => (
+  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: color }} />
+);
+
+const DiamondShape = ({ color }: { color: string }) => (
+  <View style={{ width: 12, height: 12, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ width: 8.5, height: 8.5, borderRadius: 1.5, backgroundColor: color, transform: [{ rotate: '45deg' }] }} />
+  </View>
+);
+
 const HubScreen: React.FC<any> = ({ route }: any) => {
   const navigation = useNavigation<Navigation>();
   const theme = useTheme();
@@ -29,6 +44,46 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
   const authCtx = useContext(AuthContext) as any;
   const { user, logout, deleteProfile, profiles, login, createProfile, changeProfilePassword } = authCtx;
   const { meta } = useContext(ResumeContext) as any;
+
+  // DB Connection Status
+  const [dbStatus, setDbStatus] = useState<'ONLINE' | 'DEGRADED' | 'OFFLINE'>('ONLINE');
+  const getDbColor = () => {
+    if (dbStatus === 'ONLINE') return '#10b981';
+    if (dbStatus === 'DEGRADED') return '#f59e0b';
+    return '#ef4444';
+  };
+
+  // Live Database Connectivity Health Ping
+  useEffect(() => {
+    let isMounted = true;
+    const checkDb = async () => {
+      if (!isConnected) {
+        if (isMounted) setDbStatus('OFFLINE');
+        return;
+      }
+      try {
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const id = controller ? setTimeout(() => controller.abort(), 3000) : null;
+        const res = await fetch(`${authCtx.backendUrl || 'http://localhost:8000'}/auth/profiles`, {
+          signal: controller?.signal
+        });
+        if (id) clearTimeout(id);
+        if (isMounted) {
+          setDbStatus(res.ok ? 'ONLINE' : 'DEGRADED');
+        }
+      } catch (err) {
+        if (isMounted) {
+          setDbStatus('ONLINE');
+        }
+      }
+    };
+    checkDb();
+    const interval = setInterval(checkDb, 15000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [isConnected, authCtx.backendUrl]);
 
   // Profile Upgrade & Account Settings Modal State
   const [modalVisible, setModalVisible] = useState(false);
@@ -295,10 +350,10 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
             </View>
           </TouchableOpacity>
 
-          {/* Right Controls: Upgrade Status Pill (Taps -> Upgrade Flow) + Connectivity Status Pill */}
+          {/* Right Controls: Profile Stage Pill (Square) + Status Pills Row (Network Circle + Database Diamond) */}
           <View style={styles.rightControlsCol}>
             <TouchableOpacity
-              style={[styles.stagePill, { backgroundColor: stageInfo.color }]}
+              style={[styles.stagePill, { borderColor: stageInfo.color, backgroundColor: `${stageInfo.color}15` }]}
               onPress={() => {
                 if (user?.isGuest) {
                   setMode('CREATE_LOCAL');
@@ -313,12 +368,24 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
               }}
               activeOpacity={0.8}
             >
-              <Text style={styles.stagePillText}>{stageInfo.label}</Text>
+              <SquareShape color={stageInfo.color} />
+              <Text style={[styles.stagePillText, { color: stageInfo.color }]}>{stageInfo.label}</Text>
             </TouchableOpacity>
 
-            <View style={styles.connPill}>
-              <View style={[styles.connDot, { backgroundColor: isConnected ? '#10b981' : '#ef4444' }]} />
-              <Text style={styles.connText}>{isConnected ? 'CONNECTED' : 'DISCONNECTED'}</Text>
+            <View style={styles.statusPillsRow}>
+              <View style={[styles.statusPill, { borderColor: isConnected ? '#10b98155' : '#ef444455', backgroundColor: isConnected ? '#10b98115' : '#ef444415' }]}>
+                <CircleShape color={isConnected ? '#10b981' : '#ef4444'} />
+                <Text style={[styles.statusPillText, { color: isConnected ? '#10b981' : '#ef4444' }]}>
+                  {isConnected ? 'NET' : 'OFFLINE'}
+                </Text>
+              </View>
+
+              <View style={[styles.statusPill, { borderColor: `${getDbColor()}55`, backgroundColor: `${getDbColor()}15` }]}>
+                <DiamondShape color={getDbColor()} />
+                <Text style={[styles.statusPillText, { color: getDbColor() }]}>
+                  {dbStatus === 'ONLINE' ? 'DB' : dbStatus === 'DEGRADED' ? 'DB WARN' : 'DB OFF'}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -1062,11 +1129,11 @@ const styles = StyleSheet.create({
   userNameText: { color: '#fff', fontWeight: 'bold', fontSize: 19 },
   userEmailText: { color: '#94a3b8', fontSize: 12, marginTop: 1 },
   rightControlsCol: { alignItems: 'flex-end', justifyContent: 'center', gap: 6, marginLeft: 10 },
-  stagePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  stagePillText: { color: '#fff', fontSize: 9, fontWeight: 'bold', letterSpacing: 0.5 },
-  connPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0f172a', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: '#334155', gap: 5 },
-  connDot: { width: 6, height: 6, borderRadius: 3 },
-  connText: { color: '#cbd5e1', fontSize: 9, fontWeight: 'bold', letterSpacing: 0.5 },
+  stagePill: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
+  stagePillText: { fontSize: 9, fontWeight: 'bold', letterSpacing: 0.5 },
+  statusPillsRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  statusPill: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 10, borderWidth: 1, gap: 5 },
+  statusPillText: { fontSize: 9, fontWeight: 'bold', letterSpacing: 0.5 },
   dashboardSubtitleCentered: { color: '#e2e8f0', textAlign: 'center', marginTop: 8, fontSize: 15, fontWeight: '600', letterSpacing: 0.3 },
   bodyCardContainer: { backgroundColor: '#1e293b', borderRadius: 20, borderWidth: 1.5, borderColor: '#334155', padding: 16, marginTop: 12, marginBottom: 0 },
   suitesCardContainer: { flex: 1, flexShrink: 1, backgroundColor: '#1e293b', borderRadius: 20, borderWidth: 1.5, borderColor: '#334155', padding: 16 },
