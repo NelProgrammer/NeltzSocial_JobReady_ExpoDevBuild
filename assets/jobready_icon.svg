@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F19" />
+      <stop offset="50%" stop-color="#111827" />
+      <stop offset="100%" stop-color="#1E293B" />
+    </linearGradient>
+
+    <!-- Glass Glow -->
+    <radialGradient id="ambientGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.35" />
+      <stop offset="50%" stop-color="#38BDF8" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Briefcase Outer Gradient -->
+    <linearGradient id="caseGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#4338CA" />
+    </linearGradient>
+
+    <!-- Briefcase Flap / Accent Gradient -->
+    <linearGradient id="flapGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#818CF8" />
+    </linearGradient>
+
+    <!-- Rocket / Trajectory Arrow Gradient -->
+    <linearGradient id="rocketGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="50%" stop-color="#06B6D4" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+
+    <!-- Document Fold Gradient -->
+    <linearGradient id="docGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="60%" stop-color="#E2E8F0" />
+      <stop offset="100%" stop-color="#94A3B8" />
+    </linearGradient>
+
+    <!-- Gold Accent / Star Clasp -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="50%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+
+    <!-- Drop Shadows -->
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="32" flood-color="#000000" flood-opacity="0.65" />
+    </filter>
+
+    <filter id="glowEffect" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="18" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- 1. Base Squircle / Rounded Backdrop -->
+  <rect width="1024" height="1024" rx="228" fill="url(#bgGrad)" />
+  <rect width="1024" height="1024" rx="228" fill="url(#ambientGlow)" />
+  
+  <!-- Subtle Outer Rim Highlight -->
+  <rect x="2" y="2" width="1020" height="1020" rx="226" fill="none" stroke="url(#flapGrad)" stroke-width="4" stroke-opacity="0.3" />
+
+  <!-- 2. Central Symbol Container with Shadow -->
+  <g filter="url(#dropShadow)">
+    <!-- Document Backdrop (Resume Layer) -->
+    <g transform="translate(332, 230)">
+      <path d="M 0 40 
+               C 0 18, 18 0, 40 0 
+               L 260 0 
+               L 360 100 
+               L 360 480 
+               C 360 502, 342 520, 320 520 
+               L 40 520 
+               C 18 520, 0 502, 0 480 
+               Z" 
+            fill="url(#docGrad)" fill-opacity="0.95" />
+      <!-- Document Corner Fold -->
+      <path d="M 260 0 L 260 80 C 260 91, 269 100, 280 100 L 360 100 Z" fill="#CBD5E1" />
+      
+      <!-- Minimalist CV Text Lines -->
+      <rect x="50" y="80" width="160" height="16" rx="8" fill="#6366F1" fill-opacity="0.8" />
+      <rect x="50" y="120" width="260" height="12" rx="6" fill="#94A3B8" fill-opacity="0.5" />
+      <rect x="50" y="148" width="220" height="12" rx="6" fill="#94A3B8" fill-opacity="0.5" />
+      <rect x="50" y="176" width="180" height="12" rx="6" fill="#94A3B8" fill-opacity="0.5" />
+    </g>
+
+    <!-- Briefcase Handle -->
+    <path d="M 412 400 
+             C 412 330, 612 330, 612 400 
+             L 612 440 
+             L 572 440 
+             L 572 400 
+             C 572 365, 452 365, 452 400 
+             L 452 440 
+             L 412 440 Z" 
+          fill="url(#flapGrad)" />
+
+    <!-- Briefcase Main Body -->
+    <rect x="232" y="440" width="560" height="340" rx="44" fill="url(#caseGrad)" />
+    
+    <!-- Briefcase Upper Flap (Curved Cutout) -->
+    <path d="M 232 484 
+             C 232 460, 250 440, 276 440 
+             L 748 440 
+             C 774 440, 792 460, 792 484 
+             L 792 530 
+             C 792 550, 770 570, 740 570 
+             L 560 570 
+             C 540 590, 484 590, 464 570 
+             L 284 570 
+             C 254 570, 232 550, 232 530 Z" 
+          fill="url(#flapGrad)" fill-opacity="0.4" />
+
+    <!-- Sleek Corner Accents on Briefcase -->
+    <rect x="232" y="730" width="560" height="50" rx="25" fill="#312E81" fill-opacity="0.6" />
+    
+    <!-- Central Metallic Clasp -->
+    <rect x="472" y="540" width="80" height="56" rx="14" fill="url(#goldGrad)" />
+    <circle cx="512" cy="568" r="10" fill="#78350F" />
+
+    <!-- 3. Ascending Trajectory Star / Arrow (The Career Lift) -->
+    <g filter="url(#glowEffect)">
+      <path d="M 512 280 
+               L 570 410 
+               L 534 400 
+               L 534 500 
+               L 490 500 
+               L 490 400 
+               L 454 410 Z" 
+            fill="url(#rocketGrad)" />
+      
+      <!-- Glowing Energy Core -->
+      <circle cx="512" cy="320" r="12" fill="#FFFFFF" />
+    </g>
+
+    <!-- Speed / Success Trail Accents -->
+    <line x1="390" y1="410" x2="350" y2="440" stroke="#38BDF8" stroke-width="8" stroke-linecap="round" stroke-opacity="0.7" />
+    <line x1="634" y1="410" x2="674" y2="440" stroke="#10B981" stroke-width="8" stroke-linecap="round" stroke-opacity="0.7" />
+    
+    <!-- Dynamic Orbit Ring -->
+    <ellipse cx="512" cy="512" rx="360" ry="140" fill="none" stroke="url(#rocketGrad)" stroke-width="5" stroke-dasharray="24 16" stroke-opacity="0.4" transform="rotate(-20 512 512)" />
+  </g>
+</svg>
