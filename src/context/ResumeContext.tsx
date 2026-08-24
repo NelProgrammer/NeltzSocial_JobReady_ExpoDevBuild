@@ -4,6 +4,7 @@ import { ResumeContextType } from '../types/context';
 export const ResumeContext = createContext<ResumeContextType | null>(null);
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import NetInfo from '@react-native-community/netinfo';
 import { Storage } from '../utils/storage';
 import { AuthContext } from './AuthContext';
 
@@ -56,6 +57,8 @@ export const ResumeProvider = ({ children }) => {
         if (!profileId || !token) return;
         
         try {
+            const net = await NetInfo.fetch();
+            if (!net.isConnected) return;
             // 1. Fetch Server Manifest
             const manifestResponse = await fetchWithTimeout(`${backendUrl}/sync/manifest`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -205,6 +208,9 @@ export const ResumeProvider = ({ children }) => {
     const syncUiSettings = async (profileId, token) => {
         if (!profileId || !token) return;
         try {
+            const net = await NetInfo.fetch();
+            if (!net.isConnected) return;
+
             const manifestResponse = await fetchWithTimeout(`${backendUrl}/sync/ui_settings/manifest`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             }, 5000);
@@ -305,6 +311,9 @@ export const ResumeProvider = ({ children }) => {
     const syncTimestamps = async (profileId, token, resumeId, timestampItems = []) => {
         if (!profileId || !token || !resumeId) return;
         try {
+            const net = await NetInfo.fetch();
+            if (!net.isConnected) return;
+
             if (timestampItems.length > 0) {
                 await fetchWithTimeout(`${backendUrl}/sync/timestamps/push`, {
                     method: 'POST',

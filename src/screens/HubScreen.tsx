@@ -73,7 +73,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
         }
       } catch (err) {
         if (isMounted) {
-          setDbStatus('ONLINE');
+          setDbStatus('OFFLINE');
         }
       }
     };

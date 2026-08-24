@@ -64,12 +64,68 @@ export const AuthProvider = ({ children }) => {
     lastLogin: Date.now(),
   });
 
+  // Background profile synchronization with server (Non-blocking)
+  const syncRemoteProfilesBackground = async (localProfiles) => {
+    try {
+      const response = await fetchWithTimeout(`${backendUrl}/auth/profiles`, {}, 3000);
+      if (response && response.ok) {
+        const serverProfiles = await response.json();
+        const currentLocal = (await Storage.get(Storage.KEYS.PROFILES)) || localProfiles || [];
+        const serverMap = new Map(serverProfiles.map((p: any) => [p.profile_id, p]));
+        const localMap = new Map(currentLocal.map((p: any) => [p.id, p]));
+        const mergedProfiles = [];
+
+        for (const s of serverProfiles) {
+          const local = localMap.get(s.profile_id);
+          if (local) {
+            mergedProfiles.push({
+              ...local,
+              email: s.email || local.email,
+              name: s.name || local.name,
+              accessToken: s.access_token || local.accessToken || null,
+            });
+          } else {
+            mergedProfiles.push({
+              id: s.profile_id,
+              name: s.name || deriveDisplayNameFromEmail(s.email) || 'Cloud User',
+              email: s.email || '',
+              accessToken: s.access_token || null,
+              created: new Date().toISOString(),
+              lastLogin: Date.now(),
+            });
+          }
+        }
+
+        for (const l of currentLocal) {
+          if (!serverMap.has(l.id)) {
+            mergedProfiles.push(l);
+          }
+        }
+
+        await Storage.set(Storage.KEYS.PROFILES, mergedProfiles);
+        setProfiles(mergedProfiles);
+
+        const currentActiveId = await Storage.get(Storage.KEYS.LAST_ACTIVE_ID);
+        if (currentActiveId) {
+          const updatedActive = mergedProfiles.find((p: any) => p.id === currentActiveId);
+          if (updatedActive) {
+            setUser(updatedActive);
+          }
+        }
+      }
+    } catch (apiErr: any) {
+      // Gracefully suppress network/offline errors during background sync
+      // App continues seamlessly in local/offline mode
+    }
+  };
+
   useEffect(() => {
     const initAuth = async () => {
+      let profilesArray = [];
       try {
-        // 1. Load Local Profiles
+        // 1. Load Local Profiles from AsyncStorage immediately
         const storedProfiles = await Storage.get(Storage.KEYS.PROFILES) || [];
-        let profilesArray = storedProfiles;
+        profilesArray = storedProfiles;
         
         // Bootstrap a guest profile if empty and NOT in test environment
         if (profilesArray.length === 0 && process.env.NODE_ENV !== 'test') {
@@ -79,53 +135,7 @@ export const AuthProvider = ({ children }) => {
         }
         setProfiles(profilesArray);
 
-        // 2. Fetch & Sync with Server Profiles
-        try {
-          const response = await fetchWithTimeout(`${backendUrl}/auth/profiles`, {}, 3000);
-          if (response.ok) {
-            const serverProfiles = await response.json();
-            const serverMap = new Map(serverProfiles.map(p => [p.profile_id, p]));
-            const localMap = new Map(profilesArray.map(p => [p.id, p]));
-            const mergedProfiles = [];
-
-            for (const s of serverProfiles) {
-              const local = localMap.get(s.profile_id);
-              if (local) {
-                mergedProfiles.push({
-                  ...local,
-                  email: s.email || local.email,
-                  name: s.name || local.name
-                });
-              } else {
-                mergedProfiles.push({
-                  id: s.profile_id,
-                  name: s.name || deriveDisplayNameFromEmail(s.email) || 'Cloud User',
-                  email: s.email || '',
-                  accessToken: s.access_token || null,
-                  created: new Date().toISOString(),
-                  lastLogin: Date.now()
-                });
-              }
-            }
-
-            for (const l of profilesArray) {
-              if (!serverMap.has(l.id)) {
-                mergedProfiles.push({
-                  ...l,
-                  accessToken: null
-                });
-              }
-            }
-
-            await Storage.set(Storage.KEYS.PROFILES, mergedProfiles);
-            setProfiles(mergedProfiles);
-            profilesArray = mergedProfiles;
-          }
-        } catch (apiErr) {
-          console.warn('[Auth] Remote profile sync failed, falling back to local storage:', apiErr.message);
-        }
-
-        // 3. Check for Active Session
+        // 2. Check for Active Session from AsyncStorage
         const lastActiveId = await Storage.get(Storage.KEYS.LAST_ACTIVE_ID);
         let activeProfile = profilesArray.find(p => p.id === lastActiveId);
 
@@ -156,7 +166,13 @@ export const AuthProvider = ({ children }) => {
       } catch (e) {
         console.error('[Auth] Initialization failed', e);
       } finally {
+        // Unlock UI immediately for 0ms blocking offline startup
         setLoading(false);
+      }
+
+      // 3. Initiate Non-blocking Background Profile Sync with server (if not in test mode)
+      if (process.env.NODE_ENV !== 'test') {
+        syncRemoteProfilesBackground(profilesArray);
       }
     };
     initAuth();
