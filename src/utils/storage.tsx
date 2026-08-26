@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
     PROFILE_LIST_VISIBLE_COUNT: 'neltz_jobready_profile_list_visible_count',
     PROFILE_LIST_SCROLL_SPEED: 'neltz_jobready_profile_list_scroll_speed',
     APP_COLOR_THEME: 'neltz_jobready_app_color_theme',
+    CUSTOM_BACKEND_URL: 'neltz_jobready_custom_backend_url',
 };
 
 export const Storage = {

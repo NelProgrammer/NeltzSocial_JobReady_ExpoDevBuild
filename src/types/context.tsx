@@ -17,6 +17,7 @@ export interface AuthContextType {
   changeProfilePassword: (profileId: string, newPassword: string) => Promise<void>;
   renameProfile: (profileId: string, newName: string) => Promise<void>;
   backendUrl: string;
+  setCustomBackendUrl?: (url: string) => Promise<void>;
 }
 
 export interface ResumeContextType {

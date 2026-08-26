@@ -42,8 +42,16 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
   const netInfo = useNetInfo();
   const isConnected = netInfo.isConnected ?? true;
   const authCtx = useContext(AuthContext) as any;
-  const { user, logout, deleteProfile, profiles, login, createProfile, changeProfilePassword } = authCtx;
+  const { user, logout, deleteProfile, profiles, login, createProfile, changeProfilePassword, backendUrl, setCustomBackendUrl } = authCtx;
   const { meta } = useContext(ResumeContext) as any;
+
+  // Sync Server URL Settings State
+  const [serverUrlInput, setServerUrlInput] = useState(backendUrl || '');
+  const [serverSaveMessage, setServerSaveMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (backendUrl) setServerUrlInput(backendUrl);
+  }, [backendUrl]);
 
   // DB Connection Status
   const [dbStatus, setDbStatus] = useState<'ONLINE' | 'DEGRADED' | 'OFFLINE'>('ONLINE');
@@ -790,6 +798,111 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                       )}
                     </TouchableOpacity>
                   ))}
+                </View>
+
+                {/* Backend Synchronization Server Configuration */}
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13, marginTop: 16, marginBottom: 4 }}>
+                  Backend Sync Server:
+                </Text>
+                <Text style={{ color: '#94a3b8', fontSize: 11, marginBottom: 8 }}>
+                  Select or enter endpoint for cloud & profile synchronization:
+                </Text>
+
+                {/* Active Server Status Pill */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: activeTheme.bgDark, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: activeTheme.border, marginBottom: 8 }}>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={{ color: '#94a3b8', fontSize: 10, fontWeight: 'bold' }}>ACTIVE SERVER</Text>
+                    <Text style={{ color: '#fff', fontSize: 11, fontFamily: 'monospace' }} numberOfLines={1}>
+                      {backendUrl || 'Default'}
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: `${getDbColor()}22`, borderColor: `${getDbColor()}55`, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: getDbColor() }} />
+                    <Text style={{ color: getDbColor(), fontSize: 10, fontWeight: 'bold' }}>{dbStatus}</Text>
+                  </View>
+                </View>
+
+                {/* Quick Preset Buttons */}
+                <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8 }}>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      const cloudUrl = 'https://api.jobready.neltzsocial.com';
+                      setServerUrlInput(cloudUrl);
+                      if (setCustomBackendUrl) await setCustomBackendUrl(cloudUrl);
+                      setServerSaveMessage('Set to Cloud Production!');
+                      setTimeout(() => setServerSaveMessage(null), 3000);
+                    }}
+                    style={{ flex: 1, backgroundColor: activeTheme.bgDark, borderColor: (backendUrl || '').includes('jobready.neltzsocial.com') ? activeTheme.accent : activeTheme.border, borderWidth: 1, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 8, alignItems: 'center' }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>🌐 Cloud</Text>
+                    <Text style={{ color: '#94a3b8', fontSize: 9 }}>Production</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={async () => {
+                      const lanUrl = 'http://192.168.100.101:8000';
+                      setServerUrlInput(lanUrl);
+                      if (setCustomBackendUrl) await setCustomBackendUrl(lanUrl);
+                      setServerSaveMessage('Set to Local LAN!');
+                      setTimeout(() => setServerSaveMessage(null), 3000);
+                    }}
+                    style={{ flex: 1, backgroundColor: activeTheme.bgDark, borderColor: (backendUrl || '').includes('192.168.') ? activeTheme.accent : activeTheme.border, borderWidth: 1, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 8, alignItems: 'center' }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>🏠 Local LAN</Text>
+                    <Text style={{ color: '#94a3b8', fontSize: 9 }}>192.168.100.101</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Custom URL Input & Save Button */}
+                <View style={{ marginBottom: 6 }}>
+                  <TextInput
+                    label="Custom Server URL"
+                    value={serverUrlInput}
+                    onChangeText={setServerUrlInput}
+                    mode="outlined"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    placeholder="https://api.example.com or http://ip:8000"
+                    style={{ fontSize: 12, backgroundColor: activeTheme.bgDark }}
+                    textColor="#fff"
+                  />
+                  <View style={{ flexDirection: 'row', gap: 6, marginTop: 6 }}>
+                    <Button
+                      mode="contained"
+                      buttonColor={activeTheme.accent}
+                      style={{ flex: 1, borderRadius: 8 }}
+                      labelStyle={{ fontSize: 11, fontWeight: 'bold' }}
+                      onPress={async () => {
+                        if (setCustomBackendUrl) {
+                          await setCustomBackendUrl(serverUrlInput);
+                          setServerSaveMessage('Saved & Updated!');
+                          setTimeout(() => setServerSaveMessage(null), 3000);
+                        }
+                      }}
+                    >
+                      Apply & Connect
+                    </Button>
+                    <Button
+                      mode="outlined"
+                      textColor="#94a3b8"
+                      style={{ borderColor: activeTheme.border, borderRadius: 8 }}
+                      labelStyle={{ fontSize: 11 }}
+                      onPress={async () => {
+                        if (setCustomBackendUrl) {
+                          await setCustomBackendUrl('');
+                          setServerSaveMessage('Reset to Default!');
+                          setTimeout(() => setServerSaveMessage(null), 3000);
+                        }
+                      }}
+                    >
+                      Reset Default
+                    </Button>
+                  </View>
+                  {serverSaveMessage && (
+                    <Text style={{ color: '#10b981', fontSize: 11, marginTop: 4, textAlign: 'center', fontWeight: 'bold' }}>
+                      ✓ {serverSaveMessage}
+                    </Text>
+                  )}
                 </View>
 
                 <Button

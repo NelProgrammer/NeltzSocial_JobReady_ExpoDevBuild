@@ -51,7 +51,37 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [backendUrl] = useState(() => getBackendUrl());
+  const [backendUrl, setBackendUrl] = useState(() => getBackendUrl());
+
+  // Load custom backend URL override from Storage on startup if present
+  useEffect(() => {
+    const loadCustomUrl = async () => {
+      try {
+        const savedCustomUrl = await Storage.get(Storage.KEYS.CUSTOM_BACKEND_URL);
+        if (savedCustomUrl && typeof savedCustomUrl === 'string' && savedCustomUrl.trim()) {
+          setBackendUrl(savedCustomUrl.trim());
+        }
+      } catch (e) {
+        console.error('[Auth] Failed to load custom backend URL', e);
+      }
+    };
+    loadCustomUrl();
+  }, []);
+
+  const setCustomBackendUrl = async (url: string) => {
+    try {
+      const cleanUrl = (url || '').trim().replace(/\/+$/, '');
+      if (!cleanUrl) {
+        await Storage.remove(Storage.KEYS.CUSTOM_BACKEND_URL);
+        setBackendUrl(getBackendUrl());
+      } else {
+        await Storage.set(Storage.KEYS.CUSTOM_BACKEND_URL, cleanUrl);
+        setBackendUrl(cleanUrl);
+      }
+    } catch (e) {
+      console.error('[Auth] Failed to set custom backend URL', e);
+    }
+  };
 
   const createGuestPlaceholder = () => ({
     id: 'guest_' + Date.now(),
@@ -414,6 +444,7 @@ export const AuthProvider = ({ children }) => {
         changeProfilePassword,
         renameProfile,
         backendUrl,
+        setCustomBackendUrl,
       }}>
       {children}
     </AuthContext.Provider>
