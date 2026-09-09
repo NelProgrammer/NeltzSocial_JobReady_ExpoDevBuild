@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "NeltzSocial - JobReady",
-    "slug": "neltzsocial-jobready",
+    "name": "JobReady Offline",
+    "slug": "neltzsocial-jobready-offline",
     "version": "1.0.1",
     "orientation": "portrait",
     "newArchEnabled": true,
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.neltzsocial.jobready"
+      "bundleIdentifier": "com.neltzsocial.jobready.offline"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +23,7 @@
       },
       "softwareKeyboardLayoutMode": "pan",
       "edgeToEdgeEnabled": false,
-      "package": "com.neltzsocial.jobready"
+      "package": "com.neltzsocial.jobready.offline"
     },
     "web": {
       "favicon": "./assets/favicon.png"
