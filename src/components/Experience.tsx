@@ -1,8 +1,10 @@
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { TextInput, Button, Card, IconButton, Divider, Text, Portal, Dialog } from 'react-native-paper';
+import { Button, Card, IconButton, Divider, Text, Portal, Dialog } from 'react-native-paper';
+import { ThemedTextInput as TextInput } from './common/ThemedTextInput';
 import { ResumeContext } from '../context/ResumeContext';
+import { useThemeContext } from '../context/ThemeContext';
 import { WorkExperience, SubExperienceItem } from '../types/resume';
 
 interface ExperienceProps {
@@ -15,6 +17,7 @@ const MONTH_NAMES = [
 ];
 
 const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
+    const { theme } = useThemeContext();
     const context = useContext(ResumeContext) as any;
     const resumeData = context?.resumeData;
     const updateResumeData = context?.updateResumeData;
@@ -33,7 +36,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
     if (!resumeData || !updateResumeData) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                <Text style={{ color: '#64748b' }}>Loading Experience...</Text>
+                <Text style={{ color: theme.textSecondary }}>Loading Experience...</Text>
             </View>
         );
     }
@@ -202,17 +205,18 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
         const csvSummary = getCsvSummary(subItems);
 
         return (
-            <Card style={styles.subCard}>
+            <Card style={[styles.subCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                 <Card.Title
                     title={`${label} (${subItems.length})`}
                     subtitle={`CSV: ${csvSummary}`}
                     subtitleNumberOfLines={2}
-                    titleStyle={{ fontSize: 13, fontWeight: 'bold' }}
-                    subtitleStyle={{ fontSize: 11, color: '#64748b' }}
-                    left={(props) => <IconButton {...props} icon={iconName} size={20} />}
+                    titleStyle={{ fontSize: 13, fontWeight: 'bold', color: theme.textPrimary }}
+                    subtitleStyle={{ fontSize: 11, color: theme.textSecondary }}
+                    left={(props) => <IconButton {...props} icon={iconName} iconColor={theme.accent} size={20} />}
                     right={(props) => (
                         <IconButton
                             {...props}
+                            iconColor={theme.textSecondary}
                             icon={isSubExpanded ? "chevron-up" : "chevron-down"}
                             onPress={() => toggleSubSection(subKey)}
                         />
@@ -220,9 +224,9 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                 />
                 {isSubExpanded && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {subItems.length === 0 ? (
-                            <Text style={styles.emptySubText}>No {label.toLowerCase()} items added yet.</Text>
+                            <Text style={[styles.emptySubText, { color: theme.textSecondary }]}>No {label.toLowerCase()} items added yet.</Text>
                         ) : (
                             subItems.map((item, subIndex) => (
                                 <View key={item.id || subIndex} style={styles.subItemRow}>
@@ -238,7 +242,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                     {isEditMode && (
                                         <IconButton
                                             icon="delete"
-                                            iconColor="#B00020"
+                                            iconColor="#ef4444"
                                             size={20}
                                             onPress={() => removeSubItem(expIndex, field, prefix, subIndex)}
                                         />
@@ -251,11 +255,12 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                 mode="outlined"
                                 icon="plus"
                                 compact
+                                textColor={theme.accent}
                                 onPress={() => {
                                     addSubItem(expIndex, field, prefix);
                                     setExpandedSubSections(prev => ({ ...prev, [subKey]: true }));
                                 }}
-                                style={styles.subAddBtn}
+                                style={[styles.subAddBtn, { borderColor: theme.accent }]}
                             >
                                 Add {label} Item
                             </Button>
@@ -279,28 +284,31 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
             keyboardShouldPersistTaps="handled"
         >
             {experiences.length === 0 ? (
-                <View style={styles.emptyCard}>
-                    <Text style={styles.emptyText}>ℹ️ No work experience added yet. Tap "+ Add Job Experience" to get started.</Text>
+                <View style={[styles.emptyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }]}>
+                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>ℹ️ No work experience added yet. Tap "+ Add Job Experience" to get started.</Text>
                 </View>
             ) : (
                 experiences.map((exp, index) => {
                     const isJobExpanded = expandedIndex === index;
 
                     return (
-                        <Card key={exp.id || index} style={styles.card}>
+                        <Card key={exp.id || index} style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                             <Card.Title
                                 title={exp.Organization || "New Job"}
                                 subtitle={exp.Role ? `${exp.Role}${exp.Department ? ` (${exp.Department})` : ''}` : "Role & Organization"}
-                                left={(props) => <IconButton {...props} icon="briefcase-clock-outline" size={24} />}
+                                titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                                subtitleStyle={{ color: theme.textSecondary }}
+                                left={(props) => <IconButton {...props} icon="briefcase-clock-outline" iconColor={theme.accent} size={24} />}
                                 right={(props) => (
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <IconButton
                                             {...props}
+                                            iconColor={theme.textSecondary}
                                             icon={isJobExpanded ? "chevron-up" : "chevron-down"}
                                             onPress={() => setExpandedIndex(isJobExpanded ? null : index)}
                                         />
                                         {isEditMode && (
-                                            <IconButton {...props} icon="delete" onPress={() => removeExperience(index)} />
+                                            <IconButton {...props} icon="delete" iconColor="#ef4444" onPress={() => removeExperience(index)} />
                                         )}
                                     </View>
                                 )}
@@ -308,7 +316,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
 
                             {isJobExpanded && (
                                 <Card.Content>
-                                    <Divider style={{ marginBottom: 10 }} />
+                                    <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                                     <TextInput
                                         label="Organization / Company"
                                         value={exp.Organization || ''}
@@ -393,15 +401,15 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
             )}
 
             {isEditMode && (
-                <Button mode="contained" icon="plus" onPress={addExperience} style={styles.addBtn}>
+                <Button mode="contained" icon="plus" onPress={addExperience} style={[styles.addBtn, { backgroundColor: theme.accent }]}>
                     Add Job Experience
                 </Button>
             )}
 
             {/* Full Date Calendar Picker Dialog (YYYY-MM-DD) */}
             <Portal>
-                <Dialog visible={pickerVisible} onDismiss={() => setPickerVisible(false)}>
-                    <Dialog.Title style={{ textAlign: 'center', fontSize: 16 }}>
+                <Dialog visible={pickerVisible} onDismiss={() => setPickerVisible(false)} style={{ backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }}>
+                    <Dialog.Title style={{ textAlign: 'center', fontSize: 16, color: theme.textPrimary }}>
                         📅 Select {pickerField}
                     </Dialog.Title>
                     <Dialog.Content>
@@ -413,8 +421,8 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                     if (pickerExpIndex !== null) updateExpField(pickerExpIndex, pickerField, 'Present');
                                     setPickerVisible(false);
                                 }}
-                                style={{ marginBottom: 15, backgroundColor: '#e0e7ff' }}
-                                labelStyle={{ color: '#1e40af', fontWeight: 'bold' }}
+                                style={{ marginBottom: 15, backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }}
+                                labelStyle={{ color: theme.accent, fontWeight: 'bold' }}
                             >
                                 📍 Present (Current Job)
                             </Button>
@@ -422,7 +430,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
 
                         {/* Month & Year Navigation Header */}
                         <View style={styles.yearSelectorRow}>
-                            <IconButton icon="chevron-left" size={24} onPress={() => {
+                            <IconButton icon="chevron-left" iconColor={theme.textPrimary} size={24} onPress={() => {
                                 if (selectedMonth === 1) {
                                     setSelectedMonth(12);
                                     setSelectedYear(y => y - 1);
@@ -430,10 +438,10 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                     setSelectedMonth(m => m - 1);
                                 }
                             }} />
-                            <Text style={styles.yearText}>
+                            <Text style={[styles.yearText, { color: theme.textPrimary }]}>
                                 {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
                             </Text>
-                            <IconButton icon="chevron-right" size={24} onPress={() => {
+                            <IconButton icon="chevron-right" iconColor={theme.textPrimary} size={24} onPress={() => {
                                 if (selectedMonth === 12) {
                                     setSelectedMonth(1);
                                     setSelectedYear(y => y + 1);
@@ -445,12 +453,12 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
 
                         {/* Year Step Control */}
                         <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10 }}>
-                            <Button compact mode="text" onPress={() => setSelectedYear(y => y - 1)}>‹ Year {selectedYear - 1}</Button>
-                            <Button compact mode="text" onPress={() => setSelectedYear(y => y + 1)}>Year {selectedYear + 1} ›</Button>
+                            <Button compact mode="text" textColor={theme.accent} onPress={() => setSelectedYear(y => y - 1)}>‹ Year {selectedYear - 1}</Button>
+                            <Button compact mode="text" textColor={theme.accent} onPress={() => setSelectedYear(y => y + 1)}>Year {selectedYear + 1} ›</Button>
                         </View>
 
                         {/* Day Grid (1 - 31) */}
-                        <Text style={styles.monthGridTitle}>Select Day (YYYY-MM-DD):</Text>
+                        <Text style={[styles.monthGridTitle, { color: theme.textSecondary }]}>Select Day (YYYY-MM-DD):</Text>
                         <View style={styles.dayGrid}>
                             {dayArray.map(dayNum => {
                                 const isSelected = selectedDay === dayNum;
@@ -458,14 +466,18 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                                 return (
                                     <TouchableOpacity
                                         key={dayNum}
-                                        style={[styles.dayItem, isSelected && styles.selectedDayItem]}
+                                        style={[
+                                            styles.dayItem,
+                                            { backgroundColor: theme.bgDark, borderColor: theme.border },
+                                            isSelected && { backgroundColor: theme.accent, borderColor: theme.accent }
+                                        ]}
                                         onPress={() => {
                                             setSelectedDay(dayNum);
                                             applyFullDate(selectedYear, selectedMonth, dayNum);
                                         }}
                                         activeOpacity={0.7}
                                     >
-                                        <Text style={[styles.dayText, isSelected && styles.selectedDayText]}>
+                                        <Text style={[styles.dayText, { color: theme.textPrimary }, isSelected && styles.selectedDayText]}>
                                             {dayNum}
                                         </Text>
                                     </TouchableOpacity>
@@ -474,7 +486,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
                         </View>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setPickerVisible(false)}>Cancel</Button>
+                        <Button textColor={theme.accent} onPress={() => setPickerVisible(false)}>Cancel</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
@@ -484,22 +496,21 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    card: { marginBottom: 15, backgroundColor: '#ffffff' },
-    subCard: { marginBottom: 10, borderWidth: 1, borderColor: '#cbd5e1', backgroundColor: '#f8fafc' },
-    input: { marginBottom: 8, backgroundColor: '#ffffff' },
+    card: { marginBottom: 15, borderRadius: 8 },
+    subCard: { marginBottom: 10, borderWidth: 1, borderRadius: 8 },
+    input: { marginBottom: 8 },
     subItemRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-    subAddBtn: { marginTop: 6, alignSelf: 'flex-start', borderColor: '#6200EE' },
-    addBtn: { marginTop: 10, paddingVertical: 4, backgroundColor: '#6200EE', alignSelf: 'flex-start' },
-    emptyCard: { padding: 14, backgroundColor: '#f0f4f8', borderRadius: 8, marginBottom: 15 },
-    emptyText: { color: '#64748b', fontSize: 13 },
-    emptySubText: { color: '#94a3b8', fontSize: 12, fontStyle: 'italic', marginBottom: 8 },
+    subAddBtn: { marginTop: 6, alignSelf: 'flex-start' },
+    addBtn: { marginTop: 10, paddingVertical: 4, alignSelf: 'flex-start' },
+    emptyCard: { padding: 14, borderRadius: 8, marginBottom: 15 },
+    emptyText: { fontSize: 13 },
+    emptySubText: { fontSize: 12, fontStyle: 'italic', marginBottom: 8 },
     yearSelectorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-    yearText: { fontSize: 17, fontWeight: 'bold', marginHorizontal: 10, color: '#1e293b' },
-    monthGridTitle: { fontSize: 12, fontWeight: 'bold', color: '#64748b', marginBottom: 8, textAlign: 'center' },
+    yearText: { fontSize: 17, fontWeight: 'bold', marginHorizontal: 10 },
+    monthGridTitle: { fontSize: 12, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' },
     dayGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' },
-    dayItem: { width: '13%', margin: '0.6%', paddingVertical: 8, borderRadius: 6, borderWidth: 1, borderColor: '#cbd5e1', alignItems: 'center', backgroundColor: '#f8fafc' },
-    selectedDayItem: { backgroundColor: '#6200EE', borderColor: '#6200EE' },
-    dayText: { fontSize: 12, fontWeight: 'bold', color: '#334155' },
+    dayItem: { width: '13%', margin: '0.6%', paddingVertical: 8, borderRadius: 6, borderWidth: 1, alignItems: 'center' },
+    dayText: { fontSize: 12, fontWeight: 'bold' },
     selectedDayText: { color: '#ffffff' }
 });
 

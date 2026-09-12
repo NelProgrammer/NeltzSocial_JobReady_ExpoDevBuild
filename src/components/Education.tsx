@@ -1,9 +1,11 @@
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { TextInput, Button, Card, IconButton, Divider, Text, Portal, Dialog, Switch } from 'react-native-paper';
-import { Dropdown } from 'react-native-element-dropdown';
+import { Button, Card, IconButton, Divider, Text, Portal, Dialog, Switch } from 'react-native-paper';
+import { ThemedTextInput as TextInput } from './common/ThemedTextInput';
+import { ThemedDropdown as Dropdown } from './common/ThemedDropdown';
 import { ResumeContext } from '../context/ResumeContext';
+import { useThemeContext } from '../context/ThemeContext';
 import { ProfessionalCertItem, TechCertItem, RegulatoryCertItem, TertiaryEducationItem } from '../types/resume';
 
 interface EducationProps {
@@ -28,6 +30,7 @@ const SUBJECTS_STREAMS = [
 
 const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     const { resumeData, updateResumeData } = useContext(ResumeContext) as any;
+    const { theme } = useThemeContext();
     
     // Level 1 category expand states
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
@@ -51,8 +54,8 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
 
     if (!resumeData || !updateResumeData) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                <Text style={{ color: '#64748b' }}>Loading Education details...</Text>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: theme.bgDark }}>
+                <Text style={{ color: theme.textSecondary }}>Loading Education details...</Text>
             </View>
         );
     }
@@ -302,17 +305,18 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
             keyboardShouldPersistTaps="handled"
         >
             {/* Category 1: High School */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                 <Card.Title
                     title="🏫 High School"
                     subtitle={highschool["Province Department"] ? `CSV: ${highschool["Province Department"]} (${highschool["Year Completed"] || ''})` : 'CSV: No high school added'}
                     subtitleNumberOfLines={2}
-                    titleStyle={styles.catTitle}
-                    subtitleStyle={styles.catSubtitle}
-                    left={(props) => <IconButton {...props} icon="school" />}
+                    titleStyle={[styles.catTitle, { color: theme.textPrimary }]}
+                    subtitleStyle={[styles.catSubtitle, { color: theme.textSecondary }]}
+                    left={(props) => <IconButton {...props} icon="school" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton
                             {...props}
+                            iconColor={theme.textSecondary}
                             icon={expandedCategories.highschool ? "chevron-up" : "chevron-down"}
                             onPress={() => toggleCategory('highschool')}
                         />
@@ -320,7 +324,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                 />
                 {expandedCategories.highschool && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         <TextInput
                             label="School Name / Province"
                             value={highschool["Province Department"] || ''}
@@ -328,7 +332,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                             style={styles.input}
                             editable={isEditMode}
                         />
-                        <Text style={styles.label}>Subjects Stream</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Subjects Stream</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
@@ -372,17 +376,18 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
             </Card>
 
             {/* Category 2: Tertiary Education */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                 <Card.Title
                     title={`🎓 Tertiary / Higher Education (${tertiary.length})`}
                     subtitle={getCsvSummary(tertiary, 'Qualification Name')}
                     subtitleNumberOfLines={2}
-                    titleStyle={styles.catTitle}
-                    subtitleStyle={styles.catSubtitle}
-                    left={(props) => <IconButton {...props} icon="file-certificate-outline" />}
+                    titleStyle={[styles.catTitle, { color: theme.textPrimary }]}
+                    subtitleStyle={[styles.catSubtitle, { color: theme.textSecondary }]}
+                    left={(props) => <IconButton {...props} icon="file-certificate-outline" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton
                             {...props}
+                            iconColor={theme.textSecondary}
                             icon={expandedCategories.tertiary ? "chevron-up" : "chevron-down"}
                             onPress={() => toggleCategory('tertiary')}
                         />
@@ -390,29 +395,31 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                 />
                 {expandedCategories.tertiary && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {tertiary.length === 0 ? (
-                            <View style={styles.emptyCard}><Text style={styles.emptyText}>ℹ️ No tertiary qualifications added yet.</Text></View>
+                            <View style={[styles.emptyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }]}>
+                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>ℹ️ No tertiary qualifications added yet.</Text>
+                            </View>
                         ) : (
                             tertiary.map((qual, index) => {
                                 const itemId = qual.id || `tert_${index}`;
                                 const isItemExpanded = !!expandedItems[itemId];
 
                                 return (
-                                    <View key={itemId} style={styles.subItemBox}>
+                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
-                                            <Text style={styles.subItemTitle}>
+                                            <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {qual["Qualification Name"] ? `🎓 ${qual["Qualification Name"]}` : `Qualification #${index + 1}`}
                                                 {qual.Institution ? ` (${qual.Institution})` : ''}
                                             </Text>
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <IconButton icon={isItemExpanded ? "chevron-up" : "chevron-down"} size={20} onPress={() => toggleItem(itemId)} />
-                                                {isEditMode && <IconButton icon="delete" iconColor="#B00020" size={20} onPress={() => removeTertiary(index)} />}
+                                                <IconButton icon={isItemExpanded ? "chevron-up" : "chevron-down"} iconColor={theme.textSecondary} size={20} onPress={() => toggleItem(itemId)} />
+                                                {isEditMode && <IconButton icon="delete" iconColor="#ef4444" size={20} onPress={() => removeTertiary(index)} />}
                                             </View>
                                         </View>
                                         {isItemExpanded && (
                                             <View style={{ marginTop: 8 }}>
-                                                <Divider style={{ marginBottom: 8 }} />
+                                                <Divider style={{ marginBottom: 8, backgroundColor: theme.border }} />
                                                 <TextInput label="Qualification Name" value={qual["Qualification Name"] || ''} onChangeText={(text) => updateTertiary(index, 'Qualification Name', text)} style={styles.input} editable={isEditMode} />
                                                 <TextInput label="Institution" value={qual["Institution"] || ''} onChangeText={(text) => updateTertiary(index, 'Institution', text)} style={styles.input} editable={isEditMode} />
                                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -437,7 +444,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                                     <TextInput label="NQF Level (Optional)" value={String(qual["NQF Level"] || '')} onChangeText={(text) => updateTertiary(index, 'NQF Level', text)} style={[styles.input, { flex: 1, marginLeft: 5 }]} editable={isEditMode} />
                                                 </View>
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 6, paddingHorizontal: 4 }}>
-                                                    <Text>Qualification Completed?</Text>
+                                                    <Text style={{ color: theme.textPrimary }}>Qualification Completed?</Text>
                                                     <Switch
                                                         value={qual.Completed !== false}
                                                         onValueChange={(val) => updateTertiary(index, 'Completed', val)}
@@ -461,23 +468,24 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                 );
                             })
                         )}
-                        {isEditMode && <Button mode="contained" icon="plus" onPress={addTertiary} style={styles.addBtn}>Add Tertiary Qualification</Button>}
+                        {isEditMode && <Button mode="contained" icon="plus" onPress={addTertiary} style={[styles.addBtn, { backgroundColor: theme.accent }]}>Add Tertiary Qualification</Button>}
                     </Card.Content>
                 )}
             </Card>
 
             {/* Category 3: Professional Certifications */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                 <Card.Title
                     title={`📜 Professional Certifications (${profCerts.length})`}
                     subtitle={getCsvSummary(profCerts, 'name')}
                     subtitleNumberOfLines={2}
-                    titleStyle={styles.catTitle}
-                    subtitleStyle={styles.catSubtitle}
-                    left={(props) => <IconButton {...props} icon="badge-account-horizontal-outline" />}
+                    titleStyle={[styles.catTitle, { color: theme.textPrimary }]}
+                    subtitleStyle={[styles.catSubtitle, { color: theme.textSecondary }]}
+                    left={(props) => <IconButton {...props} icon="badge-account-horizontal-outline" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton
                             {...props}
+                            iconColor={theme.textSecondary}
                             icon={expandedCategories.professional ? "chevron-up" : "chevron-down"}
                             onPress={() => toggleCategory('professional')}
                         />
@@ -485,29 +493,31 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                 />
                 {expandedCategories.professional && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {profCerts.length === 0 ? (
-                            <View style={styles.emptyCard}><Text style={styles.emptyText}>ℹ️ No professional certifications added yet.</Text></View>
+                            <View style={[styles.emptyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }]}>
+                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>ℹ️ No professional certifications added yet.</Text>
+                            </View>
                         ) : (
                             profCerts.map((cert, index) => {
                                 const itemId = cert.id || `prof_${index}`;
                                 const isItemExpanded = !!expandedItems[itemId];
 
                                 return (
-                                    <View key={itemId} style={styles.subItemBox}>
+                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
-                                            <Text style={styles.subItemTitle}>
+                                            <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {cert.name ? `📜 ${cert.name}` : `Certification #${index + 1}`}
                                                 {cert.institution ? ` (${cert.institution})` : ''}
                                             </Text>
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <IconButton icon={isItemExpanded ? "chevron-up" : "chevron-down"} size={20} onPress={() => toggleItem(itemId)} />
-                                                {isEditMode && <IconButton icon="delete" iconColor="#B00020" size={20} onPress={() => removeProfCert(index)} />}
+                                                <IconButton icon={isItemExpanded ? "chevron-up" : "chevron-down"} iconColor={theme.textSecondary} size={20} onPress={() => toggleItem(itemId)} />
+                                                {isEditMode && <IconButton icon="delete" iconColor="#ef4444" size={20} onPress={() => removeProfCert(index)} />}
                                             </View>
                                         </View>
                                         {isItemExpanded && (
                                             <View style={{ marginTop: 8 }}>
-                                                <Divider style={{ marginBottom: 8 }} />
+                                                <Divider style={{ marginBottom: 8, backgroundColor: theme.border }} />
                                                 <TextInput label="Certification Name" value={cert.name || ''} onChangeText={(text) => updateProfCert(index, 'name', text)} style={styles.input} editable={isEditMode} />
                                                 <TextInput label="Issuing Body / Institution" value={cert.institution || ''} onChangeText={(text) => updateProfCert(index, 'institution', text)} style={styles.input} editable={isEditMode} />
                                                 
@@ -555,23 +565,24 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                 );
                             })
                         )}
-                        {isEditMode && <Button mode="contained" icon="plus" onPress={addProfCert} style={styles.addBtn}>Add Professional Certification</Button>}
+                        {isEditMode && <Button mode="contained" icon="plus" onPress={addProfCert} style={[styles.addBtn, { backgroundColor: theme.accent }]}>Add Professional Certification</Button>}
                     </Card.Content>
                 )}
             </Card>
 
             {/* Category 4: Technical Certifications */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                 <Card.Title
                     title={`💻 Technical Certifications (${techCerts.length})`}
                     subtitle={getCsvSummary(techCerts, 'name')}
                     subtitleNumberOfLines={2}
-                    titleStyle={styles.catTitle}
-                    subtitleStyle={styles.catSubtitle}
-                    left={(props) => <IconButton {...props} icon="laptop-account" />}
+                    titleStyle={[styles.catTitle, { color: theme.textPrimary }]}
+                    subtitleStyle={[styles.catSubtitle, { color: theme.textSecondary }]}
+                    left={(props) => <IconButton {...props} icon="laptop-account" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton
                             {...props}
+                            iconColor={theme.textSecondary}
                             icon={expandedCategories.technical ? "chevron-up" : "chevron-down"}
                             onPress={() => toggleCategory('technical')}
                         />
@@ -579,29 +590,31 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                 />
                 {expandedCategories.technical && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {techCerts.length === 0 ? (
-                            <View style={styles.emptyCard}><Text style={styles.emptyText}>ℹ️ No technical certifications added yet (e.g. AWS, Cisco CCNA, CompTIA).</Text></View>
+                            <View style={[styles.emptyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }]}>
+                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>ℹ️ No technical certifications added yet (e.g. AWS, Cisco CCNA, CompTIA).</Text>
+                            </View>
                         ) : (
                             techCerts.map((cert, index) => {
                                 const itemId = cert.id || `tech_cert_${index}`;
                                 const isItemExpanded = !!expandedItems[itemId];
 
                                 return (
-                                    <View key={itemId} style={styles.subItemBox}>
+                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
-                                            <Text style={styles.subItemTitle}>
+                                            <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {cert.name ? `💻 ${cert.name}` : `Technical Cert #${index + 1}`}
                                                 {cert.provider ? ` (${cert.provider})` : ''}
                                             </Text>
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <IconButton icon={isItemExpanded ? "chevron-up" : "chevron-down"} size={20} onPress={() => toggleItem(itemId)} />
-                                                {isEditMode && <IconButton icon="delete" iconColor="#B00020" size={20} onPress={() => removeTechCert(index)} />}
+                                                <IconButton icon={isItemExpanded ? "chevron-up" : "chevron-down"} iconColor={theme.textSecondary} size={20} onPress={() => toggleItem(itemId)} />
+                                                {isEditMode && <IconButton icon="delete" iconColor="#ef4444" size={20} onPress={() => removeTechCert(index)} />}
                                             </View>
                                         </View>
                                         {isItemExpanded && (
                                             <View style={{ marginTop: 8 }}>
-                                                <Divider style={{ marginBottom: 8 }} />
+                                                <Divider style={{ marginBottom: 8, backgroundColor: theme.border }} />
                                                 <TextInput label="Technical Cert Name (e.g. AWS Architect, CCNA)" value={cert.name || ''} onChangeText={(text) => updateTechCert(index, 'name', text)} style={styles.input} editable={isEditMode} />
                                                 <TextInput label="Provider / Platform (e.g. AWS, Cisco, Microsoft)" value={cert.provider || ''} onChangeText={(text) => updateTechCert(index, 'provider', text)} style={styles.input} editable={isEditMode} />
                                                 
@@ -632,23 +645,24 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                 );
                             })
                         )}
-                        {isEditMode && <Button mode="contained" icon="plus" onPress={addTechCert} style={styles.addBtn}>Add Technical Certification</Button>}
+                        {isEditMode && <Button mode="contained" icon="plus" onPress={addTechCert} style={[styles.addBtn, { backgroundColor: theme.accent }]}>Add Technical Certification</Button>}
                     </Card.Content>
                 )}
             </Card>
 
             {/* Category 5: Regulatory & Statutory Certifications */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                 <Card.Title
                     title={`⚖️ Regulatory & Statutory Certifications (${regCerts.length})`}
                     subtitle={getCsvSummary(regCerts, 'name')}
                     subtitleNumberOfLines={2}
-                    titleStyle={styles.catTitle}
-                    subtitleStyle={styles.catSubtitle}
-                    left={(props) => <IconButton {...props} icon="scale-balance" />}
+                    titleStyle={[styles.catTitle, { color: theme.textPrimary }]}
+                    subtitleStyle={[styles.catSubtitle, { color: theme.textSecondary }]}
+                    left={(props) => <IconButton {...props} icon="scale-balance" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton
                             {...props}
+                            iconColor={theme.textSecondary}
                             icon={expandedCategories.regulatory ? "chevron-up" : "chevron-down"}
                             onPress={() => toggleCategory('regulatory')}
                         />
@@ -656,29 +670,31 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                 />
                 {expandedCategories.regulatory && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {regCerts.length === 0 ? (
-                            <View style={styles.emptyCard}><Text style={styles.emptyText}>ℹ️ No regulatory/statutory certs added yet (e.g. FSCA RE5, OHS Safety Officer, PSIRA).</Text></View>
+                            <View style={[styles.emptyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }]}>
+                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>ℹ️ No regulatory/statutory certs added yet (e.g. FSCA RE5, OHS Safety Officer, PSIRA).</Text>
+                            </View>
                         ) : (
                             regCerts.map((cert, index) => {
                                 const itemId = cert.id || `reg_${index}`;
                                 const isItemExpanded = !!expandedItems[itemId];
 
                                 return (
-                                    <View key={itemId} style={styles.subItemBox}>
+                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
-                                            <Text style={styles.subItemTitle}>
+                                            <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {cert.name ? `⚖️ ${cert.name}` : `Regulatory Cert #${index + 1}`}
                                                 {cert.issuingBody ? ` (${cert.issuingBody})` : ''}
                                             </Text>
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                                <IconButton icon={isItemExpanded ? "chevron-up" : "chevron-down"} size={20} onPress={() => toggleItem(itemId)} />
-                                                {isEditMode && <IconButton icon="delete" iconColor="#B00020" size={20} onPress={() => removeRegCert(index)} />}
+                                                <IconButton icon={isItemExpanded ? "chevron-up" : "chevron-down"} iconColor={theme.textSecondary} size={20} onPress={() => toggleItem(itemId)} />
+                                                {isEditMode && <IconButton icon="delete" iconColor="#ef4444" size={20} onPress={() => removeRegCert(index)} />}
                                             </View>
                                         </View>
                                         {isItemExpanded && (
                                             <View style={{ marginTop: 8 }}>
-                                                <Divider style={{ marginBottom: 8 }} />
+                                                <Divider style={{ marginBottom: 8, backgroundColor: theme.border }} />
                                                 <TextInput label="Regulatory Cert / License Name" value={cert.name || ''} onChangeText={(text) => updateRegCert(index, 'name', text)} style={styles.input} editable={isEditMode} />
                                                 <TextInput label="Issuing Authority / Statutory Body" value={cert.issuingBody || ''} onChangeText={(text) => updateRegCert(index, 'issuingBody', text)} style={styles.input} editable={isEditMode} />
                                                 <TextInput label="License / Practice Number" value={cert.licenseNumber || ''} onChangeText={(text) => updateRegCert(index, 'licenseNumber', text)} style={styles.input} editable={isEditMode} />
@@ -726,21 +742,21 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                 );
                             })
                         )}
-                        {isEditMode && <Button mode="contained" icon="plus" onPress={addRegCert} style={styles.addBtn}>Add Regulatory Certification</Button>}
+                        {isEditMode && <Button mode="contained" icon="plus" onPress={addRegCert} style={[styles.addBtn, { backgroundColor: theme.accent }]}>Add Regulatory Certification</Button>}
                     </Card.Content>
                 )}
             </Card>
 
             {/* Full Date Calendar Picker Dialog (YYYY-MM-DD) */}
             <Portal>
-                <Dialog visible={pickerVisible} onDismiss={() => setPickerVisible(false)}>
-                    <Dialog.Title style={{ textAlign: 'center', fontSize: 16 }}>
+                <Dialog visible={pickerVisible} onDismiss={() => setPickerVisible(false)} style={{ backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }}>
+                    <Dialog.Title style={{ textAlign: 'center', fontSize: 16, color: theme.textPrimary }}>
                         📅 {pickerTitle}
                     </Dialog.Title>
                     <Dialog.Content>
                         {/* Month & Year Navigation Header */}
                         <View style={styles.yearSelectorRow}>
-                            <IconButton icon="chevron-left" size={24} onPress={() => {
+                            <IconButton icon="chevron-left" iconColor={theme.textPrimary} size={24} onPress={() => {
                                 if (selectedMonth === 1) {
                                     setSelectedMonth(12);
                                     setSelectedYear(y => y - 1);
@@ -748,10 +764,10 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                     setSelectedMonth(m => m - 1);
                                 }
                             }} />
-                            <Text style={styles.yearText}>
+                            <Text style={[styles.yearText, { color: theme.textPrimary }]}>
                                 {MONTH_NAMES[selectedMonth - 1]} {selectedYear}
                             </Text>
-                            <IconButton icon="chevron-right" size={24} onPress={() => {
+                            <IconButton icon="chevron-right" iconColor={theme.textPrimary} size={24} onPress={() => {
                                 if (selectedMonth === 12) {
                                     setSelectedMonth(1);
                                     setSelectedYear(y => y + 1);
@@ -763,12 +779,12 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
 
                         {/* Year Step Control */}
                         <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 10 }}>
-                            <Button compact mode="text" onPress={() => setSelectedYear(y => y - 1)}>‹ Year {selectedYear - 1}</Button>
-                            <Button compact mode="text" onPress={() => setSelectedYear(y => y + 1)}>Year {selectedYear + 1} ›</Button>
+                            <Button compact mode="text" textColor={theme.accent} onPress={() => setSelectedYear(y => y - 1)}>‹ Year {selectedYear - 1}</Button>
+                            <Button compact mode="text" textColor={theme.accent} onPress={() => setSelectedYear(y => y + 1)}>Year {selectedYear + 1} ›</Button>
                         </View>
 
                         {/* Day Grid (1 - 31) */}
-                        <Text style={styles.monthGridTitle}>Select Day (YYYY-MM-DD):</Text>
+                        <Text style={[styles.monthGridTitle, { color: theme.textSecondary }]}>Select Day (YYYY-MM-DD):</Text>
                         <View style={styles.dayGrid}>
                             {dayArray.map(dayNum => {
                                 const isSelected = selectedDay === dayNum;
@@ -776,14 +792,18 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                 return (
                                     <TouchableOpacity
                                         key={dayNum}
-                                        style={[styles.dayItem, isSelected && styles.selectedDayItem]}
+                                        style={[
+                                            styles.dayItem,
+                                            { backgroundColor: theme.bgDark, borderColor: theme.border },
+                                            isSelected && { backgroundColor: theme.accent, borderColor: theme.accent }
+                                        ]}
                                         onPress={() => {
                                             setSelectedDay(dayNum);
                                             applyFullDate(selectedYear, selectedMonth, dayNum);
                                         }}
                                         activeOpacity={0.7}
                                     >
-                                        <Text style={[styles.dayText, isSelected && styles.selectedDayText]}>
+                                        <Text style={[styles.dayText, { color: theme.textPrimary }, isSelected && styles.selectedDayText]}>
                                             {dayNum}
                                         </Text>
                                     </TouchableOpacity>
@@ -792,7 +812,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                         </View>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setPickerVisible(false)}>Cancel</Button>
+                        <Button textColor={theme.accent} onPress={() => setPickerVisible(false)}>Cancel</Button>
                     </Dialog.Actions>
                 </Dialog>
             </Portal>
@@ -803,26 +823,25 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    card: { marginBottom: 14, backgroundColor: '#ffffff' },
+    card: { marginBottom: 14, borderRadius: 8 },
     catTitle: { fontSize: 14, fontWeight: 'bold' },
-    catSubtitle: { fontSize: 11, color: '#64748b' },
-    subItemBox: { borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, padding: 10, marginBottom: 10, backgroundColor: '#f8fafc' },
+    catSubtitle: { fontSize: 11 },
+    subItemBox: { borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 10 },
     subItemHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    subItemTitle: { fontWeight: 'bold', fontSize: 13, color: '#1e293b', flex: 1 },
-    input: { marginBottom: 8, backgroundColor: '#ffffff' },
-    addBtn: { marginTop: 8, alignSelf: 'flex-start', backgroundColor: '#6200EE' },
-    emptyCard: { padding: 12, backgroundColor: '#f0f4f8', borderRadius: 8, marginBottom: 10 },
-    emptyText: { color: '#64748b', fontSize: 13 },
+    subItemTitle: { fontWeight: 'bold', fontSize: 13, flex: 1 },
+    input: { marginBottom: 8 },
+    addBtn: { marginTop: 8, alignSelf: 'flex-start' },
+    emptyCard: { padding: 12, borderRadius: 8, marginBottom: 10 },
+    emptyText: { fontSize: 13 },
     yearSelectorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 4 },
-    yearText: { fontSize: 17, fontWeight: 'bold', marginHorizontal: 10, color: '#1e293b' },
-    monthGridTitle: { fontSize: 12, fontWeight: 'bold', color: '#64748b', marginBottom: 8, textAlign: 'center' },
+    yearText: { fontSize: 17, fontWeight: 'bold', marginHorizontal: 10 },
+    monthGridTitle: { fontSize: 12, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' },
     dayGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' },
-    dayItem: { width: '13%', margin: '0.6%', paddingVertical: 8, borderRadius: 6, borderWidth: 1, borderColor: '#cbd5e1', alignItems: 'center', backgroundColor: '#f8fafc' },
-    selectedDayItem: { backgroundColor: '#6200EE', borderColor: '#6200EE' },
-    dayText: { fontSize: 12, fontWeight: 'bold', color: '#334155' },
+    dayItem: { width: '13%', margin: '0.6%', paddingVertical: 8, borderRadius: 6, borderWidth: 1, alignItems: 'center' },
+    dayText: { fontSize: 12, fontWeight: 'bold' },
     selectedDayText: { color: '#ffffff' },
-    dropdown: { height: 50, borderColor: '#cbd5e1', borderWidth: 1, borderRadius: 4, paddingHorizontal: 8, marginBottom: 8, backgroundColor: '#ffffff' },
-    label: { fontSize: 12, color: '#64748b', marginBottom: 4, marginTop: 4, fontWeight: '500' }
+    dropdown: { height: 50, marginBottom: 8 },
+    label: { fontSize: 12, marginBottom: 4, marginTop: 4, fontWeight: '500' }
 });
 
 export default Education;
