@@ -233,7 +233,10 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                     <View style={styles.metaGrid}>
                         {identity.idNumber && <View style={styles.metaItem}><Text style={styles.metaLabel}>ID Number:</Text><Text style={styles.metaValue}>{maskId(identity.idNumber)}</Text></View>}
                         {demographics.Nationality && <View style={styles.metaItem}><Text style={styles.metaLabel}>Nationality:</Text><Text style={styles.metaValue}>{demographics.Nationality}</Text></View>}
+                        {(demographics.MaritalStatus || demographics.maritalStatus) && <View style={styles.metaItem}><Text style={styles.metaLabel}>Marital Status:</Text><Text style={styles.metaValue}>{demographics.MaritalStatus || demographics.maritalStatus}</Text></View>}
+                        {(demographics.Disability || demographics.disability) && (demographics.Disability !== 'None') && <View style={styles.metaItem}><Text style={styles.metaLabel}>Disability:</Text><Text style={styles.metaValue}>{demographics.Disability || demographics.disability}</Text></View>}
                         {licensing.DriversVisible && licensing.Drivers !== 'None' && <View style={styles.metaItem}><Text style={styles.metaLabel}>Drivers:</Text><Text style={styles.metaValue}>{licensing.Drivers}</Text></View>}
+                        {licensing.MotorVisible && licensing.Motorcycle && licensing.Motorcycle !== 'None' && <View style={styles.metaItem}><Text style={styles.metaLabel}>Motorcycle:</Text><Text style={styles.metaValue}>{licensing.Motorcycle}</Text></View>}
                     </View>
                 </View>
 
@@ -269,7 +272,13 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                                     <Text style={styles.entryTitle} numberOfLines={1}>{edu.Institution}</Text>
                                     <Text style={styles.entryDate}>{edu.Year}</Text>
                                 </View>
-                                <Text style={styles.entrySubTitle}>{edu["Qualification Name"]}</Text>
+                                <Text style={styles.entrySubTitle}>{edu["Qualification Name"]}{edu.Completed === false ? ' (In Progress)' : ''}</Text>
+                                {edu["Key Modules"] && (Array.isArray(edu["Key Modules"]) ? edu["Key Modules"].length > 0 : String(edu["Key Modules"]).trim().length > 0) && (
+                                    <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1 }]}>
+                                        <Text style={{ fontWeight: 'bold' }}>Key Modules: </Text>
+                                        {Array.isArray(edu["Key Modules"]) ? edu["Key Modules"].join(', ') : edu["Key Modules"]}
+                                    </Text>
+                                )}
                             </View>
                         ))}
                         {eduList.highschool && (eduList.highschool["Year Completed"] || eduList.highschool["Highest Grade Passed"]) && (
@@ -278,7 +287,10 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                                     <Text style={styles.entryTitle} numberOfLines={1}>{eduList.highschool["Province Department"] || 'High School'}</Text>
                                     <Text style={styles.entryDate}>{eduList.highschool["Year Completed"] || ''}</Text>
                                 </View>
-                                <Text style={styles.entrySubTitle}>{eduList.highschool["Highest Grade Passed"] || eduList.highschool["Highest Grade/Std"] || 'Completed'}</Text>
+                                <Text style={styles.entrySubTitle}>
+                                    {eduList.highschool["Highest Grade Passed"] || eduList.highschool["Highest Grade/Std"] || 'Completed'}
+                                    {eduList.highschool["Subjects Stream"] ? ` · Stream: ${eduList.highschool["Subjects Stream"]}` : ''}
+                                </Text>
                             </View>
                         )}
                     </View>
@@ -308,9 +320,13 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                         <View style={styles.refGrid}>
                             {refList.map((ref: any, idx: number) => (
                                 <View key={idx} style={styles.refItem}>
-                                    <Text style={styles.refName}>{ref.name}</Text>
-                                    <Text style={styles.refDetail}>{(ref.role || ref.relation || 'Reference')}{ref.company || ref.org ? ` at ${ref.company || ref.org}` : ''}</Text>
-                                    <Text style={styles.refDetail}>{ref.contact || ref.phone}</Text>
+                                    <Text style={styles.refName}>{ref.name || ref.Name}</Text>
+                                    <Text style={styles.refDetail}>
+                                        {(ref.role || ref.Role || ref.relation || ref.relationship || 'Reference')}
+                                        {(ref.company || ref.org || ref.organization) ? ` at ${ref.company || ref.org || ref.organization}` : ''}
+                                        {(ref.relation || ref.relationship) && (ref.role || ref.Role) ? ` (${ref.relation || ref.relationship})` : ''}
+                                    </Text>
+                                    <Text style={styles.refDetail}>{ref.cellPhone || ref.workPhone || ref.phone || ref.contact || ''}{ref.email ? ` · ${ref.email}` : ''}</Text>
                                 </View>
                             ))}
                         </View>

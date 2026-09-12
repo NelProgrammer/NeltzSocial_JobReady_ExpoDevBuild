@@ -26,6 +26,109 @@ const fetchWithTimeout = async (url, options = {}, timeout = 5000) => {
     }
 };
 
+export const buildEmptyResumeTemplate = (resumeId, userEmail = "") => {
+    const nowIso = new Date().toISOString();
+    const nowMs = Date.now();
+    return {
+        id: resumeId,
+        "personal details": {
+            names: { firstName: "", MiddleName: "", MaidenName: "", Surname: "", Prefix: "" },
+            identity: { idNumber: "", idMask: true },
+            contact: { Email: userEmail || "", Phone: "", "Phone-alt": "", LinkedIn: "", Website: "" },
+            address: { "Home Address": "", "AddressType": "Home / Physical" },
+            addresses: [
+                {
+                    id: `addr_${nowMs}_0`,
+                    addressType: "Home / Physical",
+                    unitOrHouseNo: "",
+                    streetAddress: "",
+                    suburbOrVillage: "",
+                    cityOrTown: "",
+                    province: "",
+                    postalCode: "",
+                    visible: true
+                }
+            ],
+            licensing: { Drivers: "None", DriversVisible: false, Motorcycle: "None", MotorVisible: false },
+            demographics: { Gender: "None", Nationality: "", Race: "", Disability: "None", MaritalStatus: "Single" },
+            legal: { "Criminal Record": false, Details: "" },
+            languages: [{ Language: "English", proficiency: "Fluent", visible: true }]
+        },
+        "professional summary": "",
+        experience: [
+            {
+                id: `exp_${nowMs}_0`,
+                Organization: "",
+                Role: "",
+                Department: "",
+                "Start Date": "",
+                "End Date": "",
+                "Key Responsibilities": "",
+                "Responsibility Format": "list",
+                "Reason for Leaving": "",
+                "Systems Used": "",
+                "Achievements": "",
+                visible: true,
+                updatedAt: nowIso,
+                updatedAtMs: nowMs
+            }
+        ],
+        education: { 
+            highschool: { 
+                "Province Department": "", 
+                "Year Completed": "", 
+                "Highest Grade Passed": "Grade 12 / Matric",
+                "Subjects Stream": "General",
+                visible: true 
+            }, 
+            tertiary: [
+                { 
+                    id: `tert_${nowMs}_0`, 
+                    Institution: "", 
+                    "Qualification Name": "", 
+                    "NQF Level": "", 
+                    Year: "", 
+                    Completed: false, 
+                    "Key Modules": [], 
+                    visible: true,
+                    updatedAt: nowIso,
+                    updatedAtMs: nowMs
+                }
+            ],
+            professionalCertifications: [],
+            technicalCertifications: [],
+            regulatoryCertifications: []
+        },
+        Skills: {
+            Tech: [{ id: `tech_${nowMs}_0`, name: "", howObtained: "Self-Taught", yearsInUse: "", visible: true }],
+            Soft: [{ id: `soft_${nowMs}_0`, name: "", visible: true }],
+            NonAcadCerts: [],
+            SystemsUsed: []
+        },
+        skills: {
+            Tech: [{ id: `tech_${nowMs}_0`, name: "", howObtained: "Self-Taught", yearsInUse: "", visible: true }],
+            Soft: [{ id: `soft_${nowMs}_0`, name: "", visible: true }],
+            NonAcadCerts: [],
+            SystemsUsed: []
+        },
+        References: [
+            { 
+                id: `ref_${nowMs}_0`, 
+                name: "", 
+                org: "", 
+                relation: "", 
+                phone: "", 
+                email: "", 
+                visible: true,
+                updatedAt: nowIso,
+                updatedAtMs: nowMs
+            }
+        ],
+        updatedAt: nowIso,
+        updatedAtMs: nowMs
+    };
+};
+
 export const ResumeProvider = ({ children }) => {
     const { user, backendUrl } = useContext(AuthContext);
     const [meta, setMeta] = useState([]);
@@ -360,15 +463,19 @@ export const ResumeProvider = ({ children }) => {
 
             setLoading(true);
             const storedMeta = await Storage.loadMeta(user.id);
-            setMeta(storedMeta);
             
-            if (storedMeta.length > 0) {
+            if (storedMeta && storedMeta.length > 0) {
+                setMeta(storedMeta);
                 // Determine active index
                 const activeId = storedMeta[0].id;
                 setActiveResumeId(activeId);
                 const data = await Storage.loadResumeData(user.id, activeId);
                 if (data) {
                     setResumeData(data);
+                } else {
+                    const fallbackData = buildEmptyResumeTemplate(activeId, user.email);
+                    await Storage.saveResumeData(user.id, activeId, fallbackData);
+                    setResumeData(fallbackData);
                 }
                 const settings = await Storage.loadUiSettings(user.id, activeId);
                 if (settings) {
@@ -377,9 +484,20 @@ export const ResumeProvider = ({ children }) => {
                     setUiSettings({ ...DEFAULT_UI_SETTINGS, lastModified: Date.now() });
                 }
             } else {
-                setResumeData(null);
-                setActiveResumeId(null);
-                setUiSettings(DEFAULT_UI_SETTINGS);
+                // AUTO-INITIALIZE FOR OFFLINE FIRST-RUN (All profiles: guest, local, online)
+                const initialId = `res_${Date.now()}`;
+                const initialMetaItem = { id: initialId, name: "My Master Resume", lastModified: Date.now() };
+                const initialData = buildEmptyResumeTemplate(initialId, user.email);
+                const newMeta = [initialMetaItem];
+
+                await Storage.saveMeta(user.id, newMeta);
+                await Storage.saveResumeData(user.id, initialId, initialData);
+                await Storage.saveUiSettings(user.id, initialId, { ...DEFAULT_UI_SETTINGS, lastModified: Date.now() });
+
+                setMeta(newMeta);
+                setActiveResumeId(initialId);
+                setResumeData(initialData);
+                setUiSettings({ ...DEFAULT_UI_SETTINGS, lastModified: Date.now() });
             }
             
             setLoading(false);
@@ -398,27 +516,7 @@ export const ResumeProvider = ({ children }) => {
         if (!user) return null;
         const id = `res_${Date.now()}`;
         const newMetaItem = { id, name, lastModified: Date.now() };
-
-        const initialData = {
-            "personal details": {
-                names: { firstName: "", MiddleName: "", Surname: "", Prefix: "" },
-                identity: { idNumber: "", idMask: true },
-                contact: { Email: user.email || "", Phone: "" },
-                address: { "Home Address": "", "AddressType": "Free-Standing" },
-                licensing: { Drivers: "None", DriversVisible: false, Motorcycle: "None", MotorVisible: false },
-                demographics: { Gender: "None", Nationality: "" },
-                legal: { "Criminal Record": false, Details: "" },
-                languages: [{ Language: "", proficiency: "Basic", visible: true }]
-            },
-            "professional summary": "",
-            experience: [{ Organization: "", Role: "", Department: "", "Start Date": "", "End Date": "", "Key Responsibilities": "", "Responsibility Format": "list", "Reason for Leaving": "", "Systems Used": "", "Achievements": "" }],
-            education: { 
-                highschool: { "Province Department": "", "Year Completed": "", "Subjects Stream": "" }, 
-                tertiary: [{ Institution: "", "Qualification Name": "", "NQF Level": "", "Year": "", "Completed": false, "Key Modules": [] }] 
-            },
-            "Skills": { Tech: "", Soft: "", Certs: "" },
-            "References": [{ name: "", org: "", relation: "", phone: "", email: "", visible: true }]
-        };
+        const initialData = buildEmptyResumeTemplate(id, user.email);
 
         const updatedMeta = [...meta, newMetaItem];
         setMeta(updatedMeta);
@@ -444,7 +542,10 @@ export const ResumeProvider = ({ children }) => {
         if (data) {
             setResumeData(data);
         } else {
-            console.warn(`No data found for resume ID: ${id}`);
+            console.warn(`No data found for resume ID: ${id}, initializing template`);
+            const fallbackData = buildEmptyResumeTemplate(id, user.email);
+            await Storage.saveResumeData(user.id, id, fallbackData);
+            setResumeData(fallbackData);
         }
         const settings = await Storage.loadUiSettings(user.id, id);
         if (settings) {
@@ -486,15 +587,41 @@ export const ResumeProvider = ({ children }) => {
             });
         };
 
+        const personal = data["personal details"] || data.personal || {};
+        const skills = data.skills || data.Skills || {};
+        const education = data.education || {};
+
         return {
             ...data,
+            "personal details": {
+                ...personal,
+                addresses: stampArray(personal.addresses),
+                languages: stampArray(personal.languages)
+            },
             experience: stampArray(data.experience),
             education: {
-                ...(data.education || {}),
-                tertiary: stampArray(data.education?.tertiary)
+                ...education,
+                tertiary: stampArray(education.tertiary),
+                professionalCertifications: stampArray(education.professionalCertifications),
+                technicalCertifications: stampArray(education.technicalCertifications),
+                regulatoryCertifications: stampArray(education.regulatoryCertifications)
             },
-            Skills: Array.isArray(data.Skills) ? stampArray(data.Skills) : data.Skills,
-            references: stampArray(data.references || data.References)
+            Skills: {
+                ...skills,
+                Tech: stampArray(skills.Tech),
+                Soft: stampArray(skills.Soft),
+                NonAcadCerts: stampArray(skills.NonAcadCerts),
+                SystemsUsed: stampArray(skills.SystemsUsed)
+            },
+            skills: {
+                ...skills,
+                Tech: stampArray(skills.Tech),
+                Soft: stampArray(skills.Soft),
+                NonAcadCerts: stampArray(skills.NonAcadCerts),
+                SystemsUsed: stampArray(skills.SystemsUsed)
+            },
+            References: stampArray(data.References || data.references),
+            references: stampArray(data.References || data.references)
         };
     };
 

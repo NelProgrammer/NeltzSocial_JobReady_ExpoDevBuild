@@ -1,7 +1,8 @@
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { TextInput, Button, Card, IconButton, Divider, Text, Portal, Dialog } from 'react-native-paper';
+import { TextInput, Button, Card, IconButton, Divider, Text, Portal, Dialog, Switch } from 'react-native-paper';
+import { Dropdown } from 'react-native-element-dropdown';
 import { ResumeContext } from '../context/ResumeContext';
 import { ProfessionalCertItem, TechCertItem, RegulatoryCertItem, TertiaryEducationItem } from '../types/resume';
 
@@ -12,6 +13,17 @@ interface EducationProps {
 const MONTH_NAMES = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
+const SUBJECTS_STREAMS = [
+    { label: 'General / Standard', value: 'General' },
+    { label: 'Maths & Science', value: 'Maths & Science' },
+    { label: 'Maths & Accounting / Commercial', value: 'Maths & Accounting' },
+    { label: 'Accounting & Commerce', value: 'Accounting & Commerce' },
+    { label: 'History & Geography / Humanities', value: 'History & Geography' },
+    { label: 'Biology & Life Sciences', value: 'Biology & Life Sciences' },
+    { label: 'Consumer Studies / Hospitality', value: 'Consumer Studies' },
+    { label: 'Technical / Engineering', value: 'Technical' }
 ];
 
 const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
@@ -37,7 +49,13 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1); // 1-12
     const [selectedDay, setSelectedDay] = useState<number>(new Date().getDate()); // 1-31
 
-    if (!resumeData || !updateResumeData) return null;
+    if (!resumeData || !updateResumeData) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                <Text style={{ color: '#64748b' }}>Loading Education details...</Text>
+            </View>
+        );
+    }
 
     const education = resumeData.education || {};
     const highschool = education.highschool || {};
@@ -310,6 +328,18 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                             style={styles.input}
                             editable={isEditMode}
                         />
+                        <Text style={styles.label}>Subjects Stream</Text>
+                        <Dropdown
+                            style={styles.dropdown}
+                            dropdownPosition="auto"
+                            data={SUBJECTS_STREAMS}
+                            labelField="label"
+                            valueField="value"
+                            placeholder="Select Subjects Stream"
+                            value={highschool["Subjects Stream"] || 'General'}
+                            onChange={item => updateHighSchool("Subjects Stream", item.value)}
+                            disable={!isEditMode}
+                        />
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <TouchableOpacity
                                 style={{ flex: 1, marginRight: 5 }}
@@ -406,6 +436,25 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
 
                                                     <TextInput label="NQF Level (Optional)" value={String(qual["NQF Level"] || '')} onChangeText={(text) => updateTertiary(index, 'NQF Level', text)} style={[styles.input, { flex: 1, marginLeft: 5 }]} editable={isEditMode} />
                                                 </View>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 6, paddingHorizontal: 4 }}>
+                                                    <Text>Qualification Completed?</Text>
+                                                    <Switch
+                                                        value={qual.Completed !== false}
+                                                        onValueChange={(val) => updateTertiary(index, 'Completed', val)}
+                                                        disabled={!isEditMode}
+                                                    />
+                                                </View>
+                                                <TextInput
+                                                    label="Key Modules / Major Subjects"
+                                                    value={Array.isArray(qual["Key Modules"]) ? qual["Key Modules"].join(', ') : (qual["Key Modules"] || '')}
+                                                    onChangeText={(text) => {
+                                                        const modulesArr = text.split(',').map(m => m.trim()).filter(Boolean);
+                                                        updateTertiary(index, 'Key Modules', modulesArr);
+                                                    }}
+                                                    placeholder="e.g. Financial Accounting 3, Corporate Governance"
+                                                    style={styles.input}
+                                                    editable={isEditMode}
+                                                />
                                             </View>
                                         )}
                                     </View>
@@ -771,7 +820,9 @@ const styles = StyleSheet.create({
     dayItem: { width: '13%', margin: '0.6%', paddingVertical: 8, borderRadius: 6, borderWidth: 1, borderColor: '#cbd5e1', alignItems: 'center', backgroundColor: '#f8fafc' },
     selectedDayItem: { backgroundColor: '#6200EE', borderColor: '#6200EE' },
     dayText: { fontSize: 12, fontWeight: 'bold', color: '#334155' },
-    selectedDayText: { color: '#ffffff' }
+    selectedDayText: { color: '#ffffff' },
+    dropdown: { height: 50, borderColor: '#cbd5e1', borderWidth: 1, borderRadius: 4, paddingHorizontal: 8, marginBottom: 8, backgroundColor: '#ffffff' },
+    label: { fontSize: 12, color: '#64748b', marginBottom: 4, marginTop: 4, fontWeight: '500' }
 });
 
 export default Education;

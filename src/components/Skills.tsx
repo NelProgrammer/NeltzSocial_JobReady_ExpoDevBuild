@@ -25,7 +25,13 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
     // Level 2: Individual Sub-Item Card Expand State (Collapsed by default)
     const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
-    if (!resumeData || !updateResumeData) return null;
+    if (!resumeData || !updateResumeData) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                <Text style={{ color: '#64748b' }}>Loading Skills...</Text>
+            </View>
+        );
+    }
 
     const skills: ResumeSkills = resumeData.skills || resumeData.Skills || {};
 

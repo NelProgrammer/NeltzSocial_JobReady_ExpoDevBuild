@@ -13,9 +13,15 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
     const { resumeData, updateResumeData } = useContext(ResumeContext) as any;
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null); // Collapsed by default
 
-    if (!resumeData || !updateResumeData) return null;
+    if (!resumeData || !updateResumeData) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                <Text style={{ color: '#64748b' }}>Loading References...</Text>
+            </View>
+        );
+    }
 
-    const references: ReferenceItem[] = resumeData.References || [];
+    const references: ReferenceItem[] = resumeData.References || resumeData.references || [];
 
     const addReference = () => {
         if (!isEditMode) return;
@@ -24,12 +30,14 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
             name: "",
             role: "",
             company: "",
+            relation: "",
+            relationship: "",
             cellPhone: "",
             workPhone: "",
             email: "",
             visible: true
         };
-        updateResumeData({ ...resumeData, References: [...references, newRef] });
+        updateResumeData({ ...resumeData, References: [...references, newRef], references: [...references, newRef] });
         setExpandedIndex(references.length);
     };
 
@@ -46,7 +54,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                     onPress: () => {
                         const newRef = [...references];
                         newRef.splice(index, 1);
-                        updateResumeData({ ...resumeData, References: newRef });
+                        updateResumeData({ ...resumeData, References: newRef, references: newRef });
                         setExpandedIndex(null);
                     }
                 }
@@ -57,8 +65,12 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
     const updateRef = (index: number, key: string, value: string) => {
         if (!isEditMode) return;
         const newRef = [...references];
-        newRef[index] = { ...newRef[index], [key]: value };
-        updateResumeData({ ...resumeData, References: newRef });
+        if (key === 'relation' || key === 'relationship') {
+            newRef[index] = { ...newRef[index], relation: value, relationship: value };
+        } else {
+            newRef[index] = { ...newRef[index], [key]: value };
+        }
+        updateResumeData({ ...resumeData, References: newRef, references: newRef });
     };
 
     return (
@@ -129,6 +141,15 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                                         onChangeText={(text) => updateRef(index, 'company', text)}
                                         style={styles.input}
                                         left={<TextInput.Icon icon="domain" />}
+                                        editable={isEditMode}
+                                    />
+                                    <TextInput
+                                        label="Professional Relationship"
+                                        value={ref.relation || ref.relationship || ''}
+                                        onChangeText={(text) => updateRef(index, 'relation', text)}
+                                        placeholder="e.g. Line Manager, Academic Supervisor, Colleague"
+                                        style={styles.input}
+                                        left={<TextInput.Icon icon="account-supervisor-circle" />}
                                         editable={isEditMode}
                                     />
                                     

@@ -30,7 +30,13 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1); // 1-12
     const [selectedDay, setSelectedDay] = useState<number>(new Date().getDate()); // 1-31
 
-    if (!resumeData || !updateResumeData) return null;
+    if (!resumeData || !updateResumeData) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                <Text style={{ color: '#64748b' }}>Loading Experience...</Text>
+            </View>
+        );
+    }
 
     const experiences: WorkExperience[] = resumeData.experience || [];
 

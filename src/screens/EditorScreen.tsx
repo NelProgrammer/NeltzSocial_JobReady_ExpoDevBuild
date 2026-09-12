@@ -17,7 +17,7 @@ import { createMockResumeData } from '../testing/testUtils';
 const Tab = createMaterialTopTabNavigator();
 
 type EditorScreenProps = {
-  route?: { params?: { resumeId?: string } };
+  route?: { params?: { resumeId?: string; isEditMode?: boolean } };
   navigation?: any;
 };
 
@@ -27,7 +27,7 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
   const { theme } = useThemeContext();
   const insets = useSafeAreaInsets();
 
-  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [isEditMode, setIsEditMode] = useState<boolean>(route?.params?.isEditMode !== undefined ? route.params.isEditMode : true);
   const [settingsDialogVisible, setSettingsDialogVisible] = useState<boolean>(false);
 
   const toggleColorScheme = uiSettings?.toggleColorScheme || 'semantic';

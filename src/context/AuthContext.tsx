@@ -302,6 +302,26 @@ export const AuthProvider = ({ children }) => {
         .filter(p => p.id !== user.id)
         .concat(upgradedProfile);
 
+      // Migrate existing resume data from old guest profile to new upgraded profile
+      try {
+        const oldMeta = await Storage.loadMeta(user.id);
+        if (oldMeta && oldMeta.length > 0) {
+          await Storage.saveMeta(newProfileId, oldMeta);
+          for (const m of oldMeta) {
+            const resData = await Storage.loadResumeData(user.id, m.id);
+            if (resData) {
+              await Storage.saveResumeData(newProfileId, m.id, resData);
+            }
+            const uiSettings = await Storage.loadUiSettings(user.id, m.id);
+            if (uiSettings) {
+              await Storage.saveUiSettings(newProfileId, m.id, uiSettings);
+            }
+          }
+        }
+      } catch (migErr) {
+        console.warn('[Auth] Error migrating guest resume data to upgraded profile:', migErr);
+      }
+
       await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
       await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfileId);
 

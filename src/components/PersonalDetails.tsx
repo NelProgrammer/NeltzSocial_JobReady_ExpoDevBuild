@@ -30,7 +30,13 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 
     const toggleSection = (section: any) => setExpandedSection(expandedSection === section ? null : section);
 
-    if (!resumeData) return null;
+    if (!resumeData) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                <Text style={{ color: '#666' }}>Loading CV details...</Text>
+            </View>
+        );
+    }
 
     const pd = resumeData["personal details"] || resumeData.personal || {};
     const names = pd.names || {};
@@ -175,6 +181,35 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             contentContainerStyle={{ padding: 6, paddingTop: 4, paddingBottom: 120, flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
         >
+            {/* 0. Executive Summary Section */}
+            <Card style={styles.card}>
+                <Card.Title
+                    title="Executive / Professional Summary"
+                    left={(props) => <IconButton {...props} icon="text-box-outline" />}
+                    right={(props) => (
+                        <IconButton {...props} icon={expandedSection === 'Summary' ? "chevron-up" : "chevron-down"} onPress={() => toggleSection('Summary')} />
+                    )}
+                />
+                {expandedSection === 'Summary' && (
+                    <Card.Content>
+                        <Divider style={{ marginBottom: 10 }} />
+                        <TextInput
+                            label="Professional Summary / Profile Bio"
+                            placeholder="Write a concise overview of your career, strengths, and professional objectives..."
+                            value={resumeData["professional summary"] || ''}
+                            onChangeText={(text) => {
+                                if (!isEditMode) return;
+                                updateResumeData({ ...resumeData, "professional summary": text });
+                            }}
+                            multiline
+                            numberOfLines={4}
+                            style={[styles.input, { minHeight: 90 }]}
+                            editable={isEditMode}
+                        />
+                    </Card.Content>
+                )}
+            </Card>
+
             {/* 1. Names Section */}
             <Card style={styles.card}>
                 <Card.Title
@@ -222,6 +257,14 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             value={names.MiddleName || ''}
                             onChangeText={(text) => updateField('names', 'MiddleName', text)}
                             style={styles.input}
+                            editable={isEditMode}
+                        />
+                        <TextInput
+                            label="Maiden Name (Optional)"
+                            value={names.MaidenName || ''}
+                            onChangeText={(text) => updateField('names', 'MaidenName', text)}
+                            style={styles.input}
+                            placeholder="Optional"
                             editable={isEditMode}
                         />
                         <TextInput
@@ -470,14 +513,55 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             onChange={item => updateField('demographics', 'Race', item.value)}
                             disable={!isEditMode}
                         />
-                        <TextInput
-                            label="Disability Status"
-                            placeholder="e.g. None, Physical, Visual, Hearing"
-                            value={demographics.Disability || demographics.disability || ''}
-                            onChangeText={(text) => updateField('demographics', 'Disability', text)}
-                            style={styles.input}
-                            editable={isEditMode}
+                        <Text style={styles.label}>Marital Status</Text>
+                        <Dropdown
+                            style={styles.dropdown}
+                            dropdownPosition="auto"
+                            data={[
+                                { label: 'Single', value: 'Single' },
+                                { label: 'Married', value: 'Married' },
+                                { label: 'Divorced', value: 'Divorced' },
+                                { label: 'Widowed', value: 'Widowed' },
+                                { label: 'Separated', value: 'Separated' },
+                                { label: 'Domestic Partnership', value: 'Domestic Partnership' }
+                            ]}
+                            labelField="label"
+                            valueField="value"
+                            placeholder="Select Marital Status"
+                            value={demographics.MaritalStatus || demographics.maritalStatus || 'Single'}
+                            onChange={item => updateField('demographics', 'MaritalStatus', item.value)}
+                            disable={!isEditMode}
                         />
+                        <Text style={styles.label}>Disability Status</Text>
+                        <Dropdown
+                            style={styles.dropdown}
+                            dropdownPosition="auto"
+                            data={[
+                                { label: 'None', value: 'None' },
+                                { label: 'Physical Disability', value: 'Physical' },
+                                { label: 'Visual Impairment', value: 'Visual' },
+                                { label: 'Hearing Impairment', value: 'Hearing' },
+                                { label: 'Intellectual / Learning Disability', value: 'Intellectual' },
+                                { label: 'Chronic Illness', value: 'Chronic Illness' },
+                                { label: 'Other', value: 'Other' }
+                            ]}
+                            labelField="label"
+                            valueField="value"
+                            placeholder="Select Disability Status"
+                            value={demographics.Disability || demographics.disability || 'None'}
+                            onChange={item => updateField('demographics', 'Disability', item.value)}
+                            disable={!isEditMode}
+                        />
+                        {(demographics.Disability === 'Other' || demographics.disability === 'Other' || (demographics.Disability && !['None', 'Physical', 'Visual', 'Hearing', 'Intellectual', 'Chronic Illness', 'Other'].includes(demographics.Disability))) && (
+                            <TextInput
+                                label="Specify Disability Details"
+                                placeholder="Specify disability details"
+                                value={demographics.DisabilityDetails || (['None', 'Physical', 'Visual', 'Hearing', 'Intellectual', 'Chronic Illness', 'Other'].includes(demographics.Disability) ? '' : demographics.Disability) || ''}
+                                onChangeText={(text) => updateField('demographics', 'DisabilityDetails', text)}
+                                style={styles.input}
+                                editable={isEditMode}
+                            />
+                        )}
                         <Text style={styles.label}>Nationality</Text>
                         <Dropdown
                             style={styles.dropdown}
