@@ -1,8 +1,10 @@
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { TextInput, Card, Text, Button, IconButton, SegmentedButtons, Divider } from 'react-native-paper';
+import { Card, Text, Button, IconButton, SegmentedButtons, Divider } from 'react-native-paper';
+import { ThemedTextInput as TextInput } from './common/ThemedTextInput';
 import { ResumeContext } from '../context/ResumeContext';
+import { useThemeContext } from '../context/ThemeContext';
 import { ResumeSkills, TechSkillItem, SoftSkillItem, NonAcadCertItem, SystemUsedItem } from '../types/resume';
 
 interface SkillsProps {
@@ -10,6 +12,7 @@ interface SkillsProps {
 }
 
 const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
+    const { theme } = useThemeContext();
     const context = useContext(ResumeContext) as any;
     const resumeData = context?.resumeData;
     const updateResumeData = context?.updateResumeData;
@@ -28,7 +31,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
     if (!resumeData || !updateResumeData) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                <Text style={{ color: '#64748b' }}>Loading Skills...</Text>
+                <Text style={{ color: theme.textSecondary }}>Loading Skills...</Text>
             </View>
         );
     }
@@ -119,17 +122,18 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
         const csvSummary = getCategoryCsvSummary('Tech');
 
         return (
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                 <Card.Title
                     title={`⚡ Technical Skills (${items.length})`}
                     subtitle={csvSummary}
                     subtitleNumberOfLines={2}
-                    titleStyle={{ fontSize: 14, fontWeight: 'bold' }}
-                    subtitleStyle={{ fontSize: 11, color: '#64748b' }}
-                    left={(props) => <IconButton {...props} icon="laptop" />}
+                    titleStyle={{ fontSize: 14, fontWeight: 'bold', color: theme.textPrimary }}
+                    subtitleStyle={{ fontSize: 11, color: theme.textSecondary }}
+                    left={(props) => <IconButton {...props} icon="laptop" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton
                             {...props}
+                            iconColor={theme.textSecondary}
                             icon={isCatExpanded ? "chevron-up" : "chevron-down"}
                             onPress={() => toggleCategory('Tech')}
                         />
@@ -137,10 +141,10 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                 />
                 {isCatExpanded && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {items.length === 0 ? (
-                            <View style={styles.emptyCard}>
-                                <Text style={styles.emptyText}>ℹ️ No technical skills added yet. Tap "+ Add Technical Skill" to get started.</Text>
+                            <View style={[styles.emptyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }]}>
+                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>ℹ️ No technical skills added yet. Tap "+ Add Technical Skill" to get started.</Text>
                             </View>
                         ) : (
                             items.map((item, index) => {
@@ -149,22 +153,23 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                                 const subTitle = [item.howObtained, item.yearsInUse ? `${item.yearsInUse} yrs` : ''].filter(Boolean).join(' · ');
 
                                 return (
-                                    <View key={itemId} style={styles.subItemBox}>
+                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
-                                            <Text style={styles.subItemTitle}>
+                                            <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {item.name ? `⚡ ${item.name}` : `Technical Skill #${index + 1}`}
                                                 {subTitle ? ` (${subTitle})` : ''}
                                             </Text>
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                                 <IconButton
                                                     icon={isItemExpanded ? "chevron-up" : "chevron-down"}
+                                                    iconColor={theme.textSecondary}
                                                     size={20}
                                                     onPress={() => toggleItem(itemId)}
                                                 />
                                                 {isEditMode && (
                                                     <IconButton
                                                         icon="delete"
-                                                        iconColor="#B00020"
+                                                        iconColor="#ef4444"
                                                         size={20}
                                                         onPress={() => removeItem('Tech', index)}
                                                     />
@@ -174,7 +179,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
 
                                         {isItemExpanded && (
                                             <View style={styles.subItemContent}>
-                                                <Divider style={{ marginVertical: 8 }} />
+                                                <Divider style={{ marginVertical: 8, backgroundColor: theme.border }} />
                                                 <TextInput
                                                     label="Technical Skill Name"
                                                     value={item.name || ''}
@@ -183,7 +188,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                                                     placeholder="e.g. Python, TypeScript, React Native"
                                                     editable={isEditMode}
                                                 />
-                                                <Text style={styles.subLabel}>How Obtained</Text>
+                                                <Text style={[styles.subLabel, { color: theme.textSecondary }]}>How Obtained</Text>
                                                 <SegmentedButtons
                                                     value={item.howObtained || 'Course'}
                                                     onValueChange={val => updateItemProperty('Tech', index, 'howObtained', val)}
@@ -192,6 +197,14 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                                                         { label: 'Self-Taught', value: 'Self-Taught', disabled: !isEditMode },
                                                         { label: 'On-the-Job', value: 'On-the-Job', disabled: !isEditMode }
                                                     ]}
+                                                    theme={{
+                                                        colors: {
+                                                            secondaryContainer: theme.accent,
+                                                            onSecondaryContainer: '#ffffff',
+                                                            onSurface: theme.textPrimary,
+                                                            outline: theme.border
+                                                        }
+                                                    }}
                                                     style={styles.segmented}
                                                 />
                                                 <TextInput
@@ -210,7 +223,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                             })
                         )}
                         {isEditMode && (
-                            <Button mode="contained" icon="plus" onPress={() => addSkillItem('Tech')} style={styles.addButton}>
+                            <Button mode="contained" icon="plus" onPress={() => addSkillItem('Tech')} style={[styles.addButton, { backgroundColor: theme.accent }]}>
                                 Add Technical Skill
                             </Button>
                         )}
@@ -227,17 +240,18 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
         const csvSummary = getCategoryCsvSummary('Soft');
 
         return (
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                 <Card.Title
                     title={`🧠 Soft / Interpersonal Skills (${items.length})`}
                     subtitle={csvSummary}
                     subtitleNumberOfLines={2}
-                    titleStyle={{ fontSize: 14, fontWeight: 'bold' }}
-                    subtitleStyle={{ fontSize: 11, color: '#64748b' }}
-                    left={(props) => <IconButton {...props} icon="account-group" />}
+                    titleStyle={{ fontSize: 14, fontWeight: 'bold', color: theme.textPrimary }}
+                    subtitleStyle={{ fontSize: 11, color: theme.textSecondary }}
+                    left={(props) => <IconButton {...props} icon="account-group" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton
                             {...props}
+                            iconColor={theme.textSecondary}
                             icon={isCatExpanded ? "chevron-up" : "chevron-down"}
                             onPress={() => toggleCategory('Soft')}
                         />
@@ -245,10 +259,10 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                 />
                 {isCatExpanded && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {items.length === 0 ? (
-                            <View style={styles.emptyCard}>
-                                <Text style={styles.emptyText}>ℹ️ No soft skills added yet. Tap "+ Add Soft Skill" to get started.</Text>
+                            <View style={[styles.emptyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }]}>
+                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>ℹ️ No soft skills added yet. Tap "+ Add Soft Skill" to get started.</Text>
                             </View>
                         ) : (
                             items.map((item, index) => {
@@ -256,21 +270,22 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                                 const isItemExpanded = !!expandedItems[itemId];
 
                                 return (
-                                    <View key={itemId} style={styles.subItemBox}>
+                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
-                                            <Text style={styles.subItemTitle}>
+                                            <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {item.name ? `🧠 ${item.name}` : `Soft Skill #${index + 1}`}
                                             </Text>
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                                 <IconButton
                                                     icon={isItemExpanded ? "chevron-up" : "chevron-down"}
+                                                    iconColor={theme.textSecondary}
                                                     size={20}
                                                     onPress={() => toggleItem(itemId)}
                                                 />
                                                 {isEditMode && (
                                                     <IconButton
                                                         icon="delete"
-                                                        iconColor="#B00020"
+                                                        iconColor="#ef4444"
                                                         size={20}
                                                         onPress={() => removeItem('Soft', index)}
                                                     />
@@ -280,7 +295,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
 
                                         {isItemExpanded && (
                                             <View style={styles.subItemContent}>
-                                                <Divider style={{ marginVertical: 8 }} />
+                                                <Divider style={{ marginVertical: 8, backgroundColor: theme.border }} />
                                                 <TextInput
                                                     label="Soft Skill Name"
                                                     value={item.name || ''}
@@ -296,7 +311,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                             })
                         )}
                         {isEditMode && (
-                            <Button mode="contained" icon="plus" onPress={() => addSkillItem('Soft')} style={styles.addButton}>
+                            <Button mode="contained" icon="plus" onPress={() => addSkillItem('Soft')} style={[styles.addButton, { backgroundColor: theme.accent }]}>
                                 Add Soft Skill
                             </Button>
                         )}
@@ -313,17 +328,18 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
         const csvSummary = getCategoryCsvSummary('NonAcadCerts');
 
         return (
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                 <Card.Title
                     title={`📜 Non-Academic Certifications (${items.length})`}
                     subtitle={csvSummary}
                     subtitleNumberOfLines={2}
-                    titleStyle={{ fontSize: 14, fontWeight: 'bold' }}
-                    subtitleStyle={{ fontSize: 11, color: '#64748b' }}
-                    left={(props) => <IconButton {...props} icon="certificate" />}
+                    titleStyle={{ fontSize: 14, fontWeight: 'bold', color: theme.textPrimary }}
+                    subtitleStyle={{ fontSize: 11, color: theme.textSecondary }}
+                    left={(props) => <IconButton {...props} icon="certificate" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton
                             {...props}
+                            iconColor={theme.textSecondary}
                             icon={isCatExpanded ? "chevron-up" : "chevron-down"}
                             onPress={() => toggleCategory('NonAcadCerts')}
                         />
@@ -331,10 +347,10 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                 />
                 {isCatExpanded && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {items.length === 0 ? (
-                            <View style={styles.emptyCard}>
-                                <Text style={styles.emptyText}>ℹ️ No non-academic certifications added yet. Tap "+ Add Non-Academic Cert" to get started.</Text>
+                            <View style={[styles.emptyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }]}>
+                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>ℹ️ No non-academic certifications added yet. Tap "+ Add Non-Academic Cert" to get started.</Text>
                             </View>
                         ) : (
                             items.map((item, index) => {
@@ -343,22 +359,23 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                                 const subTitle = [item.provider, item.yearObtained].filter(Boolean).join(' · ');
 
                                 return (
-                                    <View key={itemId} style={styles.subItemBox}>
+                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
-                                            <Text style={styles.subItemTitle}>
+                                            <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {item.name ? `📜 ${item.name}` : `Certification #${index + 1}`}
                                                 {subTitle ? ` (${subTitle})` : ''}
                                             </Text>
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                                 <IconButton
                                                     icon={isItemExpanded ? "chevron-up" : "chevron-down"}
+                                                    iconColor={theme.textSecondary}
                                                     size={20}
                                                     onPress={() => toggleItem(itemId)}
                                                 />
                                                 {isEditMode && (
                                                     <IconButton
                                                         icon="delete"
-                                                        iconColor="#B00020"
+                                                        iconColor="#ef4444"
                                                         size={20}
                                                         onPress={() => removeItem('NonAcadCerts', index)}
                                                     />
@@ -368,7 +385,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
 
                                         {isItemExpanded && (
                                             <View style={styles.subItemContent}>
-                                                <Divider style={{ marginVertical: 8 }} />
+                                                <Divider style={{ marginVertical: 8, backgroundColor: theme.border }} />
                                                 <TextInput
                                                     label="Certification / Course Name"
                                                     value={item.name || ''}
@@ -401,7 +418,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                             })
                         )}
                         {isEditMode && (
-                            <Button mode="contained" icon="plus" onPress={() => addSkillItem('NonAcadCerts')} style={styles.addButton}>
+                            <Button mode="contained" icon="plus" onPress={() => addSkillItem('NonAcadCerts')} style={[styles.addButton, { backgroundColor: theme.accent }]}>
                                 Add Non-Academic Cert
                             </Button>
                         )}
@@ -418,17 +435,18 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
         const csvSummary = getCategoryCsvSummary('SystemsUsed');
 
         return (
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                 <Card.Title
                     title={`🛠️ Systems & Tools Used (${items.length})`}
                     subtitle={csvSummary}
                     subtitleNumberOfLines={2}
-                    titleStyle={{ fontSize: 14, fontWeight: 'bold' }}
-                    subtitleStyle={{ fontSize: 11, color: '#64748b' }}
-                    left={(props) => <IconButton {...props} icon="wrench-clock" />}
+                    titleStyle={{ fontSize: 14, fontWeight: 'bold', color: theme.textPrimary }}
+                    subtitleStyle={{ fontSize: 11, color: theme.textSecondary }}
+                    left={(props) => <IconButton {...props} icon="wrench-clock" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton
                             {...props}
+                            iconColor={theme.textSecondary}
                             icon={isCatExpanded ? "chevron-up" : "chevron-down"}
                             onPress={() => toggleCategory('SystemsUsed')}
                         />
@@ -436,10 +454,10 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                 />
                 {isCatExpanded && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {items.length === 0 ? (
-                            <View style={styles.emptyCard}>
-                                <Text style={styles.emptyText}>ℹ️ No systems or tools added yet. Tap "+ Add System / Tool" to get started.</Text>
+                            <View style={[styles.emptyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }]}>
+                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>ℹ️ No systems or tools added yet. Tap "+ Add System / Tool" to get started.</Text>
                             </View>
                         ) : (
                             items.map((item, index) => {
@@ -448,22 +466,23 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                                 const subTitle = item.yearsInUse ? `${item.yearsInUse} yrs` : '';
 
                                 return (
-                                    <View key={itemId} style={styles.subItemBox}>
+                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
-                                            <Text style={styles.subItemTitle}>
+                                            <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {item.name ? `🛠️ ${item.name}` : `System / Software #${index + 1}`}
                                                 {subTitle ? ` (${subTitle})` : ''}
                                             </Text>
                                             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                                 <IconButton
                                                     icon={isItemExpanded ? "chevron-up" : "chevron-down"}
+                                                    iconColor={theme.textSecondary}
                                                     size={20}
                                                     onPress={() => toggleItem(itemId)}
                                                 />
                                                 {isEditMode && (
                                                     <IconButton
                                                         icon="delete"
-                                                        iconColor="#B00020"
+                                                        iconColor="#ef4444"
                                                         size={20}
                                                         onPress={() => removeItem('SystemsUsed', index)}
                                                     />
@@ -473,7 +492,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
 
                                         {isItemExpanded && (
                                             <View style={styles.subItemContent}>
-                                                <Divider style={{ marginVertical: 8 }} />
+                                                <Divider style={{ marginVertical: 8, backgroundColor: theme.border }} />
                                                 <TextInput
                                                     label="System / Software Name"
                                                     value={item.name || ''}
@@ -498,7 +517,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                             })
                         )}
                         {isEditMode && (
-                            <Button mode="contained" icon="plus" onPress={() => addSkillItem('SystemsUsed')} style={styles.addButton}>
+                            <Button mode="contained" icon="plus" onPress={() => addSkillItem('SystemsUsed')} style={[styles.addButton, { backgroundColor: theme.accent }]}>
                                 Add System / Tool
                             </Button>
                         )}
@@ -527,17 +546,17 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    card: { marginBottom: 15, backgroundColor: '#ffffff' },
-    subItemBox: { borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, padding: 10, marginBottom: 10, backgroundColor: '#f8fafc' },
+    card: { marginBottom: 15, borderRadius: 8 },
+    subItemBox: { borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 10 },
     subItemHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    subItemTitle: { fontWeight: 'bold', fontSize: 13, color: '#1e293b', flex: 1 },
+    subItemTitle: { fontWeight: 'bold', fontSize: 13, flex: 1 },
     subItemContent: { marginTop: 4 },
-    input: { marginBottom: 8, backgroundColor: '#ffffff' },
-    subLabel: { fontSize: 12, color: '#64748b', marginBottom: 4 },
+    input: { marginBottom: 8 },
+    subLabel: { fontSize: 12, marginBottom: 4 },
     segmented: { marginBottom: 8 },
-    addButton: { marginTop: 8, alignSelf: 'flex-start', backgroundColor: '#6200EE' },
-    emptyCard: { padding: 12, backgroundColor: '#f0f4f8', borderRadius: 8, marginBottom: 10 },
-    emptyText: { color: '#64748b', fontSize: 13 }
+    addButton: { marginTop: 8, alignSelf: 'flex-start' },
+    emptyCard: { padding: 12, borderRadius: 8, marginBottom: 10 },
+    emptyText: { fontSize: 13 }
 });
 
 export default Skills;

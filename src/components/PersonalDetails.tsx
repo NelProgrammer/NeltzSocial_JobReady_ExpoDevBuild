@@ -1,10 +1,12 @@
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { TextInput, Switch, Text, Button, IconButton, Card, Divider } from 'react-native-paper';
-import { Dropdown } from 'react-native-element-dropdown';
+import { Switch, Text, Button, IconButton, Card, Divider } from 'react-native-paper';
+import { ThemedTextInput as TextInput } from './common/ThemedTextInput';
+import { ThemedDropdown as Dropdown } from './common/ThemedDropdown';
 import { ResumeContext } from '../context/ResumeContext';
 import { AuthContext } from '../context/AuthContext';
+import { useThemeContext } from '../context/ThemeContext';
 import { CompositeAddressItem } from '../types/resume';
 
 interface PersonalDetailsProps {
@@ -26,14 +28,15 @@ const ADDRESS_TYPES = [
 const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) => {
     const { resumeData, updateResumeData } = useContext(ResumeContext) as any;
     const { user, autoUpgradeGuestToLocal } = useContext(AuthContext) as any;
+    const { theme } = useThemeContext();
     const [expandedSection, setExpandedSection] = useState('Names');
 
     const toggleSection = (section: any) => setExpandedSection(expandedSection === section ? null : section);
 
     if (!resumeData) {
         return (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                <Text style={{ color: '#666' }}>Loading CV details...</Text>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: theme.bgDark }}>
+                <Text style={{ color: theme.textSecondary }}>Loading CV details...</Text>
             </View>
         );
     }
@@ -174,7 +177,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 
     return (
         <KeyboardAwareScrollView
-            style={styles.container}
+            style={[styles.container, { backgroundColor: theme.bgDark }]}
             enableOnAndroid={true}
             extraScrollHeight={100}
             showsVerticalScrollIndicator={false}
@@ -182,17 +185,18 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             keyboardShouldPersistTaps="handled"
         >
             {/* 0. Executive Summary Section */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title="Executive / Professional Summary"
-                    left={(props) => <IconButton {...props} icon="text-box-outline" />}
+                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    left={(props) => <IconButton {...props} icon="text-box-outline" iconColor={theme.accent} />}
                     right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Summary' ? "chevron-up" : "chevron-down"} onPress={() => toggleSection('Summary')} />
+                        <IconButton {...props} icon={expandedSection === 'Summary' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Summary')} />
                     )}
                 />
                 {expandedSection === 'Summary' && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         <TextInput
                             label="Professional Summary / Profile Bio"
                             placeholder="Write a concise overview of your career, strengths, and professional objectives..."
@@ -211,18 +215,19 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             </Card>
 
             {/* 1. Names Section */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title="Names"
-                    left={(props) => <IconButton {...props} icon="account" />}
+                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    left={(props) => <IconButton {...props} icon="account" iconColor={theme.accent} />}
                     right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Names' ? "chevron-up" : "chevron-down"} onPress={() => toggleSection('Names')} />
+                        <IconButton {...props} icon={expandedSection === 'Names' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Names')} />
                     )}
                 />
                 {expandedSection === 'Names' && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
-                        <Text style={styles.label}>Title</Text>
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Title</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
@@ -279,17 +284,18 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             </Card>
 
             {/* 2. Contact Section */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title="Contact"
-                    left={(props) => <IconButton {...props} icon="email" />}
+                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    left={(props) => <IconButton {...props} icon="email" iconColor={theme.accent} />}
                     right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Contact' ? "chevron-up" : "chevron-down"} onPress={() => toggleSection('Contact')} />
+                        <IconButton {...props} icon={expandedSection === 'Contact' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Contact')} />
                     )}
                 />
                 {expandedSection === 'Contact' && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         <TextInput
                             label="Email"
                             value={contact.Email || ''}
@@ -337,20 +343,21 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             </Card>
 
             {/* 3. Composite Address Section */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title={`Addresses (${addresses.length})`}
-                    left={(props) => <IconButton {...props} icon="map-marker" />}
+                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    left={(props) => <IconButton {...props} icon="map-marker" iconColor={theme.accent} />}
                     right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Address' ? "chevron-up" : "chevron-down"} onPress={() => toggleSection('Address')} />
+                        <IconButton {...props} icon={expandedSection === 'Address' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Address')} />
                     )}
                 />
                 {expandedSection === 'Address' && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {addresses.map((addr, index) => (
-                            <View key={addr.id || index} style={styles.repeaterBox}>
-                                <Text style={styles.label}>Address Type (1st field after ID)</Text>
+                            <View key={addr.id || index} style={[styles.repeaterBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Address Type (1st field after ID)</Text>
                                 <Dropdown
                                     style={styles.dropdown}
                                     dropdownPosition="auto"
@@ -363,57 +370,73 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                                     disable={!isEditMode}
                                 />
                                 <TextInput
-                                    label="Unit / House / Flat No. (Optional)"
+                                    label="Unit / House / Flat No."
                                     value={addr.unitOrHouseNo || ''}
                                     onChangeText={(text) => updateAddressItem(index, 'unitOrHouseNo', text)}
                                     style={styles.input}
-                                    placeholder="e.g. Flat 4B or House 12"
                                     editable={isEditMode}
                                 />
                                 <TextInput
-                                    label="Street Address"
+                                    label="Street Address / Stand No."
                                     value={addr.streetAddress || ''}
                                     onChangeText={(text) => updateAddressItem(index, 'streetAddress', text)}
                                     style={styles.input}
-                                    placeholder="e.g. 123 Main Road"
                                     editable={isEditMode}
                                 />
                                 <TextInput
-                                    label="Suburb / Village (Optional)"
+                                    label="Suburb / Township / Village"
                                     value={addr.suburbOrVillage || ''}
                                     onChangeText={(text) => updateAddressItem(index, 'suburbOrVillage', text)}
                                     style={styles.input}
-                                    placeholder="e.g. Sandton"
                                     editable={isEditMode}
                                 />
-                                <View style={{ flexDirection: 'row', gap: 6 }}>
-                                    <TextInput
-                                        label="City / Town"
-                                        value={addr.cityOrTown || ''}
-                                        onChangeText={(text) => updateAddressItem(index, 'cityOrTown', text)}
-                                        style={[styles.input, { flex: 1 }]}
-                                        placeholder="e.g. Johannesburg"
-                                        editable={isEditMode}
-                                    />
-                                    <TextInput
-                                        label="Province"
-                                        value={addr.province || ''}
-                                        onChangeText={(text) => updateAddressItem(index, 'province', text)}
-                                        style={[styles.input, { flex: 1 }]}
-                                        placeholder="e.g. Gauteng"
-                                        editable={isEditMode}
-                                    />
-                                </View>
+                                <TextInput
+                                    label="City / Town"
+                                    value={addr.cityOrTown || ''}
+                                    onChangeText={(text) => updateAddressItem(index, 'cityOrTown', text)}
+                                    style={styles.input}
+                                    editable={isEditMode}
+                                />
+                                <Text style={[styles.label, { color: theme.textSecondary }]}>Province / State</Text>
+                                <Dropdown
+                                    style={styles.dropdown}
+                                    dropdownPosition="auto"
+                                    data={[
+                                        { label: 'Gauteng', value: 'Gauteng' },
+                                        { label: 'Western Cape', value: 'Western Cape' },
+                                        { label: 'KwaZulu-Natal', value: 'KwaZulu-Natal' },
+                                        { label: 'Eastern Cape', value: 'Eastern Cape' },
+                                        { label: 'Free State', value: 'Free State' },
+                                        { label: 'Limpopo', value: 'Limpopo' },
+                                        { label: 'Mpumalanga', value: 'Mpumalanga' },
+                                        { label: 'North West', value: 'North West' },
+                                        { label: 'Northern Cape', value: 'Northern Cape' },
+                                        { label: 'Other / International', value: 'Other' }
+                                    ]}
+                                    labelField="label"
+                                    valueField="value"
+                                    placeholder="Select Province"
+                                    value={addr.province || 'Gauteng'}
+                                    onChange={item => updateAddressItem(index, 'province', item.value)}
+                                    disable={!isEditMode}
+                                />
                                 <TextInput
                                     label="Postal Code"
                                     value={addr.postalCode || ''}
                                     onChangeText={(text) => updateAddressItem(index, 'postalCode', text)}
                                     style={styles.input}
-                                    keyboardType="numeric"
-                                    placeholder="e.g. 2000"
+                                    keyboardType="number-pad"
                                     editable={isEditMode}
                                 />
-                                {isEditMode && (
+                                <View style={styles.switchRow}>
+                                    <Text style={{ color: theme.textPrimary }}>Show on Target Resumes?</Text>
+                                    <Switch
+                                        value={addr.visible !== false}
+                                        onValueChange={(val) => updateAddressItem(index, 'visible', val)}
+                                        disabled={!isEditMode}
+                                    />
+                                </View>
+                                {isEditMode && addresses.length > 1 && (
                                     <IconButton
                                         icon="delete"
                                         iconColor="#ff5252"
@@ -425,7 +448,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             </View>
                         ))}
                         {isEditMode && (
-                            <Button mode="outlined" icon="plus" onPress={addAddress} style={{ marginBottom: 10, alignSelf: 'flex-start' }}>
+                            <Button mode="outlined" icon="plus" textColor={theme.accent} onPress={addAddress} style={{ borderColor: theme.accent, marginBottom: 10, alignSelf: 'flex-start' }}>
                                 Add Address
                             </Button>
                         )}
@@ -434,27 +457,44 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             </Card>
 
             {/* 4. Identity Section */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title="Identity"
-                    left={(props) => <IconButton {...props} icon="card-account-details" />}
+                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    left={(props) => <IconButton {...props} icon="card-account-details" iconColor={theme.accent} />}
                     right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Identity' ? "chevron-up" : "chevron-down"} onPress={() => toggleSection('Identity')} />
+                        <IconButton {...props} icon={expandedSection === 'Identity' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Identity')} />
                     )}
                 />
                 {expandedSection === 'Identity' && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Identity Type</Text>
+                        <Dropdown
+                            style={styles.dropdown}
+                            dropdownPosition="auto"
+                            data={[
+                                { label: 'South African ID', value: 'National ID' },
+                                { label: 'Passport', value: 'Passport' }
+                            ]}
+                            labelField="label"
+                            valueField="value"
+                            placeholder="Select ID Type"
+                            value={identity.idType || 'National ID'}
+                            onChange={item => updateField('identity', 'idType', item.value)}
+                            disable={!isEditMode}
+                        />
                         <TextInput
-                            label="ID Number"
+                            label={identity.idType === 'Passport' ? "Passport Number" : "South African ID Number"}
                             value={identity.idNumber || ''}
                             onChangeText={(text) => updateField('identity', 'idNumber', text)}
                             style={styles.input}
-                            keyboardType="numeric"
+                            keyboardType={identity.idType === 'Passport' ? "default" : "number-pad"}
+                            maxLength={identity.idType === 'Passport' ? 20 : 13}
                             editable={isEditMode}
                         />
                         <View style={styles.switchRow}>
-                            <Text>Mask ID on Resume? (e.g. 850101 **** ***)</Text>
+                            <Text style={{ color: theme.textPrimary }}>Mask ID on Resume? (e.g. 850101 **** ***)</Text>
                             <Switch
                                 value={identity.idMask !== false}
                                 onValueChange={(val) => updateField('identity', 'idMask', val)}
@@ -466,18 +506,19 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             </Card>
 
             {/* 5. Demographics Section */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title="Demographics (Optional)"
-                    left={(props) => <IconButton {...props} icon="human-greeting-variant" />}
+                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    left={(props) => <IconButton {...props} icon="human-greeting-variant" iconColor={theme.accent} />}
                     right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Demographics' ? "chevron-up" : "chevron-down"} onPress={() => toggleSection('Demographics')} />
+                        <IconButton {...props} icon={expandedSection === 'Demographics' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Demographics')} />
                     )}
                 />
                 {expandedSection === 'Demographics' && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
-                        <Text style={styles.label}>Gender</Text>
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Gender</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
@@ -494,7 +535,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             onChange={item => updateField('demographics', 'Gender', item.value)}
                             disable={!isEditMode}
                         />
-                        <Text style={styles.label}>Race</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Race</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
@@ -513,7 +554,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             onChange={item => updateField('demographics', 'Race', item.value)}
                             disable={!isEditMode}
                         />
-                        <Text style={styles.label}>Marital Status</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Marital Status</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
@@ -532,7 +573,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             onChange={item => updateField('demographics', 'MaritalStatus', item.value)}
                             disable={!isEditMode}
                         />
-                        <Text style={styles.label}>Disability Status</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Disability Status</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
@@ -562,7 +603,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                                 editable={isEditMode}
                             />
                         )}
-                        <Text style={styles.label}>Nationality</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Nationality</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
@@ -582,18 +623,19 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             </Card>
 
             {/* 6. Licensing Section */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title="Licensing"
-                    left={(props) => <IconButton {...props} icon="car-sports" />}
+                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    left={(props) => <IconButton {...props} icon="car-sports" iconColor={theme.accent} />}
                     right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Licensing' ? "chevron-up" : "chevron-down"} onPress={() => toggleSection('Licensing')} />
+                        <IconButton {...props} icon={expandedSection === 'Licensing' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Licensing')} />
                     )}
                 />
                 {expandedSection === 'Licensing' && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
-                        <Text style={styles.label}>Motor Vehicle Drivers License</Text>
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Motor Vehicle Drivers License</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
@@ -617,14 +659,14 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             disable={!isEditMode}
                         />
                         <View style={styles.switchRow}>
-                            <Text>Show Drivers License?</Text>
+                            <Text style={{ color: theme.textPrimary }}>Show Drivers License?</Text>
                             <Switch
                                 value={licensing.DriversVisible !== false}
                                 onValueChange={(val) => updateField('licensing', 'DriversVisible', val)}
                                 disabled={!isEditMode}
                             />
                         </View>
-                        <Text style={styles.label}>Motorcycle Drivers License</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Motorcycle Drivers License</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
@@ -644,7 +686,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             disable={!isEditMode}
                         />
                         <View style={styles.switchRow}>
-                            <Text>Show Motorcycle License?</Text>
+                            <Text style={{ color: theme.textPrimary }}>Show Motorcycle License?</Text>
                             <Switch
                                 value={(licensing.Motorcycle && licensing.Motorcycle !== 'None') ? (licensing.MotorVisible !== false) : false}
                                 onValueChange={(val) => updateField('licensing', 'MotorVisible', val)}
@@ -656,19 +698,20 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             </Card>
 
             {/* 7. Legal Section */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title="Legal"
-                    left={(props) => <IconButton {...props} icon="gavel" />}
+                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    left={(props) => <IconButton {...props} icon="gavel" iconColor={theme.accent} />}
                     right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Legal' ? "chevron-up" : "chevron-down"} onPress={() => toggleSection('Legal')} />
+                        <IconButton {...props} icon={expandedSection === 'Legal' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Legal')} />
                     )}
                 />
                 {expandedSection === 'Legal' && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         <View style={styles.switchRow}>
-                            <Text>Criminal Record?</Text>
+                            <Text style={{ color: theme.textPrimary }}>Criminal Record?</Text>
                             <Switch
                                 value={legal["Criminal Record"] || false}
                                 onValueChange={(val) => updateField('legal', 'Criminal Record', val)}
@@ -690,19 +733,20 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             </Card>
 
             {/* 8. Languages Section */}
-            <Card style={styles.card}>
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title={`Languages (${languages.length})`}
-                    left={(props) => <IconButton {...props} icon="translate" />}
+                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    left={(props) => <IconButton {...props} icon="translate" iconColor={theme.accent} />}
                     right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Languages' ? "chevron-up" : "chevron-down"} onPress={() => toggleSection('Languages')} />
+                        <IconButton {...props} icon={expandedSection === 'Languages' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Languages')} />
                     )}
                 />
                 {expandedSection === 'Languages' && (
                     <Card.Content>
-                        <Divider style={{ marginBottom: 10 }} />
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {languages.map((lang: any, index: number) => (
-                            <View key={index} style={styles.repeaterBox}>
+                            <View key={index} style={[styles.repeaterBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                 <TextInput
                                     label="Language"
                                     value={lang.Language || ''}
@@ -739,7 +783,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             </View>
                         ))}
                         {isEditMode && (
-                            <Button mode="outlined" icon="plus" onPress={addLanguage} style={{ marginBottom: 10, alignSelf: 'flex-start' }}>
+                            <Button mode="outlined" icon="plus" textColor={theme.accent} onPress={addLanguage} style={{ borderColor: theme.accent, marginBottom: 10, alignSelf: 'flex-start' }}>
                                 Add Language
                             </Button>
                         )}
@@ -751,13 +795,13 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f5f5f5' },
-    card: { marginBottom: 10 },
-    input: { marginBottom: 10, backgroundColor: '#fff', fontSize: 14 },
+    container: { flex: 1 },
+    card: { marginBottom: 10, borderRadius: 12, borderWidth: 1 },
+    input: { marginBottom: 10 },
     switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, paddingVertical: 5 },
-    dropdown: { height: 50, borderColor: '#ccc', borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, marginBottom: 10, backgroundColor: '#fff' },
-    label: { fontSize: 12, color: '#777', marginBottom: 5, marginLeft: 2 },
-    repeaterBox: { borderWidth: 1, borderColor: '#eee', borderRadius: 8, padding: 15, marginBottom: 10, backgroundColor: '#fafafa', position: 'relative' },
+    dropdown: { marginBottom: 10 },
+    label: { fontSize: 12, marginBottom: 5, marginLeft: 2, fontWeight: '600' },
+    repeaterBox: { borderWidth: 1, borderRadius: 8, padding: 15, marginBottom: 10, position: 'relative' },
     deleteBtn: { position: 'absolute', top: -5, right: -5 }
 });
 

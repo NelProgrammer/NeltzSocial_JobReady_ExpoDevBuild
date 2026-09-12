@@ -1,8 +1,10 @@
 import React, { useContext, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { TextInput, Button, Card, IconButton, Divider, Text } from 'react-native-paper';
+import { Button, Card, IconButton, Divider, Text } from 'react-native-paper';
+import { ThemedTextInput as TextInput } from './common/ThemedTextInput';
 import { ResumeContext } from '../context/ResumeContext';
+import { useThemeContext } from '../context/ThemeContext';
 import { ReferenceItem } from '../types/resume';
 
 interface ReferencesProps {
@@ -10,13 +12,14 @@ interface ReferencesProps {
 }
 
 const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
+    const { theme } = useThemeContext();
     const { resumeData, updateResumeData } = useContext(ResumeContext) as any;
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null); // Collapsed by default
 
     if (!resumeData || !updateResumeData) {
         return (
             <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                <Text style={{ color: '#64748b' }}>Loading References...</Text>
+                <Text style={{ color: theme.textSecondary }}>Loading References...</Text>
             </View>
         );
     }
@@ -83,8 +86,8 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
             keyboardShouldPersistTaps="handled"
         >
             {references.length === 0 ? (
-                <View style={styles.emptyCard}>
-                    <Text style={styles.emptyText}>ℹ️ No references added yet. Tap "+ Add Reference" to get started.</Text>
+                <View style={[styles.emptyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }]}>
+                    <Text style={[styles.emptyText, { color: theme.textSecondary }]}>ℹ️ No references added yet. Tap "+ Add Reference" to get started.</Text>
                 </View>
             ) : (
                 references.map((ref: ReferenceItem, index: number) => {
@@ -98,27 +101,30 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                     const isExpanded = expandedIndex === index;
 
                     return (
-                        <Card key={ref.id || index} style={styles.card}>
+                        <Card key={ref.id || index} style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                             <Card.Title
                                 title={refName || "New Reference"}
                                 subtitle={refCompany ? `${refRole} at ${refCompany}` : (refRole || "Reference Details")}
-                                left={(props) => <IconButton {...props} icon="account-star-outline" size={24} />}
+                                titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                                subtitleStyle={{ color: theme.textSecondary }}
+                                left={(props) => <IconButton {...props} icon="account-star-outline" iconColor={theme.accent} size={24} />}
                                 right={(props) => (
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                                         <IconButton
                                             {...props}
+                                            iconColor={theme.textSecondary}
                                             icon={isExpanded ? "chevron-up" : "chevron-down"}
                                             onPress={() => setExpandedIndex(isExpanded ? null : index)}
                                         />
                                         {isEditMode && (
-                                            <IconButton {...props} icon="delete" onPress={() => removeReference(index)} />
+                                            <IconButton {...props} icon="delete" iconColor="#ef4444" onPress={() => removeReference(index)} />
                                         )}
                                     </View>
                                 )}
                             />
                             {isExpanded && (
                                 <Card.Content>
-                                    <Divider style={{ marginBottom: 10 }} />
+                                    <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                                     <TextInput
                                         label="Full Name"
                                         value={refName}
@@ -153,7 +159,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                                         editable={isEditMode}
                                     />
                                     
-                                    <Text style={styles.subHeader}>Contact Details</Text>
+                                    <Text style={[styles.subHeader, { color: theme.textSecondary }]}>Contact Details</Text>
                                     <TextInput
                                         label="Cell Number"
                                         value={cellPhone}
@@ -193,7 +199,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
             )}
 
             {isEditMode && (
-                <Button mode="contained" icon="plus" onPress={addReference} style={styles.addBtn}>
+                <Button mode="contained" icon="plus" onPress={addReference} style={[styles.addBtn, { backgroundColor: theme.accent }]}>
                     Add Reference
                 </Button>
             )}
@@ -203,12 +209,12 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    card: { marginBottom: 15, backgroundColor: '#ffffff' },
-    subHeader: { fontWeight: 'bold', fontSize: 13, color: '#475569', marginTop: 8, marginBottom: 8 },
-    input: { marginBottom: 10, backgroundColor: '#F8F9FA' },
-    addBtn: { marginTop: 10, marginBottom: 20, alignSelf: 'flex-start', backgroundColor: '#6200EE' },
-    emptyCard: { padding: 14, backgroundColor: '#f0f4f8', borderRadius: 8, marginBottom: 15 },
-    emptyText: { color: '#64748b', fontSize: 13 }
+    card: { marginBottom: 15, borderRadius: 8 },
+    subHeader: { fontWeight: 'bold', fontSize: 13, marginTop: 8, marginBottom: 8 },
+    input: { marginBottom: 10 },
+    addBtn: { marginTop: 10, marginBottom: 20, alignSelf: 'flex-start' },
+    emptyCard: { padding: 14, borderRadius: 8, marginBottom: 15 },
+    emptyText: { fontSize: 13 }
 });
 
 export default References;
