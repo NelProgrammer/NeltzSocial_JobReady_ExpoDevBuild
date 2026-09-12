@@ -183,6 +183,8 @@ export interface ReferenceItem {
   company?: string;
   role?: string;
   Role?: string;
+  relation?: string;
+  relationship?: string;
   cellPhone?: string;
   workPhone?: string;
   email?: string;
@@ -199,7 +201,7 @@ export interface ResumeData {
     professionalCertifications?: ProfessionalCertItem[];
     technicalCertifications?: TechCertItem[];
     regulatoryCertifications?: RegulatoryCertItem[];
-    highschool?: { "Year Completed"?: number | string; "Highest Grade Passed"?: string; "Province Department"?: string; visible?: boolean };
+    highschool?: { "Year Completed"?: number | string; "Highest Grade Passed"?: string; "Province Department"?: string; "Subjects Stream"?: string; visible?: boolean };
   };
   skills?: ResumeSkills;
   Skills?: ResumeSkills;

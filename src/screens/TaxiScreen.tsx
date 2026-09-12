@@ -6,12 +6,14 @@ import { AuthContext } from '../context/AuthContext';
 import { Storage } from '../utils/storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useThemeContext } from '../context/ThemeContext';
+import { MultiLegCommutePlanner } from '../components/MultiLegCommutePlanner';
 
 const TaxiScreen = ({ navigation }: { navigation: any }) => {
     const { user } = useContext(AuthContext);
     const { theme } = useThemeContext();
     const insets = useSafeAreaInsets();
 
+    const [activeTab, setActiveTab] = useState<'single' | 'multileg'>('single');
     const [activeTrip, setActiveTrip] = useState<any>(null);
     const [savedTrips, setSavedTrips] = useState<any[]>([]);
     
@@ -333,10 +335,47 @@ const TaxiScreen = ({ navigation }: { navigation: any }) => {
                     </View>
                 ) : (
                     // Commute planner view
-                    <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 60 }}>
-                        <Card style={[styles.card, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-                            <Card.Content>
-                                <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>Commute Calculator</Text>
+                    <View style={{ flex: 1 }}>
+                        {/* Segment Tab Switcher */}
+                        <View style={{ flexDirection: 'row', padding: 8, gap: 8, borderBottomWidth: 1, borderColor: theme.border, backgroundColor: theme.bgDark }}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.segmentBtn,
+                                    {
+                                        backgroundColor: activeTab === 'single' ? theme.accent : theme.bgSurface,
+                                        borderColor: activeTab === 'single' ? theme.accent : theme.border
+                                    }
+                                ]}
+                                onPress={() => setActiveTab('single')}
+                            >
+                                <Text style={{ color: activeTab === 'single' ? '#fff' : theme.textSecondary, fontWeight: 'bold', fontSize: 12 }}>
+                                    Point-to-Point & Sentinel
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.segmentBtn,
+                                    {
+                                        backgroundColor: activeTab === 'multileg' ? theme.accent : theme.bgSurface,
+                                        borderColor: activeTab === 'multileg' ? theme.accent : theme.border
+                                    }
+                                ]}
+                                onPress={() => setActiveTab('multileg')}
+                            >
+                                <Text style={{ color: activeTab === 'multileg' ? '#fff' : theme.textSecondary, fontWeight: 'bold', fontSize: 12 }}>
+                                    Multi-Leg Transit Planner
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {activeTab === 'multileg' ? (
+                            <MultiLegCommutePlanner userId={user?.id || 'guest'} theme={theme} />
+                        ) : (
+                            <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 60 }}>
+                                <Card style={[styles.card, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <Card.Content>
+                                        <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>Commute Calculator</Text>
 
                                 <TextInput
                                     label="Origin Location"
@@ -471,6 +510,8 @@ const TaxiScreen = ({ navigation }: { navigation: any }) => {
                             </Card.Content>
                         </Card>
                     </ScrollView>
+                        )}
+                    </View>
                 )}
             </View>
 
@@ -495,6 +536,7 @@ const TaxiScreen = ({ navigation }: { navigation: any }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
+    segmentBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 8, borderRadius: 8, borderWidth: 1 },
     headerBanner: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 10, borderBottomWidth: 1 },
     headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     navBtn: { padding: 8, borderRadius: 10, borderWidth: 1 },

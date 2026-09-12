@@ -219,8 +219,12 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
                   <Switch value={isVisible('pd_name_first')} onValueChange={() => toggleItemVisibility('pd_name_first', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
                 </View>
                 <View style={styles.itemRow}>
-                  <Text style={[styles.itemTitle, { fontSize: 12, flex: 1 }]}>Middle Name: {names.middleName || 'N/A'}</Text>
+                  <Text style={[styles.itemTitle, { fontSize: 12, flex: 1 }]}>Middle Name: {names.middleName || names.MiddleName || 'N/A'}</Text>
                   <Switch value={isVisible('pd_name_middle')} onValueChange={() => toggleItemVisibility('pd_name_middle', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+                </View>
+                <View style={styles.itemRow}>
+                  <Text style={[styles.itemTitle, { fontSize: 12, flex: 1 }]}>Maiden Name: {names.MaidenName || 'N/A'}</Text>
+                  <Switch value={isVisible('pd_name_maiden')} onValueChange={() => toggleItemVisibility('pd_name_maiden', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
                 </View>
                 <View style={styles.itemRow}>
                   <Text style={[styles.itemTitle, { fontSize: 12, flex: 1 }]}>Surname: {names.Surname || 'Surname'}</Text>
