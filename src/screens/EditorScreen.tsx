@@ -105,7 +105,7 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
       </View>
 
       {/* Body Card Container wrapping Top Tab Navigator */}
-      <View style={[styles.bodyCard, { backgroundColor: theme.bgSurface, borderColor: theme.border, marginBottom: 60 + Math.max(insets.bottom, 0) }]}>
+      <View style={[styles.bodyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, marginBottom: 60 + Math.max(insets.bottom, 0) }]}>
         <Tab.Navigator
           screenOptions={{
             tabBarScrollEnabled: true,

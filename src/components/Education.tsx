@@ -297,7 +297,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
 
     return (
         <KeyboardAwareScrollView
-            style={styles.container}
+            style={[styles.container, { backgroundColor: theme.bgDark }]}
             enableOnAndroid={true}
             extraScrollHeight={100}
             showsVerticalScrollIndicator={false}
