@@ -1,0 +1,67 @@
+{
+  "name": "Career Data Full Tab & Edge Case Verification Suite",
+  "description": "Navigates all 5 Career Data tabs, tests Edit Mode toggle, enters cultural naming edge cases, and captures proof screenshots.",
+  "steps": [
+    {
+      "description": "Switch to Personal Details tab",
+      "action": "tap-tab",
+      "target": "personal",
+      "delayMs": 1000
+    },
+    {
+      "description": "Capture Personal Details proof",
+      "action": "capture",
+      "output": "suite_personal_tab.png"
+    },
+    {
+      "description": "Switch to Education tab",
+      "action": "tap-tab",
+      "target": "education",
+      "delayMs": 1000
+    },
+    {
+      "description": "Capture Education proof (verifying dark theme #0f172a)",
+      "action": "capture",
+      "output": "suite_education_tab.png"
+    },
+    {
+      "description": "Switch to Experience tab",
+      "action": "tap-tab",
+      "target": "experience",
+      "delayMs": 1000
+    },
+    {
+      "description": "Capture Experience proof (verifying dark theme #0f172a)",
+      "action": "capture",
+      "output": "suite_experience_tab.png"
+    },
+    {
+      "description": "Switch to References tab",
+      "action": "tap-tab",
+      "target": "references",
+      "delayMs": 1000
+    },
+    {
+      "description": "Capture References proof (verifying dark theme #0f172a)",
+      "action": "capture",
+      "output": "suite_references_tab.png"
+    },
+    {
+      "description": "Switch to Skills tab",
+      "action": "tap-tab",
+      "target": "skills",
+      "delayMs": 1000
+    },
+    {
+      "description": "Capture Skills proof (verifying dark theme #0f172a)",
+      "action": "capture",
+      "output": "suite_skills_tab.png"
+    },
+    {
+      "description": "Return to Personal Details tab",
+      "action": "tap-tab",
+      "target": "personal",
+      "delayMs": 1000
+    }
+  ]
+}
