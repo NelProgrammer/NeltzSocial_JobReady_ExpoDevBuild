@@ -6,7 +6,7 @@ import { ThemedTextInput as TextInput } from './common/ThemedTextInput';
 import { ThemedDropdown as Dropdown } from './common/ThemedDropdown';
 import { ResumeContext } from '../context/ResumeContext';
 import { useThemeContext } from '../context/ThemeContext';
-import { ProfessionalCertItem, TechCertItem, RegulatoryCertItem, TertiaryEducationItem } from '../types/resume';
+import { ProfessionalCertItem, TechCertItem, RegulatoryCertItem, TertiaryEducationItem, ArtisanalCertItem } from '../types/resume';
 
 interface EducationProps {
     isEditMode?: boolean;
@@ -28,6 +28,41 @@ const SUBJECTS_STREAMS = [
     { label: 'Technical / Engineering', value: 'Technical' }
 ];
 
+const SA_TRADES = [
+    { label: 'Electrician (Red Seal / Trade Test)', value: 'Electrician' },
+    { label: 'Boilermaker', value: 'Boilermaker' },
+    { label: 'Welder', value: 'Welder' },
+    { label: 'Plumber', value: 'Plumber' },
+    { label: 'Fitter & Turner', value: 'Fitter & Turner' },
+    { label: 'Mechanical Fitter', value: 'Mechanical Fitter' },
+    { label: 'Millwright', value: 'Millwright' },
+    { label: 'Motor Mechanic (Automotive)', value: 'Motor Mechanic' },
+    { label: 'Diesel Mechanic', value: 'Diesel Mechanic' },
+    { label: 'Auto Electrician', value: 'Auto Electrician' },
+    { label: 'Carpenter & Joiner', value: 'Carpenter & Joiner' },
+    { label: 'Bricklayer / Mason', value: 'Bricklayer' },
+    { label: 'Toolmaker', value: 'Toolmaker' },
+    { label: 'Rigger / Rigging', value: 'Rigger' },
+    { label: 'Instrument Mechanician', value: 'Instrument Mechanician' },
+    { label: 'Panelbeater / Spraypainter', value: 'Panelbeater' },
+    { label: 'Refrigeration & Air Conditioning', value: 'Refrigeration & Air Conditioning' },
+    { label: 'Other Trade / Artisanal', value: 'Other' }
+];
+
+const SA_TRADE_CENTRES = [
+    { label: 'INDLELA (Olifantsfontein National Trade Test Centre)', value: 'INDLELA' },
+    { label: 'merSETA Accredited Centre', value: 'merSETA' },
+    { label: 'CETA (Construction SETA) Accredited Centre', value: 'CETA' },
+    { label: 'EWSETA (Energy & Water SETA)', value: 'EWSETA' },
+    { label: 'CHIETA (Chemical Industries SETA)', value: 'CHIETA' },
+    { label: 'TETA (Transport Education SETA)', value: 'TETA' },
+    { label: 'MQA (Mining Qualifications Authority)', value: 'MQA' },
+    { label: 'NAMB (National Artisan Moderation Body)', value: 'NAMB' },
+    { label: 'QCTO Accredited Assessment Centre', value: 'QCTO' },
+    { label: 'TVET College Trade Test Centre', value: 'TVET College' },
+    { label: 'Other Accredited Centre', value: 'Other' }
+];
+
 const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     const { resumeData, updateResumeData } = useContext(ResumeContext) as any;
     const { theme } = useThemeContext();
@@ -36,6 +71,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
         highschool: false,
         tertiary: false,
+        artisanal: false,
         professional: false,
         technical: false,
         regulatory: false
@@ -63,6 +99,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     const education = resumeData.education || {};
     const highschool = education.highschool || {};
     const tertiary: TertiaryEducationItem[] = education.tertiary || [];
+    const artisanalCerts: ArtisanalCertItem[] = education.artisanalCertifications || [];
     const profCerts: ProfessionalCertItem[] = education.professionalCertifications || [];
     const techCerts: TechCertItem[] = education.technicalCertifications || [];
     const regCerts: RegulatoryCertItem[] = education.regulatoryCertifications || [];
@@ -138,6 +175,10 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     // --- Tertiary ---
     const addTertiary = () => {
         if (!isEditMode) return;
+        if (tertiary.some(t => !t["Qualification Name"]?.trim() && !t.Institution?.trim())) {
+            Alert.alert("Incomplete Qualification", "Please complete the existing tertiary qualification before adding a new one.");
+            return;
+        }
         const itemId = `edu_tertiary_${Date.now()}_${tertiary.length + 1}`;
         const newQual: TertiaryEducationItem = {
             id: itemId,
@@ -174,9 +215,62 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
         updateResumeData({ ...resumeData, education: { ...education, tertiary: newList } });
     };
 
+    // --- Artisanal / Trade Test / Red Seal ---
+    const addArtisanalCert = () => {
+        if (!isEditMode) return;
+        if (artisanalCerts.some(c => !c.trade?.trim() && !c.name?.trim())) {
+            Alert.alert("Incomplete Trade Qualification", "Please complete the existing trade qualification before adding a new one.");
+            return;
+        }
+        const itemId = `edu_art_${Date.now()}_${artisanalCerts.length + 1}`;
+        const newCert: ArtisanalCertItem = {
+            id: itemId,
+            name: '',
+            trade: '',
+            issuingBodyOrSeta: '',
+            contractOrCertificateNumber: '',
+            yearObtained: '',
+            date_obtained: '',
+            visible: true
+        };
+        updateResumeData({ ...resumeData, education: { ...education, artisanalCertifications: [...artisanalCerts, newCert] } });
+        setExpandedCategories(prev => ({ ...prev, artisanal: true }));
+        setExpandedItems(prev => ({ ...prev, [itemId]: true }));
+    };
+
+    const removeArtisanalCert = (index: number) => {
+        if (!isEditMode) return;
+        Alert.alert("Remove Artisanal Qualification", "Are you sure?", [
+            { text: "Cancel", style: "cancel" },
+            {
+                text: "Remove", style: "destructive",
+                onPress: () => {
+                    const newList = [...artisanalCerts];
+                    newList.splice(index, 1);
+                    updateResumeData({ ...resumeData, education: { ...education, artisanalCertifications: newList } });
+                }
+            }
+        ]);
+    };
+
+    const updateArtisanalCert = (index: number, key: string, value: any) => {
+        if (!isEditMode) return;
+        const newList = [...artisanalCerts];
+        if (key === 'yearObtained' || key === 'date_obtained') {
+            newList[index] = { ...newList[index], yearObtained: value, date_obtained: value, dateObtained: value };
+        } else {
+            newList[index] = { ...newList[index], [key]: value };
+        }
+        updateResumeData({ ...resumeData, education: { ...education, artisanalCertifications: newList } });
+    };
+
     // --- Professional Certifications ---
     const addProfCert = () => {
         if (!isEditMode) return;
+        if (profCerts.some(c => !c.name?.trim() && !c.institution?.trim())) {
+            Alert.alert("Incomplete Certification", "Please complete the existing professional certification before adding a new one.");
+            return;
+        }
         const itemId = `edu_prof_${Date.now()}_${profCerts.length + 1}`;
         const newCert: ProfessionalCertItem = {
             id: itemId, name: '', institution: '', yearObtained: '', date_obtained: '', certNumber: '', visible: true
@@ -217,6 +311,10 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     // --- Technical Certifications ---
     const addTechCert = () => {
         if (!isEditMode) return;
+        if (techCerts.some(c => !c.name?.trim() && !c.provider?.trim())) {
+            Alert.alert("Incomplete Certification", "Please complete the existing technical certification before adding a new one.");
+            return;
+        }
         const itemId = `edu_tech_${Date.now()}_${techCerts.length + 1}`;
         const newCert: TechCertItem = {
             id: itemId, name: '', provider: '', yearObtained: '', date_obtained: '', certNumber: '', visible: true
@@ -255,6 +353,10 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
     // --- Regulatory Certifications ---
     const addRegCert = () => {
         if (!isEditMode) return;
+        if (regCerts.some(c => !c.name?.trim() && !c.issuingBody?.trim())) {
+            Alert.alert("Incomplete Certification", "Please complete the existing regulatory certification before adding a new one.");
+            return;
+        }
         const itemId = `edu_reg_${Date.now()}_${regCerts.length + 1}`;
         const newCert: RegulatoryCertItem = {
             id: itemId, name: '', issuingBody: '', licenseNumber: '', yearObtained: '', date_obtained: '', expiryYear: '', expiry_date: '', visible: true
@@ -473,7 +575,118 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                 )}
             </Card>
 
-            {/* Category 3: Professional Certifications */}
+            {/* Category: Artisanal & Trade Test (Red Seal) */}
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
+                <Card.Title
+                    title={`🔧 Artisanal & Trade Test (${artisanalCerts.length})`}
+                    subtitle={getCsvSummary(artisanalCerts, 'trade') || getCsvSummary(artisanalCerts, 'name')}
+                    subtitleNumberOfLines={2}
+                    titleStyle={[styles.catTitle, { color: theme.textPrimary }]}
+                    subtitleStyle={[styles.catSubtitle, { color: theme.textSecondary }]}
+                    left={(props) => <IconButton {...props} icon="wrench-outline" iconColor={theme.accent} />}
+                    right={(props) => (
+                        <IconButton
+                            {...props}
+                            iconColor={theme.textSecondary}
+                            icon={expandedCategories.artisanal ? "chevron-up" : "chevron-down"}
+                            onPress={() => toggleCategory('artisanal')}
+                        />
+                    )}
+                />
+                {expandedCategories.artisanal && (
+                    <Card.Content>
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
+                        {artisanalCerts.length === 0 ? (
+                            <View style={[styles.emptyCard, { backgroundColor: theme.bgDark, borderColor: theme.border, borderWidth: 1 }]}>
+                                <Text style={[styles.emptyText, { color: theme.textSecondary }]}>ℹ️ No artisanal/trade test qualifications added yet (e.g. Red Seal Electrician, Boilermaker, Welder, Fitter & Turner).</Text>
+                            </View>
+                        ) : (
+                            artisanalCerts.map((cert, index) => {
+                                const itemId = cert.id || `art_${index}`;
+                                const isItemExpanded = !!expandedItems[itemId];
+
+                                return (
+                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                        <View style={styles.subItemHeaderRow}>
+                                            <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
+                                                {cert.trade ? `🔧 ${cert.trade}` : (cert.name ? `🔧 ${cert.name}` : `Trade Qualification #${index + 1}`)}
+                                                {cert.issuingBodyOrSeta ? ` (${cert.issuingBodyOrSeta})` : ''}
+                                            </Text>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                <IconButton icon={isItemExpanded ? "chevron-up" : "chevron-down"} iconColor={theme.textSecondary} size={20} onPress={() => toggleItem(itemId)} />
+                                                {isEditMode && <IconButton icon="delete" iconColor="#ef4444" size={20} onPress={() => removeArtisanalCert(index)} />}
+                                            </View>
+                                        </View>
+                                        {isItemExpanded && (
+                                            <View style={{ marginTop: 8 }}>
+                                                <Divider style={{ marginBottom: 8, backgroundColor: theme.border }} />
+                                                <Text style={[styles.label, { color: theme.textSecondary }]}>Designated Trade / Occupation</Text>
+                                                <Dropdown
+                                                    style={styles.dropdown}
+                                                    dropdownPosition="auto"
+                                                    data={SA_TRADES}
+                                                    labelField="label"
+                                                    valueField="value"
+                                                    placeholder="Select Designated Trade"
+                                                    value={cert.trade || ''}
+                                                    onChange={item => updateArtisanalCert(index, 'trade', item.value)}
+                                                    disable={!isEditMode}
+                                                />
+                                                <TextInput
+                                                    label="Trade Title / Specialisation (if other)"
+                                                    value={cert.name || ''}
+                                                    onChangeText={(text) => updateArtisanalCert(index, 'name', text)}
+                                                    style={styles.input}
+                                                    placeholder="e.g. Red Seal Section 28 Welder"
+                                                    editable={isEditMode}
+                                                />
+                                                <Text style={[styles.label, { color: theme.textSecondary }]}>Accredited Trade Test Centre / SETA</Text>
+                                                <Dropdown
+                                                    style={styles.dropdown}
+                                                    dropdownPosition="auto"
+                                                    data={SA_TRADE_CENTRES}
+                                                    labelField="label"
+                                                    valueField="value"
+                                                    placeholder="Select Issuing Body / SETA"
+                                                    value={cert.issuingBodyOrSeta || ''}
+                                                    onChange={item => updateArtisanalCert(index, 'issuingBodyOrSeta', item.value)}
+                                                    disable={!isEditMode}
+                                                />
+                                                <TextInput
+                                                    label="Contract / Serial / Certificate No."
+                                                    value={cert.contractOrCertificateNumber || ''}
+                                                    onChangeText={(text) => updateArtisanalCert(index, 'contractOrCertificateNumber', text)}
+                                                    style={styles.input}
+                                                    editable={isEditMode}
+                                                />
+                                                <TouchableOpacity
+                                                    onPress={() => openCalendarPicker("Date Trade Test Passed", cert.yearObtained, (val) => updateArtisanalCert(index, 'yearObtained', val))}
+                                                    disabled={!isEditMode}
+                                                    activeOpacity={0.8}
+                                                >
+                                                    <TextInput
+                                                        label="Date Trade Test Passed"
+                                                        value={String(cert.yearObtained || '')}
+                                                        style={styles.input}
+                                                        left={<TextInput.Icon icon="calendar" onPress={() => openCalendarPicker("Date Trade Test Passed", cert.yearObtained, (val) => updateArtisanalCert(index, 'yearObtained', val))} />}
+                                                        right={<TextInput.Icon icon="calendar-month" onPress={() => openCalendarPicker("Date Trade Test Passed", cert.yearObtained, (val) => updateArtisanalCert(index, 'yearObtained', val))} />}
+                                                        placeholder="YYYY-MM-DD"
+                                                        editable={false}
+                                                        pointerEvents="none"
+                                                    />
+                                                </TouchableOpacity>
+                                            </View>
+                                        )}
+                                    </View>
+                                );
+                            })
+                        )}
+                        {isEditMode && <Button mode="contained" icon="plus" onPress={addArtisanalCert} style={[styles.addBtn, { backgroundColor: theme.accent }]}>Add Trade / Artisanal Qualification</Button>}
+                    </Card.Content>
+                )}
+            </Card>
+
+            {/* Category 4: Professional Certifications */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                 <Card.Title
                     title={`📜 Professional Certifications (${profCerts.length})`}

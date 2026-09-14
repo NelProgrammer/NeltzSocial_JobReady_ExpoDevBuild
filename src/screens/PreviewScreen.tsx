@@ -172,28 +172,50 @@ const PreviewScreen = ({ navigation }) => {
             .meta-item strong { display: inline-block; width: 120px; color: #555; }
         `;
 
+        // Master Field Visibility Map
+        const vis = resumeData.visibility || {};
+        const isFieldVisible = (key) => vis[key] !== false;
+
+        // Names formatting
+        const rawFirst = isFieldVisible('pd_name_first') ? (names.firstName || '') : '';
+        const rawSurname = isFieldVisible('pd_name_surname') ? (names.Surname || '') : '';
+        let middleStr = '';
+        if (isFieldVisible('pd_name_middle') && (names.middleName || names.MiddleName)) {
+            const m = names.middleName || names.MiddleName;
+            middleStr = uiSettings?.MiddleNameFormat === 'initial' ? `${m.charAt(0)}.` : (uiSettings?.MiddleNameFormat !== 'omit' ? m : '');
+        }
+        let maidenStr = '';
+        if (isFieldVisible('pd_name_maiden') && names.MaidenName) {
+            maidenStr = uiSettings?.MaidenNameFormat === 'hyphen' ? `- ${names.MaidenName}` : (uiSettings?.MaidenNameFormat !== 'omit' ? `(née ${names.MaidenName})` : '');
+        }
+        let fullName = [rawFirst, middleStr, maidenStr, rawSurname].filter(Boolean).join(' ') || 'Job Applicant';
+        if (uiSettings?.NameCase === 'upper') fullName = fullName.toUpperCase();
+
         let headerHtml = '';
         const modernContacts = [
-            contact.Email ? `📧 ${contact.Email}` : '',
-            contact.Phone ? `📱 ${contact.Phone}` : '',
-            contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]}` : '',
-            contact.LinkedIn ? `🔗 ${contact.LinkedIn}` : '',
-            contact.Website ? `🌐 ${contact.Website}` : '',
+            (contact.Email && isFieldVisible('pd_contact_email')) ? `📧 ${contact.Email}` : '',
+            (contact.Phone && isFieldVisible('pd_contact_phone')) ? `📱 ${contact.Phone}` : '',
+            ((contact.AltPhone || contact["Phone-alt"]) && isFieldVisible('pd_contact_alt_phone')) ? `📱 ${contact.AltPhone || contact["Phone-alt"]}` : '',
+            (contact.LinkedIn && isFieldVisible('pd_contact_linkedin')) ? `🔗 ${contact.LinkedIn}` : '',
+            ((contact.Website || contact.Portfolio) && isFieldVisible('pd_contact_website')) ? `🌐 ${contact.Website || contact.Portfolio}` : '',
             address.AddressType ? `[${address.AddressType}] ${formatAddress(address["Home Address"] || '')}` : (address["Home Address"] ? formatAddress(address["Home Address"]) : '')
         ].filter(Boolean);
 
         if (Layout === 'modern') {
             headerHtml = `
                 <div class="header-mod">
-                    <h1>${names.Prefix ? names.Prefix + ' ' : ''}${names.firstName || ''} ${names.MiddleName ? names.MiddleName + ' ' : ''}${names.Surname || ''}</h1>
+                    <h1>${fullName}</h1>
                     ${modernContacts.length > 0 ? `<div class="contact-info">${modernContacts.join(' | ')}</div>` : ''}
                 </div>
             `;
         } else if (Layout === 'minimalist') {
-            const minContacts = [contact.Email, contact.Phone].filter(Boolean);
+            const minContacts = [
+                (contact.Email && isFieldVisible('pd_contact_email')) ? contact.Email : '',
+                (contact.Phone && isFieldVisible('pd_contact_phone')) ? contact.Phone : ''
+            ].filter(Boolean);
             headerHtml = `
                 <div class="header-min">
-                    <h1>${names.firstName || ''} ${names.Surname || ''}</h1>
+                    <h1>${fullName}</h1>
                     ${minContacts.length > 0 ? `<div class="contact-info">${minContacts.join(' &bull; ')}</div>` : ''}
                     ${address["Home Address"] ? `<div class="contact-info">${address.AddressType ? `[${address.AddressType}] ` : ''}${formatAddress(address["Home Address"])}</div>` : ''}
                 </div>
@@ -201,7 +223,7 @@ const PreviewScreen = ({ navigation }) => {
         } else {
             headerHtml = `
                 <div class="header-pro">
-                    <h1>${names.Prefix ? names.Prefix + ' ' : ''}${names.firstName || ''} ${names.MiddleName ? names.MiddleName + ' ' : ''}${names.Surname || ''}</h1>
+                    <h1>${fullName}</h1>
                     ${modernContacts.length > 0 ? `<div class="contact-info">${modernContacts.join(' &nbsp;|&nbsp; ')}</div>` : ''}
                 </div>
             `;
@@ -210,13 +232,19 @@ const PreviewScreen = ({ navigation }) => {
         const sectionHeader = (title) => Layout === 'minimalist' ? `<h3 class="min-h3">${title.toUpperCase()}</h3>` : `<h3>${title}</h3>`;
 
         const demoItems = [];
-        if (identity.idNumber) demoItems.push(`<strong>ID Number:</strong> ${maskId(identity.idNumber)}`);
-        if (demographics.Nationality) demoItems.push(`<strong>Nationality:</strong> ${demographics.Nationality}`);
-        if (demographics.Gender && demographics.Gender !== 'None') demoItems.push(`<strong>Gender:</strong> ${demographics.Gender}`);
-        if (demographics.Race && demographics.Race !== 'Other') demoItems.push(`<strong>Race:</strong> ${demographics.Race}`);
-        if (licensing.DriversVisible && licensing.Drivers !== 'None') demoItems.push(`<strong>Drivers License:</strong> ${licensing.Drivers}`);
-        if (licensing.MotorVisible && licensing.Motorcycle && licensing.Motorcycle !== 'None') demoItems.push(`<strong>Motorcycle:</strong> ${licensing.Motorcycle}`);
-        if (legal["Criminal Record"]) demoItems.push(`<strong>Criminal Record:</strong> Yes ${legal.Details ? `(${legal.Details})` : ''}`);
+        if (identity.idNumber && isFieldVisible('pd_identity_number')) {
+            const mask = uiSettings?.IdMask !== false && isFieldVisible('pd_identity_mask');
+            const displayVal = mask && identity.idNumber.length >= 6 ? `${identity.idNumber.substring(0, 6)} **** ***` : identity.idNumber;
+            demoItems.push(`<strong>ID Number:</strong> ${displayVal}`);
+        }
+        if (demographics.Nationality && isFieldVisible('pd_identity_nationality')) demoItems.push(`<strong>Nationality:</strong> ${demographics.Nationality}`);
+        if (demographics.Gender && demographics.Gender !== 'None' && isFieldVisible('pd_identity_gender')) demoItems.push(`<strong>Gender:</strong> ${demographics.Gender}`);
+        if (demographics.Race && demographics.Race !== 'Other' && isFieldVisible('pd_identity_race')) demoItems.push(`<strong>Race:</strong> ${demographics.Race}`);
+        if ((demographics.MaritalStatus || demographics.maritalStatus) && isFieldVisible('pd_identity_marital')) demoItems.push(`<strong>Marital Status:</strong> ${demographics.MaritalStatus || demographics.maritalStatus}`);
+        if (licensing.Drivers && licensing.Drivers !== 'None' && isFieldVisible('pd_license_drivers')) demoItems.push(`<strong>Drivers License:</strong> ${licensing.Drivers}`);
+        if (licensing.PrDP && isFieldVisible('pd_license_prdp')) demoItems.push(`<strong>PrDP:</strong> Valid`);
+        if (licensing.OwnVehicle && isFieldVisible('pd_license_vehicle')) demoItems.push(`<strong>Vehicle:</strong> Own Transport`);
+        if (legal["Criminal Record"] !== undefined && isFieldVisible('pd_identity_criminal')) demoItems.push(`<strong>Criminal Record:</strong> ${legal["Criminal Record"] ? (legal.Details || 'Yes') : 'Clear / None'}`);
 
         const isDemoComma = uiSettings?.DemoFormat === 'comma';
         const identityHtml = demoItems.length > 0 ? `
@@ -229,7 +257,7 @@ const PreviewScreen = ({ navigation }) => {
             </div>
         ` : '';
 
-        const validLanguages = (languages || []).filter(l => l.visible !== false && l.Language && l.Language.trim().length > 0);
+        const validLanguages = (languages || []).filter((l, idx) => l.visible !== false && isFieldVisible(`lang_${idx}`) && l.Language && l.Language.trim().length > 0);
         const langHtml = validLanguages.length > 0 ? `
             ${sectionHeader('Languages')}
             <ul>
@@ -237,7 +265,7 @@ const PreviewScreen = ({ navigation }) => {
             </ul>
         ` : '';
 
-        const visibleExp = (expList || []).filter(job => job.visible !== false && ((job.Organization && job.Organization.trim().length > 0) || (job.Role && job.Role.trim().length > 0)));
+        const visibleExp = (expList || []).filter((job, idx) => job.visible !== false && isFieldVisible(`exp_${idx}`) && ((job.Organization && job.Organization.trim().length > 0) || (job.Role && job.Role.trim().length > 0)));
         const respFormat = uiSettings?.RespFormat || uiSettings?.ResponsibilityFormat;
         const expHtml = visibleExp && visibleExp.length > 0 ? `
             ${sectionHeader('Professional Experience')}
@@ -258,12 +286,13 @@ const PreviewScreen = ({ navigation }) => {
             `;}).join('')}
         ` : '';
 
-        const visibleTertiary = (eduList?.tertiary || []).filter(edu => edu.visible !== false && ((edu.Institution && edu.Institution.trim().length > 0) || (edu["Qualification Name"] && edu["Qualification Name"].trim().length > 0)));
-        const visibleTechCerts = (eduList?.technicalCertifications || []).filter(cert => cert.visible !== false && cert.name && cert.name.trim().length > 0);
-        const visibleRegCerts = (eduList?.regulatoryCertifications || []).filter(cert => cert.visible !== false && cert.name && cert.name.trim().length > 0);
-        const hasHighschool = eduList?.highschool?.["Year Completed"] && eduList?.highschool?.visible !== false;
+        const visibleTertiary = (eduList?.tertiary || []).filter((edu, idx) => edu.visible !== false && isFieldVisible(`edu_tertiary_${idx}`) && ((edu.Institution && edu.Institution.trim().length > 0) || (edu["Qualification Name"] && edu["Qualification Name"].trim().length > 0)));
+        const visibleArtisanal = (eduList?.artisanalCertifications || []).filter((cert, idx) => cert.visible !== false && isFieldVisible(`edu_art_${idx}`) && ((cert.trade && cert.trade.trim().length > 0) || (cert.name && cert.name.trim().length > 0)));
+        const visibleTechCerts = (eduList?.technicalCertifications || []).filter((cert, idx) => cert.visible !== false && isFieldVisible(`edu_techcert_${idx}`) && cert.name && cert.name.trim().length > 0);
+        const visibleRegCerts = (eduList?.regulatoryCertifications || []).filter((cert, idx) => cert.visible !== false && isFieldVisible(`edu_regcert_${idx}`) && cert.name && cert.name.trim().length > 0);
+        const hasHighschool = eduList?.highschool?.["Year Completed"] && eduList?.highschool?.visible !== false && isFieldVisible('edu_highschool');
 
-        const hasEducationContent = visibleTertiary.length > 0 || visibleTechCerts.length > 0 || visibleRegCerts.length > 0 || hasHighschool;
+        const hasEducationContent = visibleTertiary.length > 0 || visibleArtisanal.length > 0 || visibleTechCerts.length > 0 || visibleRegCerts.length > 0 || hasHighschool;
 
         const eduHtml = hasEducationContent ? `
             ${sectionHeader('Education & Certifications')}
@@ -274,6 +303,15 @@ const PreviewScreen = ({ navigation }) => {
                         <span>${edu.date_obtained || edu.dateObtained || edu.Year || ''}</span>
                     </div>
                     <div>${edu["Qualification Name"]}</div>
+                </div>
+            `).join('')}
+            ${visibleArtisanal.map(cert => `
+                 <div class="edu-item" style="margin-bottom: 12px;">
+                    <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
+                        <span>🔧 ${cert.trade || cert.name}</span>
+                        <span>${cert.date_obtained || cert.dateObtained || cert.yearObtained || ''}</span>
+                    </div>
+                    <div style="font-size: 13px; color: #555;">${cert.issuingBodyOrSeta ? `Centre/SETA: ${cert.issuingBodyOrSeta}` : ''}${cert.contractOrCertificateNumber ? ` (Cert: ${cert.contractOrCertificateNumber})` : ''}</div>
                 </div>
             `).join('')}
             ${visibleTechCerts.map(cert => `
@@ -323,10 +361,12 @@ const PreviewScreen = ({ navigation }) => {
         const refHtml = refList && refList.length > 0 ? `
              ${sectionHeader('References')}
              <div class="ref-grid" style="${Layout === 'minimalist' ? 'text-align: center;' : ''}">
-                ${refList.map(ref => {
-                    const cell = ref.cellPhone ? `📱 Cell: ${ref.cellPhone}` : '';
-                    const work = ref.workPhone ? `☎️ Work: ${ref.workPhone}` : '';
-                    const email = ref.email ? `📧 ${ref.email}` : '';
+                ${refList.map((ref, idx) => {
+                    if (!isFieldVisible(`ref_${idx}`)) return '';
+                    const showContact = isFieldVisible(`ref_contact_${idx}`);
+                    const cell = (ref.cellPhone && showContact) ? `📱 Cell: ${ref.cellPhone}` : '';
+                    const work = (ref.workPhone && showContact) ? `☎️ Work: ${ref.workPhone}` : '';
+                    const email = (ref.email && showContact) ? `📧 ${ref.email}` : '';
                     const contactLines = [cell, work, email].filter(Boolean).join('<br/>');
                     const refRole = ref.role || ref.Role || ref.relation || ref.relationship || '';
                     const refOrg = ref.company || ref.organization || ref.Organization || ref.org || '';
@@ -353,7 +393,7 @@ const PreviewScreen = ({ navigation }) => {
                         <div class="vignette-sheet">
                             ${headerHtml}
                             ${identityHtml}
-                            ${summary ? `${sectionHeader('Executive Summary')}<p>${summary}</p>` : ''}
+                            ${summary && isFieldVisible('summary_visibility') ? `${sectionHeader('Executive Summary')}<p>${summary}</p>` : ''}
                             ${expHtml}
                             ${eduHtml}
                             ${skillsHtml}

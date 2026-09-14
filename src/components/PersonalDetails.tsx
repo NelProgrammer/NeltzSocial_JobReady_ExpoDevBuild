@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Switch, Text, Button, IconButton, Card, Divider } from 'react-native-paper';
 import { ThemedTextInput as TextInput } from './common/ThemedTextInput';
@@ -8,30 +8,55 @@ import { ResumeContext } from '../context/ResumeContext';
 import { AuthContext } from '../context/AuthContext';
 import { useThemeContext } from '../context/ThemeContext';
 import { CompositeAddressItem } from '../types/resume';
+import languagesData from '../../assets/data/languages.json';
 
 interface PersonalDetailsProps {
     isEditMode?: boolean;
 }
 
 const ADDRESS_TYPES = [
-    { label: '🏡 Home / Physical', value: 'Home / Physical' },
+    { label: '🏡 Home / Physical (Free-standing House)', value: 'Home / Physical' },
     { label: '🏢 Flat / Apartment', value: 'Flat / Apartment' },
-    { label: '📬 Postal Address', value: 'Postal' },
-    { label: '💼 Work / Office', value: 'Work' },
-    { label: '🏞️ Rural / Village', value: 'Rural / Village' },
-    { label: '🌾 Farm', value: 'Farm' },
+    { label: '🏘️ Townhouse / Cluster', value: 'Townhouse / Cluster' },
+    { label: '💼 Office Block / Commercial', value: 'Office Block / Commercial' },
+    { label: '🏞️ Rural / Village (Traditional Authority)', value: 'Rural / Village' },
     { label: '⛺ Informal Settlement', value: 'Informal Settlement' },
+    { label: '🌾 Farm / Agricultural', value: 'Farm' },
+    { label: '📬 Postal Address (P.O. Box / Private Bag)', value: 'Postal' },
     { label: '👥 Next of Kin / Relative', value: 'Next of Kin / Relative' },
     { label: '📌 Other', value: 'Other' },
+];
+
+const PROVINCES = [
+    { label: 'Gauteng', value: 'Gauteng' },
+    { label: 'Western Cape', value: 'Western Cape' },
+    { label: 'KwaZulu-Natal', value: 'KwaZulu-Natal' },
+    { label: 'Eastern Cape', value: 'Eastern Cape' },
+    { label: 'Free State', value: 'Free State' },
+    { label: 'Limpopo', value: 'Limpopo' },
+    { label: 'Mpumalanga', value: 'Mpumalanga' },
+    { label: 'North West', value: 'North West' },
+    { label: 'Northern Cape', value: 'Northern Cape' },
+    { label: 'Other / International', value: 'Other' }
+];
+
+const PROFICIENCY_LEVELS = [
+    { label: 'Basic', value: 'Basic' },
+    { label: 'Conversational', value: 'Conversational' },
+    { label: 'Professional Working', value: 'Professional Working' },
+    { label: 'Fluent', value: 'Fluent' },
+    { label: 'Native / Bilingual', value: 'Native / Bilingual' }
 ];
 
 const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) => {
     const { resumeData, updateResumeData } = useContext(ResumeContext) as any;
     const { user, autoUpgradeGuestToLocal } = useContext(AuthContext) as any;
     const { theme } = useThemeContext();
-    const [expandedSection, setExpandedSection] = useState('Names');
+    const [expandedSection, setExpandedSection] = useState<string | null>('Names');
+    const [expandedAddressIndex, setExpandedAddressIndex] = useState<number | null>(0);
 
     const toggleSection = (section: any) => setExpandedSection(expandedSection === section ? null : section);
+    const toggleAddressItem = (index: number) => setExpandedAddressIndex(expandedAddressIndex === index ? null : index);
 
     if (!resumeData) {
         return (
@@ -53,8 +78,12 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
     const [nationalities, setNationalities] = useState<any[]>([]);
 
     React.useEffect(() => {
-        const nationalitiesData = require('../../assets/data/nationalities_dropdown.json');
-        setNationalities(nationalitiesData.map((n: any) => ({ label: n, value: n })));
+        try {
+            const nationalitiesData = require('../../assets/data/nationalities_dropdown.json');
+            setNationalities(nationalitiesData.map((n: any) => ({ label: n, value: n })));
+        } catch {
+            setNationalities([{ label: 'South African', value: 'South African' }]);
+        }
     }, []);
 
     React.useEffect(() => {
@@ -103,17 +132,35 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
         }
     };
 
-    // Address Composite List Management
+    // Composite Address Guard & Management
+    const isAddressBlank = (addr: CompositeAddressItem) => {
+        return (
+            !addr.streetName?.trim() &&
+            !addr.suburbOrTownship?.trim() &&
+            !addr.cityOrTown?.trim() &&
+            !addr.villageName?.trim() &&
+            !addr.settlementName?.trim() &&
+            !addr.farmName?.trim() &&
+            !addr.boxOrBagNumber?.trim()
+        );
+    };
+
     const addAddress = () => {
         if (!isEditMode) return;
+        if (addresses.some(isAddressBlank)) {
+            Alert.alert('Incomplete Address Entry', 'Please complete the details of the current blank address before adding another.');
+            return;
+        }
+
         const newAddr: CompositeAddressItem = {
             id: `addr_${Date.now()}_${addresses.length + 1}`,
             addressType: 'Home / Physical',
-            unitOrHouseNo: '',
-            streetAddress: '',
-            suburbOrVillage: '',
+            streetNumber: '',
+            streetName: '',
+            standNumber: '',
+            suburbOrTownship: '',
             cityOrTown: '',
-            province: '',
+            province: 'Gauteng',
             postalCode: '',
             visible: true
         };
@@ -122,6 +169,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
         newData.personal.addresses = [...addresses, newAddr];
         newData["personal details"] = newData.personal;
         updateResumeData(newData);
+        setExpandedAddressIndex(addresses.length);
     };
 
     const updateAddressItem = (index: number, key: keyof CompositeAddressItem, value: any) => {
@@ -144,11 +192,18 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
         newData.personal.addresses = newAddrs;
         newData["personal details"] = newData.personal;
         updateResumeData(newData);
+        if (expandedAddressIndex === index) {
+            setExpandedAddressIndex(newAddrs.length > 0 ? 0 : null);
+        }
     };
 
-    // Languages Repeater Management
+    // Composite Language Guard & Management
     const addLanguage = () => {
         if (!isEditMode) return;
+        if (languages.some((l: any) => !l.Language || !l.Language.trim())) {
+            Alert.alert('Incomplete Language Entry', 'Please select a language for the current blank entry before adding another.');
+            return;
+        }
         const newData = { ...resumeData };
         if (!newData.personal) newData.personal = {};
         if (!newData.personal.languages) newData.personal.languages = [];
@@ -175,50 +230,34 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
         updateResumeData(newData);
     };
 
+    // Live Accordion Summaries
+    const fullNameSummary = [names.firstName, names.Surname].filter(Boolean).join(' ') || 'No names configured';
+    const contactCount = [contact.Email, contact.Phone, contact['Phone-alt'], contact.LinkedIn, contact.Website].filter(Boolean).length;
+    const contactSummary = contactCount > 0 ? `${contactCount} contact item${contactCount > 1 ? 's' : ''} added` : 'No contact details added';
+    const addressSummary = addresses.length > 0 ? `${addresses.length} address${addresses.length > 1 ? 'es' : ''} configured` : 'No address configured';
+    const identitySummary = identity.idNumber ? `ID Number: ${identity.idNumber}` : 'No ID configured';
+    const demographicsSummary = [demographics.Gender, demographics.Race, demographics.MaritalStatus].filter(Boolean).join(' · ') || 'Not specified';
+    const licensingSummary = [
+        licensing.Drivers && licensing.Drivers !== 'None' ? `🚗 ${licensing.Drivers}` : '',
+        licensing.Motorcycle && licensing.Motorcycle !== 'None' ? `🏍️ ${licensing.Motorcycle}` : ''
+    ].filter(Boolean).join(' · ') || 'No licenses added';
+    const languagesSummary = languages.length > 0 ? `${languages.length} language${languages.length > 1 ? 's' : ''} added` : 'No languages added';
+
     return (
         <KeyboardAwareScrollView
             style={[styles.container, { backgroundColor: theme.bgDark }]}
-            enableOnAndroid={true}
-            extraScrollHeight={100}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ padding: 6, paddingTop: 4, paddingBottom: 120, flexGrow: 1 }}
+            contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+            enableOnAndroid
+            extraScrollHeight={80}
             keyboardShouldPersistTaps="handled"
         >
-            {/* 0. Executive Summary Section */}
-            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
-                <Card.Title
-                    title="Executive / Professional Summary"
-                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
-                    left={(props) => <IconButton {...props} icon="text-box-outline" iconColor={theme.accent} />}
-                    right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Summary' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Summary')} />
-                    )}
-                />
-                {expandedSection === 'Summary' && (
-                    <Card.Content>
-                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
-                        <TextInput
-                            label="Professional Summary / Profile Bio"
-                            placeholder="Write a concise overview of your career, strengths, and professional objectives..."
-                            value={resumeData["professional summary"] || ''}
-                            onChangeText={(text) => {
-                                if (!isEditMode) return;
-                                updateResumeData({ ...resumeData, "professional summary": text });
-                            }}
-                            multiline
-                            numberOfLines={4}
-                            style={[styles.input, { minHeight: 90 }]}
-                            editable={isEditMode}
-                        />
-                    </Card.Content>
-                )}
-            </Card>
-
             {/* 1. Names Section */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title="Names"
+                    subtitle={expandedSection !== 'Names' ? fullNameSummary : undefined}
                     titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
                     left={(props) => <IconButton {...props} icon="account" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton {...props} icon={expandedSection === 'Names' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Names')} />
@@ -227,27 +266,23 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                 {expandedSection === 'Names' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
-                        <Text style={[styles.label, { color: theme.textSecondary }]}>Title</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Title / Prefix</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
                             data={[
-                                { label: 'Mr', value: 'Mr' },
-                                { label: 'Mrs', value: 'Mrs' },
-                                { label: 'Ms', value: 'Ms' },
-                                { label: 'Dr', value: 'Dr' },
-                                { label: 'Prof', value: 'Prof' },
-                                { label: 'Adv', value: 'Adv' },
-                                { label: 'Rev', value: 'Rev' },
-                                { label: 'Prince', value: 'Prince' },
-                                { label: 'Princess', value: 'Princess' },
-                                { label: 'None', value: 'None' }
+                                { label: 'None', value: 'None' },
+                                { label: 'Mr.', value: 'Mr.' },
+                                { label: 'Mrs.', value: 'Mrs.' },
+                                { label: 'Ms.', value: 'Ms.' },
+                                { label: 'Dr.', value: 'Dr.' },
+                                { label: 'Prof.', value: 'Prof.' }
                             ]}
                             labelField="label"
                             valueField="value"
                             placeholder="Select Title"
                             value={names.Prefix || 'None'}
-                            onChange={item => updateField('names', 'Prefix', item.value === 'None' ? '' : item.value)}
+                            onChange={item => updateField('names', 'Prefix', item.value)}
                             disable={!isEditMode}
                         />
                         <TextInput
@@ -269,7 +304,6 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             value={names.MaidenName || ''}
                             onChangeText={(text) => updateField('names', 'MaidenName', text)}
                             style={styles.input}
-                            placeholder="Optional"
                             editable={isEditMode}
                         />
                         <TextInput
@@ -286,9 +320,11 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             {/* 2. Contact Section */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
-                    title="Contact"
+                    title="Contact Details"
+                    subtitle={expandedSection !== 'Contact' ? contactSummary : undefined}
                     titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
-                    left={(props) => <IconButton {...props} icon="email" iconColor={theme.accent} />}
+                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
+                    left={(props) => <IconButton {...props} icon="phone" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton {...props} icon={expandedSection === 'Contact' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Contact')} />
                     )}
@@ -297,15 +333,16 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         <TextInput
-                            label="Email"
+                            label="Primary Email Address"
                             value={contact.Email || ''}
                             onChangeText={(text) => updateField('contact', 'Email', text)}
                             style={styles.input}
                             keyboardType="email-address"
+                            autoCapitalize="none"
                             editable={isEditMode}
                         />
                         <TextInput
-                            label="Phone"
+                            label="Mobile / Cell Phone"
                             value={contact.Phone || ''}
                             onChangeText={(text) => updateField('contact', 'Phone', text)}
                             style={styles.input}
@@ -313,7 +350,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             editable={isEditMode}
                         />
                         <TextInput
-                            label="Alternative Phone"
+                            label="Alternative Phone / WhatsApp"
                             value={contact["Phone-alt"] || ''}
                             onChangeText={(text) => updateField('contact', 'Phone-alt', text)}
                             style={styles.input}
@@ -342,11 +379,13 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                 )}
             </Card>
 
-            {/* 3. Composite Address Section */}
+            {/* 3. Composite Address Section (Individual Collapsible Accordions) */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title={`Addresses (${addresses.length})`}
+                    subtitle={expandedSection !== 'Address' ? addressSummary : undefined}
                     titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
                     left={(props) => <IconButton {...props} icon="map-marker" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton {...props} icon={expandedSection === 'Address' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Address')} />
@@ -355,100 +394,361 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                 {expandedSection === 'Address' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
-                        {addresses.map((addr, index) => (
-                            <View key={addr.id || index} style={[styles.repeaterBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-                                <Text style={[styles.label, { color: theme.textSecondary }]}>Address Type (1st field after ID)</Text>
-                                <Dropdown
-                                    style={styles.dropdown}
-                                    dropdownPosition="auto"
-                                    data={ADDRESS_TYPES}
-                                    labelField="label"
-                                    valueField="value"
-                                    placeholder="Select Address Type"
-                                    value={addr.addressType || 'Home / Physical'}
-                                    onChange={item => updateAddressItem(index, 'addressType', item.value)}
-                                    disable={!isEditMode}
-                                />
-                                <TextInput
-                                    label="Unit / House / Flat No."
-                                    value={addr.unitOrHouseNo || ''}
-                                    onChangeText={(text) => updateAddressItem(index, 'unitOrHouseNo', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                                <TextInput
-                                    label="Street Address / Stand No."
-                                    value={addr.streetAddress || ''}
-                                    onChangeText={(text) => updateAddressItem(index, 'streetAddress', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                                <TextInput
-                                    label="Suburb / Township / Village"
-                                    value={addr.suburbOrVillage || ''}
-                                    onChangeText={(text) => updateAddressItem(index, 'suburbOrVillage', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                                <TextInput
-                                    label="City / Town"
-                                    value={addr.cityOrTown || ''}
-                                    onChangeText={(text) => updateAddressItem(index, 'cityOrTown', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                                <Text style={[styles.label, { color: theme.textSecondary }]}>Province / State</Text>
-                                <Dropdown
-                                    style={styles.dropdown}
-                                    dropdownPosition="auto"
-                                    data={[
-                                        { label: 'Gauteng', value: 'Gauteng' },
-                                        { label: 'Western Cape', value: 'Western Cape' },
-                                        { label: 'KwaZulu-Natal', value: 'KwaZulu-Natal' },
-                                        { label: 'Eastern Cape', value: 'Eastern Cape' },
-                                        { label: 'Free State', value: 'Free State' },
-                                        { label: 'Limpopo', value: 'Limpopo' },
-                                        { label: 'Mpumalanga', value: 'Mpumalanga' },
-                                        { label: 'North West', value: 'North West' },
-                                        { label: 'Northern Cape', value: 'Northern Cape' },
-                                        { label: 'Other / International', value: 'Other' }
-                                    ]}
-                                    labelField="label"
-                                    valueField="value"
-                                    placeholder="Select Province"
-                                    value={addr.province || 'Gauteng'}
-                                    onChange={item => updateAddressItem(index, 'province', item.value)}
-                                    disable={!isEditMode}
-                                />
-                                <TextInput
-                                    label="Postal Code"
-                                    value={addr.postalCode || ''}
-                                    onChangeText={(text) => updateAddressItem(index, 'postalCode', text)}
-                                    style={styles.input}
-                                    keyboardType="number-pad"
-                                    editable={isEditMode}
-                                />
-                                <View style={styles.switchRow}>
-                                    <Text style={{ color: theme.textPrimary }}>Show on Target Resumes?</Text>
-                                    <Switch
-                                        value={addr.visible !== false}
-                                        onValueChange={(val) => updateAddressItem(index, 'visible', val)}
-                                        disabled={!isEditMode}
-                                    />
+                        {addresses.map((addr, index) => {
+                            const isExpanded = expandedAddressIndex === index;
+                            const addrSummary = [
+                                addr.unitOrFlatNo || addr.unitNo || addr.shackOrSectionOrStandNo || addr.portionOrPlotNo || addr.boxOrBagNumber,
+                                addr.buildingName || addr.complexName || addr.farmName || addr.villageName || addr.streetName || addr.postOfficeName,
+                                addr.cityOrTown || addr.suburbOrTownship
+                            ].filter(Boolean).join(', ') || 'Incomplete Address';
+
+                            return (
+                                <View key={addr.id || index} style={[styles.addressAccordionBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <TouchableOpacity
+                                        style={styles.addressAccordionHeader}
+                                        onPress={() => toggleAddressItem(index)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={{ color: theme.textPrimary, fontWeight: 'bold', fontSize: 13 }}>
+                                                📍 Address {index + 1}: {addr.addressType || 'Home / Physical'}
+                                            </Text>
+                                            <Text style={{ color: theme.textSecondary, fontSize: 11, marginTop: 2 }} numberOfLines={1}>
+                                                {addrSummary}
+                                            </Text>
+                                        </View>
+                                        <IconButton
+                                            icon={isExpanded ? "chevron-up" : "chevron-down"}
+                                            iconColor={theme.textPrimary}
+                                            size={20}
+                                        />
+                                    </TouchableOpacity>
+
+                                    {isExpanded && (
+                                        <View style={{ paddingHorizontal: 12, paddingBottom: 12 }}>
+                                            <Divider style={{ marginVertical: 8, backgroundColor: theme.border }} />
+                                            
+                                            <Text style={[styles.label, { color: theme.textSecondary }]}>Address Type</Text>
+                                            <Dropdown
+                                                style={styles.dropdown}
+                                                dropdownPosition="auto"
+                                                data={ADDRESS_TYPES}
+                                                labelField="label"
+                                                valueField="value"
+                                                placeholder="Select Address Type"
+                                                value={addr.addressType || 'Home / Physical'}
+                                                onChange={item => updateAddressItem(index, 'addressType', item.value)}
+                                                disable={!isEditMode}
+                                            />
+
+                                            {/* Specific Fields by Address Type */}
+                                            {addr.addressType === 'Flat / Apartment' && (
+                                                <>
+                                                    <TextInput
+                                                        label="Flat / Unit Number (e.g. Flat 4B)"
+                                                        value={addr.unitOrFlatNo || addr.unitOrHouseNo || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'unitOrFlatNo', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Building / Apartment Block Name"
+                                                        value={addr.buildingName || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'buildingName', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                </>
+                                            )}
+
+                                            {addr.addressType === 'Townhouse / Cluster' && (
+                                                <>
+                                                    <TextInput
+                                                        label="Unit Number (e.g. Unit 15)"
+                                                        value={addr.unitNo || addr.unitOrHouseNo || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'unitNo', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Complex / Estate Name"
+                                                        value={addr.complexName || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'complexName', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                </>
+                                            )}
+
+                                            {addr.addressType === 'Office Block / Commercial' && (
+                                                <>
+                                                    <TextInput
+                                                        label="Suite / Office / Room Number"
+                                                        value={addr.suiteOrRoomOrUnitNo || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'suiteOrRoomOrUnitNo', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Commercial Building Name"
+                                                        value={addr.buildingName || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'buildingName', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Floor (e.g. 3rd Floor)"
+                                                        value={addr.floor || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'floor', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                </>
+                                            )}
+
+                                            {/* Street Fields for Houses, Flats, Townhouses, Offices */}
+                                            {addr.addressType !== 'Rural / Village' && addr.addressType !== 'Informal Settlement' && addr.addressType !== 'Farm' && addr.addressType !== 'Postal' && (
+                                                <>
+                                                    <TextInput
+                                                        label="Street Number (e.g. 45)"
+                                                        value={addr.streetNumber || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'streetNumber', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Street Name (e.g. Main Road)"
+                                                        value={addr.streetName || addr.streetAddress || ''}
+                                                        onChangeText={(text) => {
+                                                            updateAddressItem(index, 'streetName', text);
+                                                            updateAddressItem(index, 'streetAddress', text);
+                                                        }}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    {/* Stand Number strictly below Street Name */}
+                                                    <TextInput
+                                                        label="Stand / Erf Number (Optional - Below Street Name)"
+                                                        value={addr.standNumber || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'standNumber', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Suburb / Township"
+                                                        value={addr.suburbOrTownship || addr.suburbOrVillage || ''}
+                                                        onChangeText={(text) => {
+                                                            updateAddressItem(index, 'suburbOrTownship', text);
+                                                            updateAddressItem(index, 'suburbOrVillage', text);
+                                                        }}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                </>
+                                            )}
+
+                                            {/* Rural / Village Fields */}
+                                            {addr.addressType === 'Rural / Village' && (
+                                                <>
+                                                    <TextInput
+                                                        label="Stand / Erf / House Number (e.g. Stand 1420)"
+                                                        value={addr.standOrErfOrHouseNo || addr.standNumber || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'standOrErfOrHouseNo', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Village Name (e.g. Ga-Molepo / Qunu)"
+                                                        value={addr.villageName || addr.suburbOrVillage || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'villageName', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Traditional Authority / Tribal Council"
+                                                        value={addr.traditionalAuthorityOrTribalCouncil || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'traditionalAuthorityOrTribalCouncil', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Nearest Postal Agency / Post Office"
+                                                        value={addr.postalAgencyOrPostOffice || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'postalAgencyOrPostOffice', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Town / District (e.g. Polokwane / Mthatha)"
+                                                        value={addr.townOrDistrict || addr.cityOrTown || ''}
+                                                        onChangeText={(text) => {
+                                                            updateAddressItem(index, 'townOrDistrict', text);
+                                                            updateAddressItem(index, 'cityOrTown', text);
+                                                        }}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                </>
+                                            )}
+
+                                            {/* Informal Settlement Fields */}
+                                            {addr.addressType === 'Informal Settlement' && (
+                                                <>
+                                                    <TextInput
+                                                        label="Shack / Section / Stand Number (e.g. Shack 1084)"
+                                                        value={addr.shackOrSectionOrStandNo || addr.standNumber || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'shackOrSectionOrStandNo', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Settlement Name (e.g. Diepsloot Ext 2 / Joe Slovo)"
+                                                        value={addr.settlementName || addr.suburbOrVillage || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'settlementName', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Section / Block (e.g. Section C / Block 4)"
+                                                        value={addr.sectionOrBlock || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'sectionOrBlock', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Nearest Landmark / Zone (e.g. Near Community Hall)"
+                                                        value={addr.nearestLandmarkOrZone || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'nearestLandmarkOrZone', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                </>
+                                            )}
+
+                                            {/* Farm / Agricultural Fields */}
+                                            {addr.addressType === 'Farm' && (
+                                                <>
+                                                    <TextInput
+                                                        label="Portion / Plot Number (e.g. Portion 12 / Plot 45)"
+                                                        value={addr.portionOrPlotNo || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'portionOrPlotNo', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Farm Name (e.g. Rietfontein Farm 345)"
+                                                        value={addr.farmName || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'farmName', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Road / Route / Access Road (e.g. R511 / D124)"
+                                                        value={addr.roadOrRoute || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'roadOrRoute', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="District / Nearest Town"
+                                                        value={addr.districtOrNearestTown || addr.cityOrTown || ''}
+                                                        onChangeText={(text) => {
+                                                            updateAddressItem(index, 'districtOrNearestTown', text);
+                                                            updateAddressItem(index, 'cityOrTown', text);
+                                                        }}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                </>
+                                            )}
+
+                                            {/* Postal Address Fields */}
+                                            {addr.addressType === 'Postal' && (
+                                                <>
+                                                    <Text style={[styles.label, { color: theme.textSecondary }]}>Box or Bag Type</Text>
+                                                    <Dropdown
+                                                        style={styles.dropdown}
+                                                        dropdownPosition="auto"
+                                                        data={[
+                                                            { label: 'P.O. Box', value: 'P.O. Box' },
+                                                            { label: 'Private Bag', value: 'Private Bag' }
+                                                        ]}
+                                                        labelField="label"
+                                                        valueField="value"
+                                                        value={addr.boxOrBagType || 'P.O. Box'}
+                                                        onChange={item => updateAddressItem(index, 'boxOrBagType', item.value)}
+                                                        disable={!isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Box / Bag Number (e.g. 1234)"
+                                                        value={addr.boxOrBagNumber || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'boxOrBagNumber', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    <TextInput
+                                                        label="Post Office Branch Name (e.g. Halfway House)"
+                                                        value={addr.postOfficeName || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'postOfficeName', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                </>
+                                            )}
+
+                                            {/* Common City, Province, Postal Code */}
+                                            {addr.addressType !== 'Postal' && (
+                                                <TextInput
+                                                    label="City / Town"
+                                                    value={addr.cityOrTown || ''}
+                                                    onChangeText={(text) => updateAddressItem(index, 'cityOrTown', text)}
+                                                    style={styles.input}
+                                                    editable={isEditMode}
+                                                />
+                                            )}
+
+                                            <Text style={[styles.label, { color: theme.textSecondary }]}>Province / Region</Text>
+                                            <Dropdown
+                                                style={styles.dropdown}
+                                                dropdownPosition="auto"
+                                                data={PROVINCES}
+                                                labelField="label"
+                                                valueField="value"
+                                                placeholder="Select Province"
+                                                value={addr.province || 'Gauteng'}
+                                                onChange={item => updateAddressItem(index, 'province', item.value)}
+                                                disable={!isEditMode}
+                                            />
+
+                                            <TextInput
+                                                label="Postal Code (4 Digits)"
+                                                value={addr.postalCode || ''}
+                                                onChangeText={(text) => updateAddressItem(index, 'postalCode', text)}
+                                                style={styles.input}
+                                                keyboardType="number-pad"
+                                                maxLength={4}
+                                                editable={isEditMode}
+                                            />
+
+                                            {isEditMode && addresses.length > 1 && (
+                                                <Button
+                                                    mode="outlined"
+                                                    icon="delete"
+                                                    textColor="#ef4444"
+                                                    style={{ borderColor: '#ef4444', marginTop: 8 }}
+                                                    onPress={() => removeAddressItem(index)}
+                                                >
+                                                    Remove This Address
+                                                </Button>
+                                            )}
+                                        </View>
+                                    )}
                                 </View>
-                                {isEditMode && addresses.length > 1 && (
-                                    <IconButton
-                                        icon="delete"
-                                        iconColor="#ff5252"
-                                        size={20}
-                                        onPress={() => removeAddressItem(index)}
-                                        style={styles.deleteBtn}
-                                    />
-                                )}
-                            </View>
-                        ))}
+                            );
+                        })}
+
                         {isEditMode && (
-                            <Button mode="outlined" icon="plus" textColor={theme.accent} onPress={addAddress} style={{ borderColor: theme.accent, marginBottom: 10, alignSelf: 'flex-start' }}>
+                            <Button mode="outlined" icon="plus" textColor={theme.accent} onPress={addAddress} style={{ borderColor: theme.accent, marginTop: 6, alignSelf: 'flex-start' }}>
                                 Add Address
                             </Button>
                         )}
@@ -460,7 +760,9 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title="Identity"
+                    subtitle={expandedSection !== 'Identity' ? identitySummary : undefined}
                     titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
                     left={(props) => <IconButton {...props} icon="card-account-details" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton {...props} icon={expandedSection === 'Identity' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Identity')} />
@@ -469,7 +771,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                 {expandedSection === 'Identity' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
-                        <Text style={[styles.label, { color: theme.textSecondary }]}>Identity Type</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Identity Document Type</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
@@ -485,7 +787,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             disable={!isEditMode}
                         />
                         <TextInput
-                            label={identity.idType === 'Passport' ? "Passport Number" : "South African ID Number"}
+                            label={identity.idType === 'Passport' ? "Passport Number" : "South African ID Number (13 Digits)"}
                             value={identity.idNumber || ''}
                             onChangeText={(text) => updateField('identity', 'idNumber', text)}
                             style={styles.input}
@@ -493,14 +795,6 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             maxLength={identity.idType === 'Passport' ? 20 : 13}
                             editable={isEditMode}
                         />
-                        <View style={styles.switchRow}>
-                            <Text style={{ color: theme.textPrimary }}>Mask ID on Resume? (e.g. 850101 **** ***)</Text>
-                            <Switch
-                                value={identity.idMask !== false}
-                                onValueChange={(val) => updateField('identity', 'idMask', val)}
-                                disabled={!isEditMode}
-                            />
-                        </View>
                     </Card.Content>
                 )}
             </Card>
@@ -509,7 +803,9 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title="Demographics (Optional)"
+                    subtitle={expandedSection !== 'Demographics' ? demographicsSummary : undefined}
                     titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
                     left={(props) => <IconButton {...props} icon="human-greeting-variant" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton {...props} icon={expandedSection === 'Demographics' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Demographics')} />
@@ -535,14 +831,14 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             onChange={item => updateField('demographics', 'Gender', item.value)}
                             disable={!isEditMode}
                         />
-                        <Text style={[styles.label, { color: theme.textSecondary }]}>Race</Text>
+                        <Text style={[styles.label, { color: theme.textSecondary }]}>Race (EEA Reporting)</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
                             data={[
                                 { label: 'African', value: 'African' },
                                 { label: 'Coloured', value: 'Coloured' },
-                                { label: 'Asian', value: 'Asian' },
+                                { label: 'Asian / Indian', value: 'Asian' },
                                 { label: 'White', value: 'White' },
                                 { label: 'Foreigner', value: 'Foreigner' },
                                 { label: 'Other', value: 'Other' }
@@ -579,30 +875,20 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             dropdownPosition="auto"
                             data={[
                                 { label: 'None', value: 'None' },
-                                { label: 'Physical Disability', value: 'Physical' },
-                                { label: 'Visual Impairment', value: 'Visual' },
-                                { label: 'Hearing Impairment', value: 'Hearing' },
-                                { label: 'Intellectual / Learning Disability', value: 'Intellectual' },
+                                { label: 'Physical', value: 'Physical' },
+                                { label: 'Visual', value: 'Visual' },
+                                { label: 'Hearing', value: 'Hearing' },
+                                { label: 'Intellectual', value: 'Intellectual' },
                                 { label: 'Chronic Illness', value: 'Chronic Illness' },
                                 { label: 'Other', value: 'Other' }
                             ]}
                             labelField="label"
                             valueField="value"
-                            placeholder="Select Disability Status"
-                            value={demographics.Disability || demographics.disability || 'None'}
+                            placeholder="Select Disability"
+                            value={['None', 'Physical', 'Visual', 'Hearing', 'Intellectual', 'Chronic Illness'].includes(demographics.Disability) ? demographics.Disability : (demographics.Disability ? 'Other' : 'None')}
                             onChange={item => updateField('demographics', 'Disability', item.value)}
                             disable={!isEditMode}
                         />
-                        {(demographics.Disability === 'Other' || demographics.disability === 'Other' || (demographics.Disability && !['None', 'Physical', 'Visual', 'Hearing', 'Intellectual', 'Chronic Illness', 'Other'].includes(demographics.Disability))) && (
-                            <TextInput
-                                label="Specify Disability Details"
-                                placeholder="Specify disability details"
-                                value={demographics.DisabilityDetails || (['None', 'Physical', 'Visual', 'Hearing', 'Intellectual', 'Chronic Illness', 'Other'].includes(demographics.Disability) ? '' : demographics.Disability) || ''}
-                                onChangeText={(text) => updateField('demographics', 'DisabilityDetails', text)}
-                                style={styles.input}
-                                editable={isEditMode}
-                            />
-                        )}
                         <Text style={[styles.label, { color: theme.textSecondary }]}>Nationality</Text>
                         <Dropdown
                             style={styles.dropdown}
@@ -615,7 +901,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             value={demographics.Nationality || 'South African'}
                             onChange={item => updateField('demographics', 'Nationality', item.value)}
                             search
-                            searchPlaceholder="Search..."
+                            searchPlaceholder="Search nationality..."
                             disable={!isEditMode}
                         />
                     </Card.Content>
@@ -626,7 +912,9 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title="Licensing"
+                    subtitle={expandedSection !== 'Licensing' ? licensingSummary : undefined}
                     titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
                     left={(props) => <IconButton {...props} icon="car-sports" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton {...props} icon={expandedSection === 'Licensing' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Licensing')} />
@@ -650,49 +938,27 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                             ]}
                             labelField="label"
                             valueField="value"
-                            placeholder="Select Motor Vehicle License (or none)"
+                            placeholder="Select Motor Vehicle License"
                             value={licensing.Drivers || 'None'}
-                            onChange={item => {
-                                updateField('licensing', 'Drivers', item.value);
-                                updateField('licensing', 'DriversVisible', item.value !== 'None');
-                            }}
+                            onChange={item => updateField('licensing', 'Drivers', item.value)}
                             disable={!isEditMode}
                         />
-                        <View style={styles.switchRow}>
-                            <Text style={{ color: theme.textPrimary }}>Show Drivers License?</Text>
-                            <Switch
-                                value={licensing.DriversVisible !== false}
-                                onValueChange={(val) => updateField('licensing', 'DriversVisible', val)}
-                                disabled={!isEditMode}
-                            />
-                        </View>
                         <Text style={[styles.label, { color: theme.textSecondary }]}>Motorcycle Drivers License</Text>
                         <Dropdown
                             style={styles.dropdown}
                             dropdownPosition="auto"
                             data={[
                                 { label: 'No Motorcycle Drivers License', value: 'None' },
-                                { label: '🛵 Code A1 (Motorcycle <=125cc)', value: 'Code A1' },
-                                { label: '🏍️ Code A (Motorcycle >125cc)', value: 'Code A' }
+                                { label: '🏍️ Code A1 (Motorcycle <= 125cc)', value: 'Code A1' },
+                                { label: '🏍️ Code A (Motorcycle > 125cc)', value: 'Code A' }
                             ]}
                             labelField="label"
                             valueField="value"
-                            placeholder="Select Motorcycle License (or none)"
+                            placeholder="Select Motorcycle License"
                             value={licensing.Motorcycle || 'None'}
-                            onChange={item => {
-                                updateField('licensing', 'Motorcycle', item.value);
-                                updateField('licensing', 'MotorVisible', item.value !== 'None');
-                            }}
+                            onChange={item => updateField('licensing', 'Motorcycle', item.value)}
                             disable={!isEditMode}
                         />
-                        <View style={styles.switchRow}>
-                            <Text style={{ color: theme.textPrimary }}>Show Motorcycle License?</Text>
-                            <Switch
-                                value={(licensing.Motorcycle && licensing.Motorcycle !== 'None') ? (licensing.MotorVisible !== false) : false}
-                                onValueChange={(val) => updateField('licensing', 'MotorVisible', val)}
-                                disabled={!isEditMode || !licensing.Motorcycle || licensing.Motorcycle === 'None'}
-                            />
-                        </View>
                     </Card.Content>
                 )}
             </Card>
@@ -732,11 +998,13 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                 )}
             </Card>
 
-            {/* 8. Languages Section */}
+            {/* 8. Languages Section (Dropdown List & Competency Guard) */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <Card.Title
                     title={`Languages (${languages.length})`}
+                    subtitle={expandedSection !== 'Languages' ? languagesSummary : undefined}
                     titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
                     left={(props) => <IconButton {...props} icon="translate" iconColor={theme.accent} />}
                     right={(props) => (
                         <IconButton {...props} icon={expandedSection === 'Languages' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Languages')} />
@@ -745,45 +1013,56 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                 {expandedSection === 'Languages' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
-                        {languages.map((lang: any, index: number) => (
-                            <View key={index} style={[styles.repeaterBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-                                <TextInput
-                                    label="Language"
-                                    value={lang.Language || ''}
-                                    onChangeText={(text) => updateLanguage(index, 'Language', text)}
-                                    style={styles.input}
-                                    editable={isEditMode}
-                                />
-                                <Dropdown
-                                    style={styles.dropdown}
-                                    dropdownPosition="auto"
-                                    data={[
-                                        { label: 'Basic', value: 'Basic' },
-                                        { label: 'Conversational', value: 'Conversational' },
-                                        { label: 'Professional Working', value: 'Professional Working' },
-                                        { label: 'Fluent', value: 'Fluent' },
-                                        { label: 'Native / Bilingual', value: 'Native / Bilingual' }
-                                    ]}
-                                    labelField="label"
-                                    valueField="value"
-                                    placeholder="Proficiency"
-                                    value={lang.proficiency || 'Basic'}
-                                    onChange={item => updateLanguage(index, 'proficiency', item.value)}
-                                    disable={!isEditMode}
-                                />
-                                {isEditMode && (
-                                    <IconButton
-                                        icon="delete"
-                                        iconColor="#ff5252"
-                                        size={20}
-                                        onPress={() => removeLanguage(index)}
-                                        style={styles.deleteBtn}
+                        {languages.map((lang: any, index: number) => {
+                            const isLanguageSelected = Boolean(lang.Language && lang.Language.trim());
+
+                            return (
+                                <View key={index} style={[styles.repeaterBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <Text style={[styles.label, { color: theme.textSecondary }]}>Select Language</Text>
+                                    <Dropdown
+                                        style={styles.dropdown}
+                                        dropdownPosition="auto"
+                                        maxHeight={250}
+                                        data={languagesData}
+                                        labelField="label"
+                                        valueField="value"
+                                        placeholder="Choose a language..."
+                                        value={lang.Language || ''}
+                                        onChange={item => updateLanguage(index, 'Language', item.value)}
+                                        search
+                                        searchPlaceholder="Search language..."
+                                        disable={!isEditMode}
                                     />
-                                )}
-                            </View>
-                        ))}
+
+                                    <Text style={[styles.label, { color: isLanguageSelected ? theme.textSecondary : '#64748b' }]}>
+                                        Competency / Proficiency {!isLanguageSelected ? '(Select language first)' : ''}
+                                    </Text>
+                                    <Dropdown
+                                        style={[styles.dropdown, !isLanguageSelected && { opacity: 0.5 }]}
+                                        dropdownPosition="auto"
+                                        data={PROFICIENCY_LEVELS}
+                                        labelField="label"
+                                        valueField="value"
+                                        placeholder="Proficiency"
+                                        value={lang.proficiency || 'Basic'}
+                                        onChange={item => updateLanguage(index, 'proficiency', item.value)}
+                                        disable={!isEditMode || !isLanguageSelected}
+                                    />
+
+                                    {isEditMode && languages.length > 1 && (
+                                        <IconButton
+                                            icon="delete"
+                                            iconColor="#ef4444"
+                                            size={20}
+                                            onPress={() => removeLanguage(index)}
+                                            style={styles.deleteBtn}
+                                        />
+                                    )}
+                                </View>
+                            );
+                        })}
                         {isEditMode && (
-                            <Button mode="outlined" icon="plus" textColor={theme.accent} onPress={addLanguage} style={{ borderColor: theme.accent, marginBottom: 10, alignSelf: 'flex-start' }}>
+                            <Button mode="outlined" icon="plus" textColor={theme.accent} onPress={addLanguage} style={{ borderColor: theme.accent, marginTop: 4, alignSelf: 'flex-start' }}>
                                 Add Language
                             </Button>
                         )}
@@ -796,13 +1075,43 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    card: { marginBottom: 10, borderRadius: 12, borderWidth: 1 },
-    input: { marginBottom: 10 },
-    switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, paddingVertical: 5 },
-    dropdown: { marginBottom: 10 },
-    label: { fontSize: 12, marginBottom: 5, marginLeft: 2, fontWeight: '600' },
-    repeaterBox: { borderWidth: 1, borderRadius: 8, padding: 15, marginBottom: 10, position: 'relative' },
-    deleteBtn: { position: 'absolute', top: -5, right: -5 }
+    card: { marginBottom: 12, borderRadius: 12, borderWidth: 1 },
+    input: { marginBottom: 8 },
+    label: { fontSize: 12, fontWeight: 'bold', marginBottom: 4 },
+    dropdown: {
+        height: 48,
+        borderWidth: 1,
+        borderColor: '#475569',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        marginBottom: 8,
+        backgroundColor: '#0f172a'
+    },
+    switchRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 8
+    },
+    repeaterBox: {
+        borderWidth: 1,
+        borderRadius: 10,
+        padding: 12,
+        marginBottom: 10
+    },
+    addressAccordionBox: {
+        borderWidth: 1,
+        borderRadius: 10,
+        marginBottom: 8,
+        overflow: 'hidden'
+    },
+    addressAccordionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 10
+    },
+    deleteBtn: { alignSelf: 'flex-end', margin: 0 }
 });
 
 export default PersonalDetails;

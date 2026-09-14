@@ -1,9 +1,53 @@
 export interface CompositeAddressItem {
   id: string; // 1st
-  addressType: string; // 2nd (Dropdown sub-options: Home / Physical, Flat / Apartment, Postal, Work, Rural / Village, Farm, Informal Settlement, Next of Kin, Other)
-  unitOrHouseNo?: string;
-  streetAddress?: string;
-  suburbOrVillage?: string;
+  addressType: string; // 2nd (Dropdown sub-options: Home / Physical, Flat / Apartment, Townhouse / Cluster, Office Block / Commercial, Rural / Village, Informal Settlement, Farm, Postal Address, Next of Kin / Relative, Other)
+  
+  // Free-standing House
+  streetNumber?: string;
+  streetName?: string;
+  standNumber?: string; // strictly below street name
+  
+  // Flat / Apartment
+  unitOrFlatNo?: string;
+  buildingName?: string;
+  
+  // Townhouse / Cluster
+  unitNo?: string;
+  complexName?: string;
+  
+  // Office Block / Commercial
+  suiteOrRoomOrUnitNo?: string;
+  floor?: string;
+  
+  // Rural / Village (Traditional & Tribal Authority)
+  standOrErfOrHouseNo?: string;
+  villageName?: string;
+  traditionalAuthorityOrTribalCouncil?: string;
+  postalAgencyOrPostOffice?: string;
+  townOrDistrict?: string;
+  
+  // Informal Settlement
+  shackOrSectionOrStandNo?: string;
+  settlementName?: string;
+  sectionOrBlock?: string;
+  nearestLandmarkOrZone?: string;
+  
+  // Farm / Agricultural
+  portionOrPlotNo?: string;
+  farmName?: string;
+  roadOrRoute?: string;
+  districtOrNearestTown?: string;
+  
+  // Postal Address
+  boxOrBagType?: 'P.O. Box' | 'Private Bag' | string;
+  boxOrBagNumber?: string;
+  postOfficeName?: string;
+  
+  // Common / Geographic fields
+  suburbOrTownship?: string;
+  suburbOrVillage?: string; // legacy fallback
+  unitOrHouseNo?: string;   // legacy fallback
+  streetAddress?: string;   // legacy fallback
   cityOrTown?: string;
   province?: string;
   postalCode?: string;
@@ -174,6 +218,18 @@ export interface RegulatoryCertItem {
   visible?: boolean;
 }
 
+export interface ArtisanalCertItem {
+  id: string;
+  name: string; // e.g. "Red Seal Electrician", "Trade Test Welder"
+  trade?: string; // "Electrician", "Boilermaker", "Plumber", "Fitter & Turner", "Millwright", "Welder", etc.
+  issuingBodyOrSeta?: string; // "QCTO / SETA / NAMB / Dept of Higher Education"
+  contractOrCertificateNumber?: string;
+  yearObtained?: string | number;
+  date_obtained?: string;
+  dateObtained?: string;
+  visible?: boolean;
+}
+
 export interface ReferenceItem {
   id: string;
   name?: string;
@@ -201,12 +257,52 @@ export interface ResumeData {
     professionalCertifications?: ProfessionalCertItem[];
     technicalCertifications?: TechCertItem[];
     regulatoryCertifications?: RegulatoryCertItem[];
+    artisanalCertifications?: ArtisanalCertItem[];
     highschool?: { "Year Completed"?: number | string; "Highest Grade Passed"?: string; "Province Department"?: string; "Subjects Stream"?: string; visible?: boolean };
   };
   skills?: ResumeSkills;
   Skills?: ResumeSkills;
   "professional summary"?: string;
   References?: ReferenceItem[];
+}
+
+export interface FormattingSettings {
+  NameCase?: 'title' | 'upper';
+  MiddleNameFormat?: 'full' | 'initial' | 'omit';
+  MaidenNameFormat?: 'parentheses' | 'hyphen' | 'omit';
+  ContactFormat?: 'bullet' | 'inline';
+  ContactSeparator?: 'dot' | 'pipe' | 'comma' | 'slash';
+  ContactDisplayMode?: 'keyValue' | 'iconValue' | 'valuesOnly';
+  AddressFormat?: 'multi' | 'inline';
+  AddressSeparator?: 'comma' | 'pipe' | 'dot';
+  AddressMaskStreet?: boolean;
+  AddressIncludeStand?: boolean;
+  AddressIncludeProvince?: boolean;
+  AddressIncludePostalCode?: boolean;
+  IdMask?: boolean;
+  IdDisplayMode?: 'keyValue' | 'valueOnly';
+  DemoFormat?: 'bullet' | 'inline' | 'comma' | 'list';
+  DemoSeparator?: 'dot' | 'pipe' | 'bullet';
+  DemoDisplayMode?: 'keyValue' | 'valuesOnly';
+  EduOrder?: 'qualificationFirst' | 'institutionFirst';
+  EduDateFormat?: 'yearOnly' | 'monthYear';
+  ExpOrder?: 'roleFirst' | 'companyFirst';
+  ExpDateFormat?: 'monthYear' | 'yearMonth';
+  RespFormat?: 'bullet' | 'paragraph' | 'comma';
+  RespBulletType?: 'circle' | 'diamond' | 'hyphen' | 'asterisk' | 'arrow';
+  TechFormat?: 'bullet' | 'comma' | 'list';
+  SoftFormat?: 'bullet' | 'comma' | 'list';
+  ArtisanalFormat?: 'bullet' | 'comma';
+  SystemsFormat?: 'bullet' | 'comma';
+  ProfCertsFormat?: 'bullet' | 'comma';
+  NonAcadCertsFormat?: 'bullet' | 'comma';
+  SkillsBulletType?: 'circle' | 'diamond' | 'hyphen' | 'plus';
+  SkillsSeparator?: 'comma' | 'semicolon' | 'pipe';
+  LanguagesFormat?: 'inline' | 'bullet' | 'table';
+  LanguagesShowProficiency?: boolean;
+  ReferencesLayout?: 'grid' | 'stacked';
+  ReferencesSeparator?: 'lineBreak' | 'dot';
+  toggleColorScheme?: 'semantic' | 'paper' | 'theme';
 }
 
 export type ResumeType = 'source_of_truth' | 'main' | 'targeted';

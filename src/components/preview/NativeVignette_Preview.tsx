@@ -49,7 +49,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
 
     const glowColor = getGlowColor();
 
-    const pd = data["personal details"] || {};
+    const pd = data["personal details"] || data.personal || {};
     const names = pd.names || {};
     const contact = pd.contact || {};
     const address = pd.address || {};
@@ -64,23 +64,125 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
     const summary = data["professional summary"];
     const refList = (data.References || data.references || []).filter((r: any) => r.visible !== false);
 
-    // Clean contact elements (never dangling '|')
-    const contactElements = [contact.Email, contact.Phone, contact["Phone-alt"], contact.LinkedIn, contact.Website].filter(Boolean);
+    // Master Field Visibility Map
+    const vis = data.visibility || {};
+    const isFieldVisible = (key: string) => vis[key] !== false;
 
-    // Address formatting helper
-    const formatAddressText = (addrStr: string) => {
-        if (!addrStr) return '';
-        const isBullet = uiSettings?.AddressFormat === 'bullet' || uiSettings?.AddressFormat === 'list';
-        if (isBullet) {
-            return addrStr.split('\n').map(l => l.trim()).filter(Boolean).join('\n');
+    // Names presentation respecting visibility and formatting tokens
+    const rawFirst = isFieldVisible('pd_name_first') ? (names.firstName || '') : '';
+    const rawSurname = isFieldVisible('pd_name_surname') ? (names.Surname || '') : '';
+    let middleStr = '';
+    if (isFieldVisible('pd_name_middle') && (names.middleName || names.MiddleName)) {
+        const m = names.middleName || names.MiddleName;
+        if (uiSettings?.MiddleNameFormat === 'initial') {
+            middleStr = `${m.charAt(0)}.`;
+        } else if (uiSettings?.MiddleNameFormat !== 'omit') {
+            middleStr = m;
         }
-        return addrStr.split('\n').map(l => l.trim()).filter(Boolean).join(', ');
-    };
+    }
+    let maidenStr = '';
+    if (isFieldVisible('pd_name_maiden') && names.MaidenName) {
+        if (uiSettings?.MaidenNameFormat === 'hyphen') {
+            maidenStr = `- ${names.MaidenName}`;
+        } else if (uiSettings?.MaidenNameFormat !== 'omit') {
+            maidenStr = `(née ${names.MaidenName})`;
+        }
+    }
 
-    const addressText = address["Home Address"] ? formatAddressText(address["Home Address"]) : '';
+    let fullName = [rawFirst, middleStr, maidenStr, rawSurname].filter(Boolean).join(' ');
+    if (!fullName.trim()) fullName = 'Job Applicant';
+    if (uiSettings?.NameCase === 'upper') {
+        fullName = fullName.toUpperCase();
+    }
+
+    // Contact separator
+    const getContactSeparator = () => {
+        switch (uiSettings?.ContactSeparator) {
+            case 'pipe': return ' | ';
+            case 'comma': return ', ';
+            case 'slash': return ' / ';
+            case 'dot':
+            default: return ' • ';
+        }
+    };
+    const contactSep = getContactSeparator();
+
+    // Contact elements respecting visibility
+    const contactElements: string[] = [];
+    if (contact.Email && isFieldVisible('pd_contact_email')) {
+        contactElements.push(uiSettings?.ContactDisplayMode === 'keyValue' ? `Email: ${contact.Email}` : (uiSettings?.ContactDisplayMode === 'valuesOnly' ? contact.Email : `📧 ${contact.Email}`));
+    }
+    if (contact.Phone && isFieldVisible('pd_contact_phone')) {
+        contactElements.push(uiSettings?.ContactDisplayMode === 'keyValue' ? `Phone: ${contact.Phone}` : (uiSettings?.ContactDisplayMode === 'valuesOnly' ? contact.Phone : `📱 ${contact.Phone}`));
+    }
+    if ((contact.AltPhone || contact["Phone-alt"]) && isFieldVisible('pd_contact_alt_phone')) {
+        const p = contact.AltPhone || contact["Phone-alt"];
+        contactElements.push(uiSettings?.ContactDisplayMode === 'keyValue' ? `Alt Phone: ${p}` : (uiSettings?.ContactDisplayMode === 'valuesOnly' ? p : `📱 ${p}`));
+    }
+    if (contact.LinkedIn && isFieldVisible('pd_contact_linkedin')) {
+        contactElements.push(uiSettings?.ContactDisplayMode === 'keyValue' ? `LinkedIn: ${contact.LinkedIn}` : (uiSettings?.ContactDisplayMode === 'valuesOnly' ? contact.LinkedIn : `🔗 ${contact.LinkedIn}`));
+    }
+    if ((contact.Website || contact.Portfolio) && isFieldVisible('pd_contact_website')) {
+        const w = contact.Website || contact.Portfolio;
+        contactElements.push(uiSettings?.ContactDisplayMode === 'keyValue' ? `Website: ${w}` : (uiSettings?.ContactDisplayMode === 'valuesOnly' ? w : `🌐 ${w}`));
+    }
+
+    // Addresses respecting individual visibility
+    const addressList = (pd.addresses || []).filter((a: any, idx: number) => a.visible !== false && isFieldVisible(`pd_addr_${idx}`));
+    const addressStrings = addressList.map((a: any, idx: number) => {
+        const parts: string[] = [];
+        const isMasked = isFieldVisible(`pd_addr_mask_${idx}`) === false || uiSettings?.AddressMaskStreet;
+        const includeStand = isFieldVisible(`pd_addr_stand_${idx}`) !== false && uiSettings?.AddressIncludeStand !== false;
+
+        if (a.unitOrFlatNo || a.buildingName) {
+            parts.push([a.unitOrFlatNo, a.buildingName].filter(Boolean).join(' '));
+        }
+        if (a.unitNo || a.complexName) {
+            parts.push([a.unitNo, a.complexName].filter(Boolean).join(' '));
+        }
+        if (a.streetName) {
+            const streetLine = isMasked ? `**** ${a.streetName}` : [a.streetNumber, a.streetName].filter(Boolean).join(' ');
+            parts.push(streetLine);
+        }
+        if (includeStand && a.standNumber) {
+            parts.push(`Stand: ${isMasked ? '****' : a.standNumber}`);
+        }
+        if (a.villageName || a.traditionalAuthorityOrTribalCouncil) {
+            parts.push([a.standOrErfOrHouseNo, a.villageName, a.traditionalAuthorityOrTribalCouncil].filter(Boolean).join(', '));
+        }
+        if (a.shackOrSectionOrStandNo || a.settlementName) {
+            parts.push([a.shackOrSectionOrStandNo, a.settlementName, a.sectionOrBlock, a.nearestLandmarkOrZone].filter(Boolean).join(', '));
+        }
+        if (a.farmName || a.portionOrPlotNo) {
+            parts.push([a.portionOrPlotNo, a.farmName, a.roadOrRoute].filter(Boolean).join(', '));
+        }
+        if (a.boxOrBagNumber) {
+            parts.push(`${a.boxOrBagType || 'P.O. Box'} ${a.boxOrBagNumber}${a.postOfficeName ? `, ${a.postOfficeName}` : ''}`);
+        }
+        if (a.suburbOrTownship || a.suburbOrVillage) {
+            parts.push(a.suburbOrTownship || a.suburbOrVillage);
+        }
+        if (a.cityOrTown) {
+            parts.push(a.cityOrTown);
+        }
+        if (uiSettings?.AddressIncludeProvince !== false && a.province) {
+            parts.push(a.province);
+        }
+        if (uiSettings?.AddressIncludePostalCode !== false && a.postalCode) {
+            parts.push(a.postalCode);
+        }
+        if (parts.length === 0 && a.streetAddress) {
+            parts.push(a.streetAddress);
+        }
+
+        const isInline = uiSettings?.AddressFormat === 'comma';
+        return parts.join(isInline ? ', ' : '\n');
+    });
+
+    const addressText = addressStrings.length > 0 ? addressStrings.join(' | ') : (address["Home Address"] ? address["Home Address"] : '');
 
     // Calculate content density for 1-Page Fitting
-    const totalItemCount = expList.length + (eduList.tertiary?.length || 0) + (refList.length || 0) + (skills.Tech ? 1 : 0) + (summary ? 1 : 0);
+    const totalItemCount = expList.length + (eduList.tertiary?.length || 0) + (eduList.artisanalCertifications?.length || 0) + (refList.length || 0) + (skills.Tech ? 1 : 0) + (summary ? 1 : 0);
     const isDense = fitMode === 'page' || totalItemCount > 5;
 
     // Density Scale Tokens
@@ -90,33 +192,26 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
     const bodyFontSize = isDense ? 11 : 12;
     const bodyLineHeight = isDense ? 15 : 17;
 
-    const maskId = (idStr: string) => {
-        if (!idStr) return '';
-        if (identity.idMask !== false && idStr.length >= 6) {
-            return `${idStr.substring(0, 6)} **** ***`;
-        }
-        return idStr;
-    };
-
     const renderHeader = () => {
         if (layout === 'modern') {
             return (
                 <View style={[styles.headerModern, { marginHorizontal: -pagePadding, marginTop: -pagePadding, padding: pagePadding }]}>
-                    <Text style={[styles.nameModern, { fontSize: nameFontSize }]}>{names.firstName} {names.Surname}</Text>
+                    <Text style={[styles.nameModern, { fontSize: nameFontSize }]}>{fullName}</Text>
                     <View style={styles.contactRowModern}>
-                        {contact.Email ? <Text style={styles.contactTextModern}>📧 {contact.Email}</Text> : null}
-                        {contact.Phone ? <Text style={styles.contactTextModern}>📱 {contact.Phone}</Text> : null}
+                        {contactElements.map((c, i) => (
+                            <Text key={i} style={styles.contactTextModern}>{c}</Text>
+                        ))}
                     </View>
                 </View>
             );
         } else if (layout === 'minimalist') {
             return (
                 <View style={styles.headerMinimalist}>
-                    <Text style={[styles.nameMinimalist, { fontSize: nameFontSize - 2 }]}>{names.firstName} {names.Surname}</Text>
+                    <Text style={[styles.nameMinimalist, { fontSize: nameFontSize - 2 }]}>{fullName}</Text>
                     <Divider style={{ marginVertical: 8 }} />
                     {contactElements.length > 0 && (
                         <Text style={styles.contactTextMinimalist}>
-                            {contactElements.join(' • ')}
+                            {contactElements.join(contactSep)}
                         </Text>
                     )}
                 </View>
@@ -125,7 +220,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
             return (
                 <View style={styles.headerChrono}>
                     <View style={styles.headerChronoMain}>
-                        <Text style={[styles.nameChrono, { fontSize: nameFontSize }]}>{names.firstName} {names.Surname}</Text>
+                        <Text style={[styles.nameChrono, { fontSize: nameFontSize }]}>{fullName}</Text>
                         <Text style={styles.titleChrono}>{expList[0]?.Role || 'Professional'}</Text>
                     </View>
                     {contactElements.length > 0 && (
@@ -140,21 +235,21 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
         } else if (layout === 'functional') {
             return (
                 <View style={styles.headerFunc}>
-                    <Text style={[styles.nameFunc, { fontSize: nameFontSize + 4 }]}>{names.firstName} {names.Surname}</Text>
+                    <Text style={[styles.nameFunc, { fontSize: nameFontSize + 4 }]}>{fullName}</Text>
                     <View style={styles.funcDivider} />
                     {contactElements.length > 0 && (
-                        <Text style={styles.contactTextFunc}>{contactElements.join(' | ')}</Text>
+                        <Text style={styles.contactTextFunc}>{contactElements.join(contactSep)}</Text>
                     )}
                 </View>
             );
         } else {
             return (
                 <View style={styles.headerPro}>
-                    <Text style={[styles.namePro, { fontSize: nameFontSize }]}>{names.Prefix ? names.Prefix + ' ' : ''}{names.firstName} {names.Surname}</Text>
+                    <Text style={[styles.namePro, { fontSize: nameFontSize }]}>{fullName}</Text>
                     <View style={styles.contactRowPro}>
                         {contactElements.length > 0 && (
                             <Text style={styles.contactTextPro}>
-                                {contactElements.join(' | ')}
+                                {contactElements.join(contactSep)}
                             </Text>
                         )}
                         {addressText ? (
@@ -254,26 +349,51 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
         return items.map(item => `• ${item}`).join('\n');
     };
 
-    // Prepared Demographic Items
+    // Prepared Demographic Items respecting visibility
     const demoItems: { label: string; value: string }[] = [];
-    if (identity.idNumber) demoItems.push({ label: 'ID Number', value: maskId(identity.idNumber) });
-    if (demographics.Nationality) demoItems.push({ label: 'Nationality', value: demographics.Nationality });
-    if (demographics.Gender && demographics.Gender !== 'None') demoItems.push({ label: 'Gender', value: demographics.Gender });
-    if (demographics.Race && demographics.Race !== 'Other') demoItems.push({ label: 'Race', value: demographics.Race });
-    if (demographics.MaritalStatus || demographics.maritalStatus) demoItems.push({ label: 'Marital Status', value: demographics.MaritalStatus || demographics.maritalStatus });
-    if ((demographics.Disability || demographics.disability) && (demographics.Disability !== 'None')) demoItems.push({ label: 'Disability', value: demographics.Disability || demographics.disability });
-    if (licensing.DriversVisible && licensing.Drivers !== 'None') demoItems.push({ label: 'Drivers License', value: licensing.Drivers });
-    if (licensing.MotorVisible && licensing.Motorcycle && licensing.Motorcycle !== 'None') demoItems.push({ label: 'Motorcycle License', value: licensing.Motorcycle });
+    if (identity.idNumber && isFieldVisible('pd_identity_number')) {
+        const mask = uiSettings?.IdMask !== false && isFieldVisible('pd_identity_mask');
+        const displayVal = mask && identity.idNumber.length >= 6 ? `${identity.idNumber.substring(0, 6)} **** ***` : identity.idNumber;
+        demoItems.push({ label: 'ID Number', value: displayVal });
+    }
+    if (demographics.Nationality && isFieldVisible('pd_identity_nationality')) {
+        demoItems.push({ label: 'Nationality', value: demographics.Nationality });
+    }
+    if (demographics.Gender && demographics.Gender !== 'None' && isFieldVisible('pd_identity_gender')) {
+        demoItems.push({ label: 'Gender', value: demographics.Gender });
+    }
+    if (demographics.Race && demographics.Race !== 'Other' && isFieldVisible('pd_identity_race')) {
+        demoItems.push({ label: 'Race', value: demographics.Race });
+    }
+    if ((demographics.MaritalStatus || demographics.maritalStatus) && isFieldVisible('pd_identity_marital')) {
+        demoItems.push({ label: 'Marital Status', value: demographics.MaritalStatus || demographics.maritalStatus });
+    }
+    if ((demographics.Disability || demographics.disability) && (demographics.Disability !== 'None') && isFieldVisible('pd_identity_disability')) {
+        demoItems.push({ label: 'Disability', value: demographics.Disability || demographics.disability });
+    }
+    if (licensing.Drivers && licensing.Drivers !== 'None' && isFieldVisible('pd_license_drivers')) {
+        demoItems.push({ label: 'Drivers License', value: licensing.Drivers });
+    }
+    if (licensing.PrDP && isFieldVisible('pd_license_prdp')) {
+        demoItems.push({ label: 'PrDP Permit', value: 'Valid Professional Driving Permit' });
+    }
+    if (licensing.OwnVehicle && isFieldVisible('pd_license_vehicle')) {
+        demoItems.push({ label: 'Vehicle', value: 'Own Transport' });
+    }
+    if (legal["Criminal Record"] !== undefined && isFieldVisible('pd_identity_criminal')) {
+        demoItems.push({ label: 'Criminal Record', value: legal["Criminal Record"] ? (legal.Details || 'Yes') : 'Clear / None' });
+    }
 
     const isDemoComma = uiSettings?.DemoFormat === 'comma';
 
     // Filter valid non-empty collections to prevent ghost placeholders
     const validExpList = expList.filter((job: any) => job.visible !== false && ((job.Organization && job.Organization.trim().length > 0) || (job.Role && job.Role.trim().length > 0)));
     const validTertiary = (eduList.tertiary || []).filter((edu: any) => edu.visible !== false && ((edu.Institution && edu.Institution.trim().length > 0) || (edu["Qualification Name"] && edu["Qualification Name"].trim().length > 0)));
+    const validArtisanal = (eduList.artisanalCertifications || []).filter((cert: any, idx: number) => cert.visible !== false && isFieldVisible(`edu_art_${idx}`) && ((cert.trade && cert.trade.trim().length > 0) || (cert.name && cert.name.trim().length > 0)));
     const validTechCerts = (eduList.technicalCertifications || []).filter((cert: any) => cert.visible !== false && cert.name && cert.name.trim().length > 0);
     const validRegCerts = (eduList.regulatoryCertifications || []).filter((cert: any) => cert.visible !== false && cert.name && cert.name.trim().length > 0);
     const hasHighschool = eduList.highschool && (eduList.highschool["Province Department"] || eduList.highschool["Year Completed"]) && eduList.highschool.visible !== false;
-    const hasEducation = validTertiary.length > 0 || validTechCerts.length > 0 || validRegCerts.length > 0 || hasHighschool;
+    const hasEducation = validTertiary.length > 0 || validArtisanal.length > 0 || validTechCerts.length > 0 || validRegCerts.length > 0 || hasHighschool;
 
     const techText = formatFieldItems(skills.Tech, uiSettings?.TechFormat);
     const softText = formatFieldItems(skills.Soft, uiSettings?.SoftFormat);
@@ -320,7 +440,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                     </View>
                 )}
 
-                {summary ? (
+                {summary && isFieldVisible('summary_visibility') ? (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader(layout === 'functional' ? 'Professional Profile' : 'Professional Summary')}
                         <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{summary}</Text>
@@ -387,6 +507,15 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                                 </View>
                             );
                         })}
+                        {validArtisanal.map((cert: any, idx: number) => (
+                            <View key={`art_${idx}`} style={styles.entry}>
+                                <View style={styles.entryHeader}>
+                                    <Text style={styles.entryTitle} numberOfLines={1}>🔧 {cert.trade || cert.name}</Text>
+                                    <Text style={styles.entryDate}>{cert.date_obtained || cert.dateObtained || cert.yearObtained || ''}</Text>
+                                </View>
+                                <Text style={styles.entrySubTitle}>{[cert.issuingBodyOrSeta ? `Centre/SETA: ${cert.issuingBodyOrSeta}` : '', cert.contractOrCertificateNumber ? `Cert No: ${cert.contractOrCertificateNumber}` : ''].filter(Boolean).join(' · ')}</Text>
+                            </View>
+                        ))}
                         {validTechCerts.map((cert: any, idx: number) => (
                             <View key={`tc_${idx}`} style={styles.entry}>
                                 <View style={styles.entryHeader}>
