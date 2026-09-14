@@ -62,10 +62,10 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
     const getCategoryCsvSummary = (field: keyof ResumeSkills) => {
         const items = getSkillItems(field);
         const names = items.map(i => (i.name || i.text || '').trim()).filter(Boolean);
-        if (names.length === 0) return 'CSV: No items added';
+        if (names.length === 0) return 'No items added';
         const joined = names.join(', ');
         const summary = joined.length > 70 ? `${joined.substring(0, 67)}...` : joined;
-        return `CSV: ${summary}`;
+        return summary;
     };
 
     const updateSkillItems = (field: keyof ResumeSkills, items: any[]) => {

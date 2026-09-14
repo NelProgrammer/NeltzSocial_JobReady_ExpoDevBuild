@@ -123,9 +123,9 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
 
     const getCsvSummary = (items: any[], nameKey: string) => {
         const names = items.map(i => (i[nameKey] || '').trim()).filter(Boolean);
-        if (names.length === 0) return 'CSV: No items added';
+        if (names.length === 0) return 'No items added';
         const joined = names.join(', ');
-        return `CSV: ${joined.length > 70 ? `${joined.substring(0, 67)}...` : joined}`;
+        return joined.length > 70 ? `${joined.substring(0, 67)}...` : joined;
     };
 
     // --- High School ---
@@ -308,7 +308,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                 <Card.Title
                     title="🏫 High School"
-                    subtitle={highschool["Province Department"] ? `CSV: ${highschool["Province Department"]} (${highschool["Year Completed"] || ''})` : 'CSV: No high school added'}
+                    subtitle={highschool["Province Department"] ? `${highschool["Province Department"]} (${highschool["Year Completed"] || ''})` : 'No high school added'}
                     subtitleNumberOfLines={2}
                     titleStyle={[styles.catTitle, { color: theme.textPrimary }]}
                     subtitleStyle={[styles.catSubtitle, { color: theme.textSecondary }]}

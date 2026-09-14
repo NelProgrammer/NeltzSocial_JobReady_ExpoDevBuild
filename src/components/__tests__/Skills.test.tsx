@@ -57,14 +57,14 @@ describe('Skills Data Normalization Unit & Integration Logic Tests', () => {
         expect(getSkillItems(skills, 'Tech')).toEqual([]);
     });
 
-    test('generates live CSV summary string for Skill category items', () => {
+    test('generates live summary string for Skill category items', () => {
         const getCategoryCsvSummary = (skills: ResumeSkills, field: keyof ResumeSkills) => {
             const items = getSkillItems(skills, field);
             const names = items.map(i => (i.name || '').trim()).filter(Boolean);
-            if (names.length === 0) return 'CSV: No items added';
+            if (names.length === 0) return 'No items added';
             const joined = names.join(', ');
             const summary = joined.length > 70 ? `${joined.substring(0, 67)}...` : joined;
-            return `CSV: ${summary}`;
+            return summary;
         };
 
         const skills: ResumeSkills = {
@@ -75,7 +75,7 @@ describe('Skills Data Normalization Unit & Integration Logic Tests', () => {
             ]
         };
 
-        expect(getCategoryCsvSummary(skills, 'Tech')).toBe('CSV: TypeScript, Python, React Native');
-        expect(getCategoryCsvSummary({}, 'Tech')).toBe('CSV: No items added');
+        expect(getCategoryCsvSummary(skills, 'Tech')).toBe('TypeScript, Python, React Native');
+        expect(getCategoryCsvSummary({}, 'Tech')).toBe('No items added');
     });
 });

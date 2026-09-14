@@ -438,8 +438,8 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
                   <View key={itemId} style={styles.jobBox}>
                     <View style={styles.itemRow}>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.itemTitle}>💼 {job.Role} at {job.Organization}</Text>
-                        <Text style={styles.itemSub}>{job["Start Date"]} – {job["End Date"]}</Text>
+                        <Text style={styles.itemTitle}>💼 {[job.Role, job.Organization].filter(Boolean).join(' at ') || 'Untitled Position'}</Text>
+                        <Text style={styles.itemSub}>{[job["Start Date"], job["End Date"]].filter(Boolean).join(' – ') || 'Dates unspecified'}</Text>
                       </View>
                       <Switch
                         value={isVisible(itemId, job)}
@@ -506,8 +506,8 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
                 return (
                   <View key={itemId} style={styles.itemRow}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.itemTitle}>👥 {item.name || item.Name}</Text>
-                      <Text style={styles.itemSub}>{item.role || item.Role} at {item.company || item.Organization}</Text>
+                      <Text style={styles.itemTitle}>👥 {item.name || item.Name || 'Reference'}</Text>
+                      <Text style={styles.itemSub}>{[item.role || item.Role, item.company || item.Organization || item.org].filter(Boolean).join(' at ') || 'Reference Details'}</Text>
                     </View>
                     <Switch
                       value={isVisible(itemId, item)}
@@ -568,8 +568,8 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                   <Text style={{ fontSize: 10, color: uiSettings?.RespFormat !== 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.RespFormat !== 'comma' ? 'bold' : 'normal' }}>Bulleted List</Text>
                   <Switch
-                    value={uiSettings?.RespFormat === 'comma'}
-                    onValueChange={(val) => updateUiSettings({ ...uiSettings, RespFormat: val ? 'comma' : 'list' })}
+                    value={uiSettings?.RespFormat === 'comma' || uiSettings?.ResponsibilityFormat === 'comma'}
+                    onValueChange={(val) => updateUiSettings({ ...uiSettings, RespFormat: val ? 'comma' : 'list', ResponsibilityFormat: val ? 'comma' : 'list' })}
                     trackColor={switchColors}
                   />
                   <Text style={{ fontSize: 10, color: uiSettings?.RespFormat === 'comma' ? theme.accent : '#94a3b8', fontWeight: uiSettings?.RespFormat === 'comma' ? 'bold' : 'normal' }}>Comma</Text>

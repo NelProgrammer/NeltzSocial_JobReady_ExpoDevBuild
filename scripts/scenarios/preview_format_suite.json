@@ -1,0 +1,62 @@
+{
+  "name": "Preview Format & CSV Subtitle Cleanup Verification Suite",
+  "description": "Verifies that accordion subtitles no longer show 'CSV:', 'at' connectors are clean, format toggles switch between bulleted and comma, and preview ghost artifacts are eliminated.",
+  "steps": [
+    {
+      "description": "Return to Hub to ensure clean starting state",
+      "action": "tap-target",
+      "target": "footer_home",
+      "delayMs": 1000
+    },
+    {
+      "description": "Tap Resume Builder from Hub",
+      "action": "tap-target",
+      "target": "resumebuilder",
+      "delayMs": 1500
+    },
+    {
+      "description": "Switch to Skills tab",
+      "action": "tap-tab",
+      "target": "skills",
+      "delayMs": 1000
+    },
+    {
+      "description": "Capture Skills tab proof (Verifying clean subtitle without 'CSV:')",
+      "action": "capture",
+      "output": "suite_skills_clean_subtitle.png"
+    },
+    {
+      "description": "Switch to Education tab",
+      "action": "tap-tab",
+      "target": "education",
+      "delayMs": 1000
+    },
+    {
+      "description": "Capture Education tab proof (Verifying clean subtitle without 'CSV:')",
+      "action": "capture",
+      "output": "suite_education_clean_subtitle.png"
+    },
+    {
+      "description": "Tap Configure Fields button to enter Fields Selection screen",
+      "action": "tap-target",
+      "target": "configure_btn",
+      "delayMs": 1500
+    },
+    {
+      "description": "Capture Fields Selection proof (Verifying Experience and References without dangling 'at')",
+      "action": "capture",
+      "output": "suite_fields_clean_at.png"
+    },
+    {
+      "description": "Tap Preview CV button to enter Preview screen",
+      "action": "tap-coords",
+      "coords": "507 2265",
+      "delayMs": 2000
+    },
+    {
+      "description": "Capture Resume Preview proof (Verifying clean headers, no lone '|', no ghost placeholders)",
+      "action": "capture",
+      "output": "suite_preview_clean_proof.png"
+    }
+  ]
+}

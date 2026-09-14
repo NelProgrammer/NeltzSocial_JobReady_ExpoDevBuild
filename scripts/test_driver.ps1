@@ -30,8 +30,8 @@ $tabMap = @{
     "references"    = "784 366"
     "skills"        = "978 366"
     "edit_fab"      = "991 153"
-    "resumebuilder" = "540 625"
-    "pdfworkbench"  = "540 735"
+    "resumebuilder" = "540 1500"
+    "pdfworkbench"  = "540 1750"
     "back_button"   = "89 153"
     "footer_home"   = "92 2265"
     "configure_btn" = "507 2265"
@@ -66,6 +66,10 @@ if ($Action -ne "") {
         "tap" {
             Write-Host "Tapping: $Coords..." -ForegroundColor Yellow
             adb -s $Device shell input tap $Coords
+        }
+        "swipe" {
+            Write-Host "Swiping: $Coords..." -ForegroundColor Yellow
+            adb -s $Device shell input swipe $Coords
         }
         "type-text" {
             Write-Host "Typing: '$Text'..." -ForegroundColor Yellow

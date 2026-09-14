@@ -67,7 +67,7 @@ const PreviewScreen = ({ navigation }) => {
         } = resumeData;
 
         const skills = skillsObj || skillsCapObj || {};
-        const refList = (refListCap || refListLow || []).filter(r => r.visible !== false);
+        const refList = (refListCap || refListLow || []).filter(r => r.visible !== false && ((r.name || r.Name || '').trim().length > 0 || (r.role || r.Role || r.relation || '').trim().length > 0));
         const Layout = uiSettings?.Layout || uiSettings?.["Document Settings"]?.Layout || 'professional';
         const names = pd?.names || {};
         const contact = pd?.contact || {};
@@ -173,93 +173,94 @@ const PreviewScreen = ({ navigation }) => {
         `;
 
         let headerHtml = '';
+        const modernContacts = [
+            contact.Email ? `📧 ${contact.Email}` : '',
+            contact.Phone ? `📱 ${contact.Phone}` : '',
+            contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]}` : '',
+            contact.LinkedIn ? `🔗 ${contact.LinkedIn}` : '',
+            contact.Website ? `🌐 ${contact.Website}` : '',
+            address.AddressType ? `[${address.AddressType}] ${formatAddress(address["Home Address"] || '')}` : (address["Home Address"] ? formatAddress(address["Home Address"]) : '')
+        ].filter(Boolean);
+
         if (Layout === 'modern') {
             headerHtml = `
                 <div class="header-mod">
                     <h1>${names.Prefix ? names.Prefix + ' ' : ''}${names.firstName || ''} ${names.MiddleName ? names.MiddleName + ' ' : ''}${names.Surname || ''}</h1>
-                    <div class="contact-info">
-                        ${contact.Email ? `📧 ${contact.Email} | ` : ''} 
-                        ${contact.Phone ? `📱 ${contact.Phone} | ` : ''} 
-                        ${contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]} | ` : ''} 
-                        ${contact.LinkedIn ? `🔗 ${contact.LinkedIn} | ` : ''} 
-                        ${contact.Website ? `🌐 ${contact.Website} | ` : ''} 
-                        ${address.AddressType ? `[${address.AddressType}] ` : ''}${address["Home Address"] ? `${formatAddress(address["Home Address"])}` : ''}
-                    </div>
+                    ${modernContacts.length > 0 ? `<div class="contact-info">${modernContacts.join(' | ')}</div>` : ''}
                 </div>
             `;
         } else if (Layout === 'minimalist') {
+            const minContacts = [contact.Email, contact.Phone].filter(Boolean);
             headerHtml = `
                 <div class="header-min">
                     <h1>${names.firstName || ''} ${names.Surname || ''}</h1>
-                    <div class="contact-info">
-                        ${contact.Email || ''} &bull; ${contact.Phone || ''}
-                    </div>
-                    <div class="contact-info">
-                        ${address.AddressType ? `[${address.AddressType}] ` : ''}${address["Home Address"] ? formatAddress(address["Home Address"]) : ''}
-                    </div>
+                    ${minContacts.length > 0 ? `<div class="contact-info">${minContacts.join(' &bull; ')}</div>` : ''}
+                    ${address["Home Address"] ? `<div class="contact-info">${address.AddressType ? `[${address.AddressType}] ` : ''}${formatAddress(address["Home Address"])}</div>` : ''}
                 </div>
             `;
         } else {
             headerHtml = `
                 <div class="header-pro">
                     <h1>${names.Prefix ? names.Prefix + ' ' : ''}${names.firstName || ''} ${names.MiddleName ? names.MiddleName + ' ' : ''}${names.Surname || ''}</h1>
-                    <div class="contact-info">
-                        ${contact.Email ? `📧 ${contact.Email} &nbsp;|&nbsp;` : ''} 
-                        ${contact.Phone ? `📱 ${contact.Phone} &nbsp;|&nbsp;` : ''} 
-                        ${contact["Phone-alt"] ? `📱 ${contact["Phone-alt"]} &nbsp;|&nbsp;` : ''} 
-                        ${contact.LinkedIn ? `🔗 ${contact.LinkedIn} &nbsp;|&nbsp;` : ''} 
-                        ${contact.Website ? `🌐 ${contact.Website} &nbsp;|&nbsp;` : ''} 
-                        ${address.AddressType ? `[${address.AddressType}] ` : ''}${address["Home Address"] ? `${formatAddress(address["Home Address"])}` : ''}
-                    </div>
+                    ${modernContacts.length > 0 ? `<div class="contact-info">${modernContacts.join(' &nbsp;|&nbsp; ')}</div>` : ''}
                 </div>
             `;
         }
 
         const sectionHeader = (title) => Layout === 'minimalist' ? `<h3 class="min-h3">${title.toUpperCase()}</h3>` : `<h3>${title}</h3>`;
 
-        const identityHtml = identity.idNumber || demographics.Nationality || (licensing.Drivers && licensing.DriversVisible) || (licensing.Motorcycle && licensing.MotorVisible) || (legal["Criminal Record"]) ? `
+        const demoItems = [];
+        if (identity.idNumber) demoItems.push(`<strong>ID Number:</strong> ${maskId(identity.idNumber)}`);
+        if (demographics.Nationality) demoItems.push(`<strong>Nationality:</strong> ${demographics.Nationality}`);
+        if (demographics.Gender && demographics.Gender !== 'None') demoItems.push(`<strong>Gender:</strong> ${demographics.Gender}`);
+        if (demographics.Race && demographics.Race !== 'Other') demoItems.push(`<strong>Race:</strong> ${demographics.Race}`);
+        if (licensing.DriversVisible && licensing.Drivers !== 'None') demoItems.push(`<strong>Drivers License:</strong> ${licensing.Drivers}`);
+        if (licensing.MotorVisible && licensing.Motorcycle && licensing.Motorcycle !== 'None') demoItems.push(`<strong>Motorcycle:</strong> ${licensing.Motorcycle}`);
+        if (legal["Criminal Record"]) demoItems.push(`<strong>Criminal Record:</strong> Yes ${legal.Details ? `(${legal.Details})` : ''}`);
+
+        const isDemoComma = uiSettings?.DemoFormat === 'comma';
+        const identityHtml = demoItems.length > 0 ? `
             <div class="meta-section">
                 ${Layout === 'minimalist' ? sectionHeader('Personal Information') : ''}
+                ${isDemoComma ? `<div style="font-size: 13px; color: #444; line-height: 1.6;">${demoItems.join(' &nbsp;·&nbsp; ')}</div>` : `
                 <div class="meta-grid">
-                    ${identity.idNumber ? `<div class="meta-item"><strong>ID Number:</strong> ${maskId(identity.idNumber)}</div>` : ''}
-                    ${demographics.Nationality ? `<div class="meta-item"><strong>Nationality:</strong> ${demographics.Nationality}</div>` : ''}
-                    ${demographics.Gender && demographics.Gender !== 'None' ? `<div class="meta-item"><strong>Gender:</strong> ${demographics.Gender}</div>` : ''}
-                    ${demographics.Race && demographics.Race !== 'Other' ? `<div class="meta-item"><strong>Race:</strong> ${demographics.Race}</div>` : ''}
-                    ${licensing.DriversVisible && licensing.Drivers !== 'None' ? `<div class="meta-item"><strong>Drivers License:</strong> ${licensing.Drivers}</div>` : ''}
-                    ${licensing.MotorVisible && licensing.Motorcycle !== 'None' ? `<div class="meta-item"><strong>Motorcycle:</strong> ${licensing.Motorcycle}</div>` : ''}
-                    ${legal["Criminal Record"] ? `<div class="meta-item"><strong>Criminal Record:</strong> Yes ${legal.Details ? `(${legal.Details})` : ''}</div>` : ''}
-                </div>
+                    ${demoItems.map(item => `<div class="meta-item">${item}</div>`).join('')}
+                </div>`}
             </div>
         ` : '';
 
-        const langHtml = languages.length > 0 ? `
+        const validLanguages = (languages || []).filter(l => l.visible !== false && l.Language && l.Language.trim().length > 0);
+        const langHtml = validLanguages.length > 0 ? `
             ${sectionHeader('Languages')}
             <ul>
-                ${languages.filter(l => l.visible !== false).map(l => `<li><strong>${l.Language}:</strong> ${l.proficiency}</li>`).join('')}
+                ${validLanguages.map(l => `<li><strong>${l.Language}:</strong> ${l.proficiency || 'Fluent'}</li>`).join('')}
             </ul>
         ` : '';
 
-        const visibleExp = (expList || []).filter(job => job.visible !== false);
+        const visibleExp = (expList || []).filter(job => job.visible !== false && ((job.Organization && job.Organization.trim().length > 0) || (job.Role && job.Role.trim().length > 0)));
+        const respFormat = uiSettings?.RespFormat || uiSettings?.ResponsibilityFormat;
         const expHtml = visibleExp && visibleExp.length > 0 ? `
             ${sectionHeader('Professional Experience')}
-            ${visibleExp.map(job => `
+            ${visibleExp.map(job => {
+                const dateRange = [job["Start Date"], job["End Date"] || (job["Start Date"] ? 'Present' : '')].filter(Boolean).join(' - ');
+                return `
                 <div class="job-item" style="margin-bottom: 20px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
-                        <span>${job.Organization}${job.Department ? ` (${job.Department})` : ''}</span>
-                        <span>${job["Start Date"]} - ${job["End Date"] || 'Present'}</span>
+                        <span>${job.Organization || 'Organization'}${job.Department ? ` (${job.Department})` : ''}</span>
+                        ${dateRange ? `<span>${dateRange}</span>` : ''}
                     </div>
-                    <div class="job-role" style="font-style: italic; color: #555; margin-bottom: 5px;">${job.Role}</div>
-                    ${formatBulletList(job["Key Responsibilities"], uiSettings?.ResponsibilityFormat) ? `<div class="job-desc" style="font-size: 14px; line-height: 1.5; white-space: pre-line; margin-bottom: 5px;">${formatBulletList(job["Key Responsibilities"], uiSettings?.ResponsibilityFormat)}</div>` : ''}
+                    ${job.Role ? `<div class="job-role" style="font-style: italic; color: #555; margin-bottom: 5px;">${job.Role}</div>` : ''}
+                    ${formatBulletList(job["Key Responsibilities"], respFormat) ? `<div class="job-desc" style="font-size: 14px; line-height: 1.5; white-space: pre-line; margin-bottom: 5px;">${formatBulletList(job["Key Responsibilities"], respFormat)}</div>` : ''}
                     ${job.Achievements && formatBulletList(job.Achievements, 'bullet') ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Key Achievements:</strong> ${formatBulletList(job.Achievements, 'bullet')}</div>` : ''}
                     ${job["Systems Used"] && formatBulletList(job["Systems Used"], uiSettings?.SystemsUsedFormat) ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Systems & Tools Used:</strong> ${formatBulletList(job["Systems Used"], uiSettings?.SystemsUsedFormat)}</div>` : ''}
                     ${job["Reason for Leaving"] ? `<div style="font-size: 12.5px; margin-top: 5px; font-style: italic; color: #777;">Reason for leaving: ${job["Reason for Leaving"]}</div>` : ''}
                 </div>
-            `).join('')}
+            `;}).join('')}
         ` : '';
 
-        const visibleTertiary = (eduList?.tertiary || []).filter(edu => edu.visible !== false);
-        const visibleTechCerts = (eduList?.technicalCertifications || []).filter(cert => cert.visible !== false);
-        const visibleRegCerts = (eduList?.regulatoryCertifications || []).filter(cert => cert.visible !== false);
+        const visibleTertiary = (eduList?.tertiary || []).filter(edu => edu.visible !== false && ((edu.Institution && edu.Institution.trim().length > 0) || (edu["Qualification Name"] && edu["Qualification Name"].trim().length > 0)));
+        const visibleTechCerts = (eduList?.technicalCertifications || []).filter(cert => cert.visible !== false && cert.name && cert.name.trim().length > 0);
+        const visibleRegCerts = (eduList?.regulatoryCertifications || []).filter(cert => cert.visible !== false && cert.name && cert.name.trim().length > 0);
         const hasHighschool = eduList?.highschool?.["Year Completed"] && eduList?.highschool?.visible !== false;
 
         const hasEducationContent = visibleTertiary.length > 0 || visibleTechCerts.length > 0 || visibleRegCerts.length > 0 || hasHighschool;
@@ -327,11 +328,14 @@ const PreviewScreen = ({ navigation }) => {
                     const work = ref.workPhone ? `☎️ Work: ${ref.workPhone}` : '';
                     const email = ref.email ? `📧 ${ref.email}` : '';
                     const contactLines = [cell, work, email].filter(Boolean).join('<br/>');
+                    const refRole = ref.role || ref.Role || ref.relation || ref.relationship || '';
+                    const refOrg = ref.company || ref.organization || ref.Organization || ref.org || '';
+                    const refRoleOrg = [refRole, refOrg].filter(Boolean).join(' at ') || 'Reference';
 
                     return `
                     <div class="ref-item" style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;">
-                        <strong>${ref.name || ref.Name || ''}</strong><br/>
-                        ${ref.role || ref.Role || 'Reference'}${ref.company || ref.organization || ref.Organization ? ` at ${ref.company || ref.organization || ref.Organization}` : ''}<br/>
+                        <strong>${ref.name || ref.Name || 'Reference'}</strong><br/>
+                        ${refRoleOrg}<br/>
                         ${contactLines}
                     </div>
                     `;
@@ -551,6 +555,7 @@ const PreviewScreen = ({ navigation }) => {
                         isGenerating={isGeneratingPdf} 
                         fitMode={fitMode}
                         enableScroll={enableScroll}
+                        uiSettings={uiSettings}
                     />
                 </View>
 

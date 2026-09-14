@@ -13,9 +13,10 @@ interface NativeVignetteProps {
     glow?: string | null;
     exportFormat?: string;
     fitMode?: string;
+    uiSettings?: any;
 }
 
-const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 'professional', glow = null, exportFormat = 'pdf', fitMode = 'a4' }) => {
+const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 'professional', glow = null, exportFormat = 'pdf', fitMode = 'a4', uiSettings = null }) => {
     const { width: windowWidth, height: windowHeight } = useWindowDimensions();
     if (!data) return null;
 
@@ -63,6 +64,21 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
     const summary = data["professional summary"];
     const refList = (data.References || data.references || []).filter((r: any) => r.visible !== false);
 
+    // Clean contact elements (never dangling '|')
+    const contactElements = [contact.Email, contact.Phone, contact["Phone-alt"], contact.LinkedIn, contact.Website].filter(Boolean);
+
+    // Address formatting helper
+    const formatAddressText = (addrStr: string) => {
+        if (!addrStr) return '';
+        const isBullet = uiSettings?.AddressFormat === 'bullet' || uiSettings?.AddressFormat === 'list';
+        if (isBullet) {
+            return addrStr.split('\n').map(l => l.trim()).filter(Boolean).join('\n');
+        }
+        return addrStr.split('\n').map(l => l.trim()).filter(Boolean).join(', ');
+    };
+
+    const addressText = address["Home Address"] ? formatAddressText(address["Home Address"]) : '';
+
     // Calculate content density for 1-Page Fitting
     const totalItemCount = expList.length + (eduList.tertiary?.length || 0) + (refList.length || 0) + (skills.Tech ? 1 : 0) + (summary ? 1 : 0);
     const isDense = fitMode === 'page' || totalItemCount > 5;
@@ -88,8 +104,8 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                 <View style={[styles.headerModern, { marginHorizontal: -pagePadding, marginTop: -pagePadding, padding: pagePadding }]}>
                     <Text style={[styles.nameModern, { fontSize: nameFontSize }]}>{names.firstName} {names.Surname}</Text>
                     <View style={styles.contactRowModern}>
-                        {contact.Email && <Text style={styles.contactTextModern}>📧 {contact.Email}</Text>}
-                        {contact.Phone && <Text style={styles.contactTextModern}>📱 {contact.Phone}</Text>}
+                        {contact.Email ? <Text style={styles.contactTextModern}>📧 {contact.Email}</Text> : null}
+                        {contact.Phone ? <Text style={styles.contactTextModern}>📱 {contact.Phone}</Text> : null}
                     </View>
                 </View>
             );
@@ -98,9 +114,11 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                 <View style={styles.headerMinimalist}>
                     <Text style={[styles.nameMinimalist, { fontSize: nameFontSize - 2 }]}>{names.firstName} {names.Surname}</Text>
                     <Divider style={{ marginVertical: 8 }} />
-                    <Text style={styles.contactTextMinimalist}>
-                        {contact.Email} • {contact.Phone}
-                    </Text>
+                    {contactElements.length > 0 && (
+                        <Text style={styles.contactTextMinimalist}>
+                            {contactElements.join(' • ')}
+                        </Text>
+                    )}
                 </View>
             );
         } else if (layout === 'chronological') {
@@ -110,10 +128,13 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                         <Text style={[styles.nameChrono, { fontSize: nameFontSize }]}>{names.firstName} {names.Surname}</Text>
                         <Text style={styles.titleChrono}>{expList[0]?.Role || 'Professional'}</Text>
                     </View>
-                    <View style={styles.contactBoxChrono}>
-                        <Text style={styles.contactTextChrono}>{contact.Phone}</Text>
-                        <Text style={styles.contactTextChrono}>{contact.Email}</Text>
-                    </View>
+                    {contactElements.length > 0 && (
+                        <View style={styles.contactBoxChrono}>
+                            {contactElements.map((c, i) => (
+                                <Text key={i} style={styles.contactTextChrono}>{c}</Text>
+                            ))}
+                        </View>
+                    )}
                 </View>
             );
         } else if (layout === 'functional') {
@@ -121,7 +142,9 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                 <View style={styles.headerFunc}>
                     <Text style={[styles.nameFunc, { fontSize: nameFontSize + 4 }]}>{names.firstName} {names.Surname}</Text>
                     <View style={styles.funcDivider} />
-                    <Text style={styles.contactTextFunc}>{contact.Email} | {contact.Phone}</Text>
+                    {contactElements.length > 0 && (
+                        <Text style={styles.contactTextFunc}>{contactElements.join(' | ')}</Text>
+                    )}
                 </View>
             );
         } else {
@@ -129,14 +152,16 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                 <View style={styles.headerPro}>
                     <Text style={[styles.namePro, { fontSize: nameFontSize }]}>{names.Prefix ? names.Prefix + ' ' : ''}{names.firstName} {names.Surname}</Text>
                     <View style={styles.contactRowPro}>
-                        <Text style={styles.contactTextPro}>
-                            {contact.Email} | {contact.Phone}
-                        </Text>
-                        {address["Home Address"] && (
+                        {contactElements.length > 0 && (
                             <Text style={styles.contactTextPro}>
-                                {address["Home Address"].replace(/\n/g, ', ')}
+                                {contactElements.join(' | ')}
                             </Text>
                         )}
+                        {addressText ? (
+                            <Text style={styles.contactTextPro}>
+                                {addressText}
+                            </Text>
+                        ) : null}
                     </View>
                 </View>
             );
@@ -152,13 +177,16 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
     };
 
     if (exportFormat === 'word_text') {
+        const validWordExp = expList.filter((job: any) => job.visible !== false && ((job.Organization && job.Organization.trim().length > 0) || (job.Role && job.Role.trim().length > 0)));
+        const validWordEdu = (eduList.tertiary || []).filter((edu: any) => edu.visible !== false && ((edu.Institution && edu.Institution.trim().length > 0) || (edu["Qualification Name"] && edu["Qualification Name"].trim().length > 0)));
+
         return (
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={[styles.glowWrapper, glow && { borderColor: glowColor, borderWidth: 4, elevation: 15 }]}>
                     <Surface style={[styles.page, { width: pageWidth, minHeight: pageHeight, padding: pagePadding }]} elevation={4}>
                         <Text style={styles.plainTextHeader}>{names.firstName} {names.Surname}</Text>
-                        <Text style={styles.plainTextContact}>{contact.Email} | {contact.Phone}</Text>
-                        <Text style={styles.plainTextContact}>{address["Home Address"] ? address["Home Address"].replace(/\n/g, ', ') : ''}</Text>
+                        {contactElements.length > 0 && <Text style={styles.plainTextContact}>{contactElements.join(' | ')}</Text>}
+                        {addressText ? <Text style={styles.plainTextContact}>{addressText}</Text> : null}
                         <Divider style={{ marginVertical: 10 }} />
 
                         {summary && (
@@ -168,23 +196,27 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                             </View>
                         )}
                         
-                        {expList.length > 0 && (
+                        {validWordExp.length > 0 && (
                             <View style={[styles.section, { marginBottom: sectionMargin }]}>
                                 {renderSectionHeader('Professional Experience')}
-                                {expList.map((job: any, idx: number) => (
-                                    <View key={idx} style={styles.entry}>
-                                        <Text style={styles.plainTextBold}>{job.Organization} | {job.Role}</Text>
-                                        <Text style={styles.plainTextSub}>{job["Start Date"]} - {job["End Date"] || 'Present'}</Text>
-                                        <Text style={styles.plainTextBody}>{stringifyField(job["Key Responsibilities"])}</Text>
-                                    </View>
-                                ))}
+                                {validWordExp.map((job: any, idx: number) => {
+                                    const dateRange = [job["Start Date"], job["End Date"] || (job["Start Date"] ? 'Present' : '')].filter(Boolean).join(' - ');
+                                    const resp = formatFieldItems(job["Key Responsibilities"], uiSettings?.RespFormat || uiSettings?.ResponsibilityFormat);
+                                    return (
+                                        <View key={idx} style={styles.entry}>
+                                            <Text style={styles.plainTextBold}>{job.Organization || 'Organization'} | {job.Role || 'Role'}</Text>
+                                            {dateRange ? <Text style={styles.plainTextSub}>{dateRange}</Text> : null}
+                                            {resp ? <Text style={styles.plainTextBody}>{resp}</Text> : null}
+                                        </View>
+                                    );
+                                })}
                             </View>
                         )}
 
-                        {(eduList.tertiary?.length > 0) && (
+                        {validWordEdu.length > 0 && (
                             <View style={[styles.section, { marginBottom: sectionMargin }]}>
                                 {renderSectionHeader('Education')}
-                                {eduList.tertiary?.map((edu: any, idx: number) => (
+                                {validWordEdu.map((edu: any, idx: number) => (
                                     <View key={idx} style={styles.entry}>
                                         <Text style={styles.plainTextBold}>{edu.Institution} | {edu["Qualification Name"]}</Text>
                                         <Text style={styles.plainTextSub}>{edu.Year}</Text>
@@ -198,19 +230,59 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
         );
     }
 
-    // Helper to safely format multi-item arrays or strings into text
-    const stringifyField = (val: any) => {
+    // Helper to safely format multi-item arrays or strings according to 'comma' vs 'bullet'/'list'
+    const formatFieldItems = (val: any, format?: string) => {
         if (!val) return '';
+        let items: string[] = [];
         if (Array.isArray(val)) {
-            return val.map(item => {
-                if (typeof item === 'object' && item !== null) {
-                    return item.name || item.text || item.skill || '';
-                }
-                return String(item);
-            }).filter(Boolean).join('\n');
+            items = val
+                .filter(item => typeof item === 'object' && item !== null ? item.visible !== false : true)
+                .map(item => typeof item === 'object' && item !== null ? (item.name || item.text || item.skill || '') : String(item))
+                .map(s => s.trim())
+                .filter(Boolean);
+        } else {
+            items = String(val)
+                .split('\n')
+                .map(line => line.replace(/^[-•*]\s*/, '').trim())
+                .filter(Boolean);
         }
-        return String(val);
+        if (items.length === 0) return '';
+        if (format === 'comma') {
+            return items.join(', ');
+        }
+        // Default: Bulleted List
+        return items.map(item => `• ${item}`).join('\n');
     };
+
+    // Prepared Demographic Items
+    const demoItems: { label: string; value: string }[] = [];
+    if (identity.idNumber) demoItems.push({ label: 'ID Number', value: maskId(identity.idNumber) });
+    if (demographics.Nationality) demoItems.push({ label: 'Nationality', value: demographics.Nationality });
+    if (demographics.Gender && demographics.Gender !== 'None') demoItems.push({ label: 'Gender', value: demographics.Gender });
+    if (demographics.Race && demographics.Race !== 'Other') demoItems.push({ label: 'Race', value: demographics.Race });
+    if (demographics.MaritalStatus || demographics.maritalStatus) demoItems.push({ label: 'Marital Status', value: demographics.MaritalStatus || demographics.maritalStatus });
+    if ((demographics.Disability || demographics.disability) && (demographics.Disability !== 'None')) demoItems.push({ label: 'Disability', value: demographics.Disability || demographics.disability });
+    if (licensing.DriversVisible && licensing.Drivers !== 'None') demoItems.push({ label: 'Drivers License', value: licensing.Drivers });
+    if (licensing.MotorVisible && licensing.Motorcycle && licensing.Motorcycle !== 'None') demoItems.push({ label: 'Motorcycle License', value: licensing.Motorcycle });
+
+    const isDemoComma = uiSettings?.DemoFormat === 'comma';
+
+    // Filter valid non-empty collections to prevent ghost placeholders
+    const validExpList = expList.filter((job: any) => job.visible !== false && ((job.Organization && job.Organization.trim().length > 0) || (job.Role && job.Role.trim().length > 0)));
+    const validTertiary = (eduList.tertiary || []).filter((edu: any) => edu.visible !== false && ((edu.Institution && edu.Institution.trim().length > 0) || (edu["Qualification Name"] && edu["Qualification Name"].trim().length > 0)));
+    const validTechCerts = (eduList.technicalCertifications || []).filter((cert: any) => cert.visible !== false && cert.name && cert.name.trim().length > 0);
+    const validRegCerts = (eduList.regulatoryCertifications || []).filter((cert: any) => cert.visible !== false && cert.name && cert.name.trim().length > 0);
+    const hasHighschool = eduList.highschool && (eduList.highschool["Province Department"] || eduList.highschool["Year Completed"]) && eduList.highschool.visible !== false;
+    const hasEducation = validTertiary.length > 0 || validTechCerts.length > 0 || validRegCerts.length > 0 || hasHighschool;
+
+    const techText = formatFieldItems(skills.Tech, uiSettings?.TechFormat);
+    const softText = formatFieldItems(skills.Soft, uiSettings?.SoftFormat);
+    const certsText = formatFieldItems(skills.Certifications || skills.Certs || skills.professionalCertifications, uiSettings?.ProfCertsFormat);
+    const nonAcadText = formatFieldItems(skills.NonAcadCerts, uiSettings?.NonAcadCertsFormat);
+    const hasSkills = !!(techText || softText || certsText || nonAcadText);
+
+    const validLanguages = languages.filter((l: any) => l.visible !== false && l.Language && l.Language.trim().length > 0);
+    const validRefs = refList.filter((ref: any) => (ref.name || ref.Name || '').trim().length > 0 || (ref.role || ref.Role || ref.relation || '').trim().length > 0);
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -218,74 +290,126 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                 <Surface style={[styles.page, { width: pageWidth, minHeight: pageHeight, padding: pagePadding }]} elevation={4}>
                 {renderHeader()}
 
-                {/* Section Priority Logic */}
-                {layout === 'functional' && (skills.Tech || skills.Soft) && (
+                {/* Section Priority Logic: Functional Layout Expertise */}
+                {layout === 'functional' && hasSkills && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Expertise & Skills')}
-                        {skills.Tech && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {stringifyField(skills.Tech)}</Text>}
-                        {skills.Soft && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Core Competencies:</Text> {stringifyField(skills.Soft)}</Text>}
+                        {techText ? <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {techText}</Text> : null}
+                        {softText ? <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Core Competencies:</Text> {softText}</Text> : null}
                     </View>
                 )}
 
                 {/* Personal Info Meta Section */}
-                <View style={[styles.section, { marginBottom: sectionMargin }]}>
-                    {renderSectionHeader('Personal Information')}
-                    <View style={styles.metaGrid}>
-                        {identity.idNumber && <View style={styles.metaItem}><Text style={styles.metaLabel}>ID Number:</Text><Text style={styles.metaValue}>{maskId(identity.idNumber)}</Text></View>}
-                        {demographics.Nationality && <View style={styles.metaItem}><Text style={styles.metaLabel}>Nationality:</Text><Text style={styles.metaValue}>{demographics.Nationality}</Text></View>}
-                        {(demographics.MaritalStatus || demographics.maritalStatus) && <View style={styles.metaItem}><Text style={styles.metaLabel}>Marital Status:</Text><Text style={styles.metaValue}>{demographics.MaritalStatus || demographics.maritalStatus}</Text></View>}
-                        {(demographics.Disability || demographics.disability) && (demographics.Disability !== 'None') && <View style={styles.metaItem}><Text style={styles.metaLabel}>Disability:</Text><Text style={styles.metaValue}>{demographics.Disability || demographics.disability}</Text></View>}
-                        {licensing.DriversVisible && licensing.Drivers !== 'None' && <View style={styles.metaItem}><Text style={styles.metaLabel}>Drivers:</Text><Text style={styles.metaValue}>{licensing.Drivers}</Text></View>}
-                        {licensing.MotorVisible && licensing.Motorcycle && licensing.Motorcycle !== 'None' && <View style={styles.metaItem}><Text style={styles.metaLabel}>Motorcycle:</Text><Text style={styles.metaValue}>{licensing.Motorcycle}</Text></View>}
+                {demoItems.length > 0 && (
+                    <View style={[styles.section, { marginBottom: sectionMargin }]}>
+                        {renderSectionHeader('Personal Information')}
+                        {isDemoComma ? (
+                            <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
+                                {demoItems.map(d => `${d.label}: ${d.value}`).join(' · ')}
+                            </Text>
+                        ) : (
+                            <View style={styles.metaGrid}>
+                                {demoItems.map((item, idx) => (
+                                    <View key={idx} style={styles.metaItem}>
+                                        <Text style={styles.metaLabel}>{item.label}:</Text>
+                                        <Text style={styles.metaValue}>{item.value}</Text>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
                     </View>
-                </View>
+                )}
 
-                {summary && (
+                {summary ? (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader(layout === 'functional' ? 'Professional Profile' : 'Professional Summary')}
                         <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{summary}</Text>
                     </View>
-                )}
+                ) : null}
 
-                {expList.length > 0 && (
+                {validExpList.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Work Experience')}
-                        {expList.map((job: any, idx: number) => (
-                            <View key={idx} style={styles.entry}>
-                                <View style={styles.entryHeader}>
-                                    <Text style={styles.entryTitle} numberOfLines={1}>{job.Organization}</Text>
-                                    <Text style={styles.entryDate}>{job["Start Date"]} - {job["End Date"] || 'Present'}</Text>
+                        {validExpList.map((job: any, idx: number) => {
+                            const dateRange = [job["Start Date"], job["End Date"] || (job["Start Date"] ? 'Present' : '')].filter(Boolean).join(' - ');
+                            const respText = formatFieldItems(job["Key Responsibilities"], uiSettings?.RespFormat || uiSettings?.ResponsibilityFormat);
+                            const achieveText = formatFieldItems(job.Achievements, 'bullet');
+                            const systemsText = formatFieldItems(job["Systems Used"], uiSettings?.SystemsUsedFormat);
+
+                            return (
+                                <View key={idx} style={styles.entry}>
+                                    <View style={styles.entryHeader}>
+                                        <Text style={styles.entryTitle} numberOfLines={1}>{job.Organization || 'Organization'}</Text>
+                                        {dateRange ? <Text style={styles.entryDate}>{dateRange}</Text> : null}
+                                    </View>
+                                    {job.Role ? <Text style={styles.entrySubTitle}>{job.Role}</Text> : null}
+                                    {respText ? (
+                                        <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1 }]}>
+                                            {respText}
+                                        </Text>
+                                    ) : null}
+                                    {achieveText ? (
+                                        <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1, marginTop: 4 }]}>
+                                            <Text style={{ fontWeight: 'bold' }}>Key Achievements:{'\n'}</Text>
+                                            {achieveText}
+                                        </Text>
+                                    ) : null}
+                                    {systemsText ? (
+                                        <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1, marginTop: 4 }]}>
+                                            <Text style={{ fontWeight: 'bold' }}>Systems Used: </Text>
+                                            {systemsText}
+                                        </Text>
+                                    ) : null}
                                 </View>
-                                <Text style={styles.entrySubTitle}>{job.Role}</Text>
-                                <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1 }]}>{stringifyField(job["Key Responsibilities"])}</Text>
-                            </View>
-                        ))}
+                            );
+                        })}
                     </View>
                 )}
 
-                {(eduList.tertiary?.length > 0 || (eduList.highschool && (eduList.highschool["Year Completed"] || eduList.highschool["Highest Grade Passed"]))) && (
+                {hasEducation && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Education')}
-                        {eduList.tertiary?.map((edu: any, idx: number) => (
-                            <View key={idx} style={styles.entry}>
-                                <View style={styles.entryHeader}>
-                                    <Text style={styles.entryTitle} numberOfLines={1}>{edu.Institution}</Text>
-                                    <Text style={styles.entryDate}>{edu.Year}</Text>
+                        {validTertiary.map((edu: any, idx: number) => {
+                            const subTitle = [edu["Qualification Name"], edu.Completed === false && edu["Qualification Name"] ? '(In Progress)' : ''].filter(Boolean).join(' ');
+                            return (
+                                <View key={idx} style={styles.entry}>
+                                    <View style={styles.entryHeader}>
+                                        <Text style={styles.entryTitle} numberOfLines={1}>{edu.Institution || 'Institution'}</Text>
+                                        {edu.Year ? <Text style={styles.entryDate}>{edu.Year}</Text> : null}
+                                    </View>
+                                    {subTitle ? <Text style={styles.entrySubTitle}>{subTitle}</Text> : null}
+                                    {edu["Key Modules"] && (Array.isArray(edu["Key Modules"]) ? edu["Key Modules"].length > 0 : String(edu["Key Modules"]).trim().length > 0) && (
+                                        <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1 }]}>
+                                            <Text style={{ fontWeight: 'bold' }}>Key Modules: </Text>
+                                            {Array.isArray(edu["Key Modules"]) ? edu["Key Modules"].join(', ') : edu["Key Modules"]}
+                                        </Text>
+                                    )}
                                 </View>
-                                <Text style={styles.entrySubTitle}>{edu["Qualification Name"]}{edu.Completed === false ? ' (In Progress)' : ''}</Text>
-                                {edu["Key Modules"] && (Array.isArray(edu["Key Modules"]) ? edu["Key Modules"].length > 0 : String(edu["Key Modules"]).trim().length > 0) && (
-                                    <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1 }]}>
-                                        <Text style={{ fontWeight: 'bold' }}>Key Modules: </Text>
-                                        {Array.isArray(edu["Key Modules"]) ? edu["Key Modules"].join(', ') : edu["Key Modules"]}
-                                    </Text>
-                                )}
+                            );
+                        })}
+                        {validTechCerts.map((cert: any, idx: number) => (
+                            <View key={`tc_${idx}`} style={styles.entry}>
+                                <View style={styles.entryHeader}>
+                                    <Text style={styles.entryTitle} numberOfLines={1}>💻 {cert.name}</Text>
+                                    <Text style={styles.entryDate}>{cert.date_obtained || cert.yearObtained || ''}</Text>
+                                </View>
+                                <Text style={styles.entrySubTitle}>{[cert.provider ? `Provider: ${cert.provider}` : '', cert.certNumber ? `ID: ${cert.certNumber}` : ''].filter(Boolean).join(' · ')}</Text>
                             </View>
                         ))}
-                        {eduList.highschool && (eduList.highschool["Year Completed"] || eduList.highschool["Highest Grade Passed"]) && (
+                        {validRegCerts.map((cert: any, idx: number) => (
+                            <View key={`rc_${idx}`} style={styles.entry}>
+                                <View style={styles.entryHeader}>
+                                    <Text style={styles.entryTitle} numberOfLines={1}>⚖️ {cert.name}</Text>
+                                    <Text style={styles.entryDate}>{cert.date_obtained || cert.yearObtained || ''}</Text>
+                                </View>
+                                <Text style={styles.entrySubTitle}>{[cert.issuingBody ? `Authority: ${cert.issuingBody}` : '', cert.licenseNumber ? `License: ${cert.licenseNumber}` : ''].filter(Boolean).join(' · ')}</Text>
+                            </View>
+                        ))}
+                        {hasHighschool && (
                             <View style={styles.entry}>
                                 <View style={styles.entryHeader}>
                                     <Text style={styles.entryTitle} numberOfLines={1}>{eduList.highschool["Province Department"] || 'High School'}</Text>
-                                    <Text style={styles.entryDate}>{eduList.highschool["Year Completed"] || ''}</Text>
+                                    {eduList.highschool["Year Completed"] ? <Text style={styles.entryDate}>{eduList.highschool["Year Completed"]}</Text> : null}
                                 </View>
                                 <Text style={styles.entrySubTitle}>
                                     {eduList.highschool["Highest Grade Passed"] || eduList.highschool["Highest Grade/Std"] || 'Completed'}
@@ -296,39 +420,91 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                     </View>
                 )}
 
-                {(skills.Tech || skills.Soft || skills.Certifications) && (
+                {hasSkills && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Skills & Certifications')}
-                        {skills.Tech && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {stringifyField(skills.Tech)}</Text>}
-                        {skills.Soft && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Soft Skills:</Text> {stringifyField(skills.Soft)}</Text>}
-                        {skills.Certifications && <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Certifications:</Text> {stringifyField(skills.Certifications)}</Text>}
+                        {techText ? (
+                            <View style={{ marginBottom: 6 }}>
+                                <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
+                                    <Text style={{ fontWeight: 'bold' }}>Technical Skills: </Text>
+                                    {uiSettings?.TechFormat === 'comma' ? techText : ''}
+                                </Text>
+                                {uiSettings?.TechFormat !== 'comma' && (
+                                    <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight, paddingLeft: 8 }]}>
+                                        {techText}
+                                    </Text>
+                                )}
+                            </View>
+                        ) : null}
+                        {softText ? (
+                            <View style={{ marginBottom: 6 }}>
+                                <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
+                                    <Text style={{ fontWeight: 'bold' }}>Soft Skills: </Text>
+                                    {uiSettings?.SoftFormat === 'comma' ? softText : ''}
+                                </Text>
+                                {uiSettings?.SoftFormat !== 'comma' && (
+                                    <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight, paddingLeft: 8 }]}>
+                                        {softText}
+                                    </Text>
+                                )}
+                            </View>
+                        ) : null}
+                        {certsText ? (
+                            <View style={{ marginBottom: 6 }}>
+                                <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
+                                    <Text style={{ fontWeight: 'bold' }}>Certifications: </Text>
+                                    {uiSettings?.ProfCertsFormat === 'comma' ? certsText : ''}
+                                </Text>
+                                {uiSettings?.ProfCertsFormat !== 'comma' && (
+                                    <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight, paddingLeft: 8 }]}>
+                                        {certsText}
+                                    </Text>
+                                )}
+                            </View>
+                        ) : null}
+                        {nonAcadText ? (
+                            <View style={{ marginBottom: 6 }}>
+                                <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
+                                    <Text style={{ fontWeight: 'bold' }}>Non-Academic Certifications: </Text>
+                                    {uiSettings?.NonAcadCertsFormat === 'comma' ? nonAcadText : ''}
+                                </Text>
+                                {uiSettings?.NonAcadCertsFormat !== 'comma' && (
+                                    <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight, paddingLeft: 8 }]}>
+                                        {nonAcadText}
+                                    </Text>
+                                )}
+                            </View>
+                        ) : null}
                     </View>
                 )}
 
-                {languages.length > 0 && (
+                {validLanguages.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Languages')}
-                        {languages.filter((l: any) => l.visible !== false).map((l: any, idx: number) => (
-                            <Text key={idx} style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{l.Language}: {l.proficiency}</Text>
+                        {validLanguages.map((l: any, idx: number) => (
+                            <Text key={idx} style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{l.Language}: {l.proficiency || 'Fluent'}</Text>
                         ))}
                     </View>
                 )}
 
-                {refList.length > 0 && (
+                {validRefs.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('References')}
                         <View style={styles.refGrid}>
-                            {refList.map((ref: any, idx: number) => (
-                                <View key={idx} style={styles.refItem}>
-                                    <Text style={styles.refName}>{ref.name || ref.Name}</Text>
-                                    <Text style={styles.refDetail}>
-                                        {(ref.role || ref.Role || ref.relation || ref.relationship || 'Reference')}
-                                        {(ref.company || ref.org || ref.organization) ? ` at ${ref.company || ref.org || ref.organization}` : ''}
-                                        {(ref.relation || ref.relationship) && (ref.role || ref.Role) ? ` (${ref.relation || ref.relationship})` : ''}
-                                    </Text>
-                                    <Text style={styles.refDetail}>{ref.cellPhone || ref.workPhone || ref.phone || ref.contact || ''}{ref.email ? ` · ${ref.email}` : ''}</Text>
-                                </View>
-                            ))}
+                            {validRefs.map((ref: any, idx: number) => {
+                                const refRole = ref.role || ref.Role || ref.relation || ref.relationship || '';
+                                const refOrg = ref.company || ref.org || ref.organization || '';
+                                const refRoleOrg = [refRole, refOrg].filter(Boolean).join(' at ');
+                                const refContact = [ref.cellPhone || ref.workPhone || ref.phone || ref.contact || '', ref.email].filter(Boolean).join(' · ');
+
+                                return (
+                                    <View key={idx} style={styles.refItem}>
+                                        <Text style={styles.refName}>{ref.name || ref.Name || 'Reference'}</Text>
+                                        {refRoleOrg ? <Text style={styles.refDetail}>{refRoleOrg}</Text> : null}
+                                        {refContact ? <Text style={styles.refDetail}>{refContact}</Text> : null}
+                                    </View>
+                                );
+                            })}
                         </View>
                     </View>
                 )}

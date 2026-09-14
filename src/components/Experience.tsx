@@ -208,7 +208,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
             <Card style={[styles.subCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                 <Card.Title
                     title={`${label} (${subItems.length})`}
-                    subtitle={`CSV: ${csvSummary}`}
+                    subtitle={csvSummary}
                     subtitleNumberOfLines={2}
                     titleStyle={{ fontSize: 13, fontWeight: 'bold', color: theme.textPrimary }}
                     subtitleStyle={{ fontSize: 11, color: theme.textSecondary }}

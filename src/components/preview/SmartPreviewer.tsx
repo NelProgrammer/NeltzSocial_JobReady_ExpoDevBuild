@@ -27,7 +27,8 @@ const SmartPreviewer = ({
     mode = 'resume', 
     buildList = [],
     fitMode = 'a4', // 'a4' (A4 proportional default), 'page' (100% fit), 'width' (Fill width)
-    enableScroll = true 
+    enableScroll = true,
+    uiSettings = null
 }: any) => {
     const [engineState, setEngineState] = useState('evaluating'); // 'vignette', 'pdf', 'pdf_webview', 'web_iframe'
     const [pdfError, setPdfError] = useState(false);
@@ -86,7 +87,7 @@ const SmartPreviewer = ({
         content = mode === 'workbook' ? (
             <WorkbookVignette buildList={buildList} />
         ) : (
-            <NativeVignette_Preview data={data} layout={layout} exportFormat={exportFormat} fitMode={fitMode} />
+            <NativeVignette_Preview data={data} layout={layout} exportFormat={exportFormat} fitMode={fitMode} uiSettings={uiSettings} />
         );
     } else if (engineState === 'web_iframe') {
         if (!pdfUri) {
