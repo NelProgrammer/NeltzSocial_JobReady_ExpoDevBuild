@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Switch, Text, Button, IconButton, Card, Divider } from 'react-native-paper';
 import { ThemedTextInput as TextInput } from './common/ThemedTextInput';
@@ -8,6 +8,7 @@ import { ResumeContext } from '../context/ResumeContext';
 import { AuthContext } from '../context/AuthContext';
 import { useThemeContext } from '../context/ThemeContext';
 import { CompositeAddressItem } from '../types/resume';
+import { getPlacesByPostalCode, searchPlaces } from '../utils/postalCodeLookup';
 import languagesData from '../../assets/data/languages.json';
 
 interface PersonalDetailsProps {
@@ -197,17 +198,34 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
         }
     };
 
+    const handlePostalCodeChange = (index: number, text: string) => {
+        updateAddressItem(index, 'postalCode', text);
+        if (text.trim().length === 4) {
+            const matches = getPlacesByPostalCode(text.trim());
+            if (matches.length > 0) {
+                const primary = matches[0];
+                const currentAddr = addresses[index] || {};
+                if (!currentAddr.province || currentAddr.province === 'Gauteng' && primary.province !== 'Gauteng') {
+                    updateAddressItem(index, 'province', primary.province);
+                }
+                if (!currentAddr.cityOrTown) {
+                    updateAddressItem(index, 'cityOrTown', primary.city);
+                }
+            }
+        }
+    };
+
     // Composite Language Guard & Management
     const addLanguage = () => {
         if (!isEditMode) return;
-        if (languages.some((l: any) => !l.Language || !l.Language.trim())) {
-            Alert.alert('Incomplete Language Entry', 'Please select a language for the current blank entry before adding another.');
+        if (languages.some((l: any) => !l.Language || !l.Language.trim() || (l.Language === 'Other' && (!l.customLanguage || !l.customLanguage.trim())))) {
+            Alert.alert('Incomplete Language Entry', 'Please specify a language name for the current blank or Other entry before adding another.');
             return;
         }
         const newData = { ...resumeData };
         if (!newData.personal) newData.personal = {};
         if (!newData.personal.languages) newData.personal.languages = [];
-        newData.personal.languages.push({ Language: "", proficiency: "Basic", visible: true });
+        newData.personal.languages.push({ Language: "", customLanguage: "", proficiency: "Basic", visible: true });
         newData["personal details"] = newData.personal;
         updateResumeData(newData);
     };
@@ -241,7 +259,9 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
         licensing.Drivers && licensing.Drivers !== 'None' ? `🚗 ${licensing.Drivers}` : '',
         licensing.Motorcycle && licensing.Motorcycle !== 'None' ? `🏍️ ${licensing.Motorcycle}` : ''
     ].filter(Boolean).join(' · ') || 'No licenses added';
-    const languagesSummary = languages.length > 0 ? `${languages.length} language${languages.length > 1 ? 's' : ''} added` : 'No languages added';
+    const languagesSummary = languages.length > 0
+        ? languages.map((l: any) => (l.Language === 'Other' ? (l.customLanguage || 'Other') : l.Language)).filter(Boolean).join(', ') || `${languages.length} language${languages.length > 1 ? 's' : ''}`
+        : 'No languages added';
 
     return (
         <KeyboardAwareScrollView
@@ -544,6 +564,36 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                                                         style={styles.input}
                                                         editable={isEditMode}
                                                     />
+                                                    {isEditMode && addr.suburbOrTownship && addr.suburbOrTownship.length >= 3 && searchPlaces(addr.suburbOrTownship, 4).length > 0 && (
+                                                        <View style={{ marginTop: 2, marginBottom: 8 }}>
+                                                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                                                {searchPlaces(addr.suburbOrTownship, 4).map((p, pIdx) => (
+                                                                    <TouchableOpacity
+                                                                        key={pIdx}
+                                                                        onPress={() => {
+                                                                            updateAddressItem(index, 'suburbOrTownship', p.suburb);
+                                                                            updateAddressItem(index, 'cityOrTown', p.city);
+                                                                            updateAddressItem(index, 'province', p.province);
+                                                                            updateAddressItem(index, 'postalCode', p.postalCode);
+                                                                        }}
+                                                                        style={{
+                                                                            backgroundColor: theme.bgDark,
+                                                                            borderColor: theme.border,
+                                                                            borderWidth: 1,
+                                                                            borderRadius: 12,
+                                                                            paddingHorizontal: 8,
+                                                                            paddingVertical: 4,
+                                                                            marginRight: 6
+                                                                        }}
+                                                                    >
+                                                                        <Text style={{ color: theme.accent, fontSize: 11 }}>
+                                                                            📍 {p.suburb}, {p.city} ({p.postalCode})
+                                                                        </Text>
+                                                                    </TouchableOpacity>
+                                                                ))}
+                                                            </ScrollView>
+                                                        </View>
+                                                    )}
                                                 </>
                                             )}
 
@@ -723,12 +773,50 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                                             <TextInput
                                                 label="Postal Code (4 Digits)"
                                                 value={addr.postalCode || ''}
-                                                onChangeText={(text) => updateAddressItem(index, 'postalCode', text)}
+                                                onChangeText={(text) => handlePostalCodeChange(index, text)}
                                                 style={styles.input}
                                                 keyboardType="number-pad"
                                                 maxLength={4}
                                                 editable={isEditMode}
                                             />
+                                            {isEditMode && addr.postalCode && addr.postalCode.length === 4 && getPlacesByPostalCode(addr.postalCode).length > 0 && (
+                                                <View style={{ marginTop: 4, marginBottom: 8 }}>
+                                                    <Text style={{ fontSize: 11, color: theme.accent, fontWeight: '600', marginBottom: 4 }}>
+                                                        📍 Matching SA Places (Tap to apply):
+                                                    </Text>
+                                                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                                        {getPlacesByPostalCode(addr.postalCode).slice(0, 6).map((p, pIdx) => (
+                                                            <TouchableOpacity
+                                                                key={pIdx}
+                                                                onPress={() => {
+                                                                    updateAddressItem(index, 'province', p.province);
+                                                                    updateAddressItem(index, 'cityOrTown', p.city);
+                                                                    if (addr.addressType === 'Rural / Village') {
+                                                                        updateAddressItem(index, 'villageName', p.suburb);
+                                                                    } else if (addr.addressType === 'Informal Settlement') {
+                                                                        updateAddressItem(index, 'settlementName', p.suburb);
+                                                                    } else {
+                                                                        updateAddressItem(index, 'suburbOrTownship', p.suburb);
+                                                                    }
+                                                                }}
+                                                                style={{
+                                                                    backgroundColor: theme.bgSurface,
+                                                                    borderColor: theme.accent,
+                                                                    borderWidth: 1,
+                                                                    borderRadius: 12,
+                                                                    paddingHorizontal: 10,
+                                                                    paddingVertical: 5,
+                                                                    marginRight: 6
+                                                                }}
+                                                            >
+                                                                <Text style={{ color: theme.textPrimary, fontSize: 12 }}>
+                                                                    {p.suburb} ({p.city})
+                                                                </Text>
+                                                            </TouchableOpacity>
+                                                        ))}
+                                                    </ScrollView>
+                                                </View>
+                                            )}
 
                                             {isEditMode && addresses.length > 1 && (
                                                 <Button
@@ -1014,7 +1102,9 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
                         {languages.map((lang: any, index: number) => {
-                            const isLanguageSelected = Boolean(lang.Language && lang.Language.trim());
+                            const isLanguageSelected = Boolean(
+                                lang.Language && (lang.Language !== 'Other' || (lang.customLanguage && lang.customLanguage.trim()))
+                            );
 
                             return (
                                 <View key={index} style={[styles.repeaterBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
@@ -1034,8 +1124,18 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                                         disable={!isEditMode}
                                     />
 
+                                    {lang.Language === 'Other' && (
+                                        <TextInput
+                                            label="Specify Language Name (e.g. Polish, Yoruba, Korean)"
+                                            value={lang.customLanguage || ''}
+                                            onChangeText={(text) => updateLanguage(index, 'customLanguage', text)}
+                                            style={styles.input}
+                                            editable={isEditMode}
+                                        />
+                                    )}
+
                                     <Text style={[styles.label, { color: isLanguageSelected ? theme.textSecondary : '#64748b' }]}>
-                                        Competency / Proficiency {!isLanguageSelected ? '(Select language first)' : ''}
+                                        Competency / Proficiency {!isLanguageSelected ? (lang.Language === 'Other' ? '(Specify language name first)' : '(Select language first)') : ''}
                                     </Text>
                                     <Dropdown
                                         style={[styles.dropdown, !isLanguageSelected && { opacity: 0.5 }]}

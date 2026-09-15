@@ -177,7 +177,7 @@ export interface PersonalDetails {
     maritalStatus?: string;
   };
   legal?: { "Criminal Record"?: boolean; Details?: string };
-  languages?: Array<{ Language: string; proficiency: string; visible?: boolean }>;
+  languages?: Array<{ Language: string; proficiency: string; visible?: boolean; customLanguage?: string }>;
 }
 
 export interface TertiaryEducationItem {

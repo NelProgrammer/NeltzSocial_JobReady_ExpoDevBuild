@@ -401,7 +401,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
     const nonAcadText = formatFieldItems(skills.NonAcadCerts, uiSettings?.NonAcadCertsFormat);
     const hasSkills = !!(techText || softText || certsText || nonAcadText);
 
-    const validLanguages = languages.filter((l: any) => l.visible !== false && l.Language && l.Language.trim().length > 0);
+    const validLanguages = languages.filter((l: any) => l.visible !== false && l.Language && l.Language.trim().length > 0 && (l.Language !== 'Other' || (l.customLanguage && l.customLanguage.trim().length > 0)));
     const validRefs = refList.filter((ref: any) => (ref.name || ref.Name || '').trim().length > 0 || (ref.role || ref.Role || ref.relation || '').trim().length > 0);
 
     return (
@@ -611,7 +611,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Languages')}
                         {validLanguages.map((l: any, idx: number) => (
-                            <Text key={idx} style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{l.Language}: {l.proficiency || 'Fluent'}</Text>
+                            <Text key={idx} style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{(l.Language === 'Other' ? (l.customLanguage || 'Other') : l.Language)}: {l.proficiency || 'Fluent'}</Text>
                         ))}
                     </View>
                 )}
