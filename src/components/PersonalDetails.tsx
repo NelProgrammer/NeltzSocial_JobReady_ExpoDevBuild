@@ -8,7 +8,7 @@ import { ResumeContext } from '../context/ResumeContext';
 import { AuthContext } from '../context/AuthContext';
 import { useThemeContext } from '../context/ThemeContext';
 import { CompositeAddressItem } from '../types/resume';
-import { getPlacesByPostalCode, searchPlaces } from '../utils/postalCodeLookup';
+import { getPlacesByPostalCode, searchPlaces, searchBySuburb, searchByCity, SAPlace } from '../utils/postalCodeLookup';
 import languagesData from '../../assets/data/languages.json';
 
 interface PersonalDetailsProps {
@@ -198,6 +198,26 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
         }
     };
 
+    const applyPlaceToAddress = (index: number, place: SAPlace) => {
+        updateAddressItem(index, 'province', place.province);
+        updateAddressItem(index, 'cityOrTown', place.city);
+        updateAddressItem(index, 'postalCode', place.postalCode);
+
+        const addr = addresses[index] || {};
+        if (addr.addressType === 'Rural / Village') {
+            updateAddressItem(index, 'villageName', place.suburb);
+            updateAddressItem(index, 'townOrDistrict', place.city);
+        } else if (addr.addressType === 'Informal Settlement') {
+            updateAddressItem(index, 'settlementName', place.suburb);
+        } else if (addr.addressType === 'Farm / Smallholding' || addr.addressType === 'Farm') {
+            if (!addr.districtOrNearestTown) updateAddressItem(index, 'districtOrNearestTown', place.city);
+            updateAddressItem(index, 'suburbOrTownship', place.suburb);
+        } else {
+            updateAddressItem(index, 'suburbOrTownship', place.suburb);
+            updateAddressItem(index, 'suburbOrVillage', place.suburb);
+        }
+    };
+
     const handlePostalCodeChange = (index: number, text: string) => {
         updateAddressItem(index, 'postalCode', text);
         if (text.trim().length === 4) {
@@ -205,7 +225,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
             if (matches.length > 0) {
                 const primary = matches[0];
                 const currentAddr = addresses[index] || {};
-                if (!currentAddr.province || currentAddr.province === 'Gauteng' && primary.province !== 'Gauteng') {
+                if (!currentAddr.province || (currentAddr.province === 'Gauteng' && primary.province !== 'Gauteng')) {
                     updateAddressItem(index, 'province', primary.province);
                 }
                 if (!currentAddr.cityOrTown) {
@@ -564,18 +584,16 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                                                         style={styles.input}
                                                         editable={isEditMode}
                                                     />
-                                                    {isEditMode && addr.suburbOrTownship && addr.suburbOrTownship.length >= 3 && searchPlaces(addr.suburbOrTownship, 4).length > 0 && (
+                                                    {isEditMode && (addr.suburbOrTownship || addr.suburbOrVillage) && (addr.suburbOrTownship || addr.suburbOrVillage || '').trim().length >= 2 && searchBySuburb(addr.suburbOrTownship || addr.suburbOrVillage || '', 6).length > 0 && (
                                                         <View style={{ marginTop: 2, marginBottom: 8 }}>
+                                                            <Text style={{ fontSize: 11, color: theme.accent, fontWeight: '600', marginBottom: 4 }}>
+                                                                📍 Matching Suburbs, Cities & Postal Codes (Tap to apply all):
+                                                            </Text>
                                                             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                                                {searchPlaces(addr.suburbOrTownship, 4).map((p, pIdx) => (
+                                                                {searchBySuburb(addr.suburbOrTownship || addr.suburbOrVillage || '', 6).map((p, pIdx) => (
                                                                     <TouchableOpacity
                                                                         key={pIdx}
-                                                                        onPress={() => {
-                                                                            updateAddressItem(index, 'suburbOrTownship', p.suburb);
-                                                                            updateAddressItem(index, 'cityOrTown', p.city);
-                                                                            updateAddressItem(index, 'province', p.province);
-                                                                            updateAddressItem(index, 'postalCode', p.postalCode);
-                                                                        }}
+                                                                        onPress={() => applyPlaceToAddress(index, p)}
                                                                         style={{
                                                                             backgroundColor: theme.bgDark,
                                                                             borderColor: theme.border,
@@ -587,7 +605,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                                                                         }}
                                                                     >
                                                                         <Text style={{ color: theme.accent, fontSize: 11 }}>
-                                                                            📍 {p.suburb}, {p.city} ({p.postalCode})
+                                                                            📍 {p.suburb} · {p.city} ({p.postalCode})
                                                                         </Text>
                                                                     </TouchableOpacity>
                                                                 ))}
@@ -614,6 +632,34 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                                                         style={styles.input}
                                                         editable={isEditMode}
                                                     />
+                                                    {isEditMode && (addr.villageName || addr.suburbOrVillage) && (addr.villageName || addr.suburbOrVillage || '').trim().length >= 2 && searchBySuburb(addr.villageName || addr.suburbOrVillage || '', 6).length > 0 && (
+                                                        <View style={{ marginTop: 2, marginBottom: 8 }}>
+                                                            <Text style={{ fontSize: 11, color: theme.accent, fontWeight: '600', marginBottom: 4 }}>
+                                                                📍 Matching Places & Postal Codes (Tap to apply all):
+                                                            </Text>
+                                                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                                                {searchBySuburb(addr.villageName || addr.suburbOrVillage || '', 6).map((p, pIdx) => (
+                                                                    <TouchableOpacity
+                                                                        key={pIdx}
+                                                                        onPress={() => applyPlaceToAddress(index, p)}
+                                                                        style={{
+                                                                            backgroundColor: theme.bgDark,
+                                                                            borderColor: theme.border,
+                                                                            borderWidth: 1,
+                                                                            borderRadius: 12,
+                                                                            paddingHorizontal: 8,
+                                                                            paddingVertical: 4,
+                                                                            marginRight: 6
+                                                                        }}
+                                                                    >
+                                                                        <Text style={{ color: theme.accent, fontSize: 11 }}>
+                                                                            📍 {p.suburb} · {p.city} ({p.postalCode})
+                                                                        </Text>
+                                                                    </TouchableOpacity>
+                                                                ))}
+                                                            </ScrollView>
+                                                        </View>
+                                                    )}
                                                     <TextInput
                                                         label="Traditional Authority / Tribal Council"
                                                         value={addr.traditionalAuthorityOrTribalCouncil || ''}
@@ -658,6 +704,34 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                                                         style={styles.input}
                                                         editable={isEditMode}
                                                     />
+                                                    {isEditMode && (addr.settlementName || addr.suburbOrVillage) && (addr.settlementName || addr.suburbOrVillage || '').trim().length >= 2 && searchBySuburb(addr.settlementName || addr.suburbOrVillage || '', 6).length > 0 && (
+                                                        <View style={{ marginTop: 2, marginBottom: 8 }}>
+                                                            <Text style={{ fontSize: 11, color: theme.accent, fontWeight: '600', marginBottom: 4 }}>
+                                                                📍 Matching Settlements & Postal Codes (Tap to apply all):
+                                                            </Text>
+                                                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                                                {searchBySuburb(addr.settlementName || addr.suburbOrVillage || '', 6).map((p, pIdx) => (
+                                                                    <TouchableOpacity
+                                                                        key={pIdx}
+                                                                        onPress={() => applyPlaceToAddress(index, p)}
+                                                                        style={{
+                                                                            backgroundColor: theme.bgDark,
+                                                                            borderColor: theme.border,
+                                                                            borderWidth: 1,
+                                                                            borderRadius: 12,
+                                                                            paddingHorizontal: 8,
+                                                                            paddingVertical: 4,
+                                                                            marginRight: 6
+                                                                        }}
+                                                                    >
+                                                                        <Text style={{ color: theme.accent, fontSize: 11 }}>
+                                                                            📍 {p.suburb} · {p.city} ({p.postalCode})
+                                                                        </Text>
+                                                                    </TouchableOpacity>
+                                                                ))}
+                                                            </ScrollView>
+                                                        </View>
+                                                    )}
                                                     <TextInput
                                                         label="Section / Block (e.g. Section C / Block 4)"
                                                         value={addr.sectionOrBlock || ''}
@@ -748,13 +822,43 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 
                                             {/* Common City, Province, Postal Code */}
                                             {addr.addressType !== 'Postal' && (
-                                                <TextInput
-                                                    label="City / Town"
-                                                    value={addr.cityOrTown || ''}
-                                                    onChangeText={(text) => updateAddressItem(index, 'cityOrTown', text)}
-                                                    style={styles.input}
-                                                    editable={isEditMode}
-                                                />
+                                                <>
+                                                    <TextInput
+                                                        label="City / Town"
+                                                        value={addr.cityOrTown || ''}
+                                                        onChangeText={(text) => updateAddressItem(index, 'cityOrTown', text)}
+                                                        style={styles.input}
+                                                        editable={isEditMode}
+                                                    />
+                                                    {isEditMode && addr.cityOrTown && (addr.cityOrTown || '').trim().length >= 2 && searchByCity(addr.cityOrTown || '', 6).length > 0 && (
+                                                        <View style={{ marginTop: 2, marginBottom: 8 }}>
+                                                            <Text style={{ fontSize: 11, color: theme.accent, fontWeight: '600', marginBottom: 4 }}>
+                                                                📍 Matching Cities, Suburbs & Postal Codes (Tap to apply all):
+                                                            </Text>
+                                                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                                                {searchByCity(addr.cityOrTown || '', 6).map((p, pIdx) => (
+                                                                    <TouchableOpacity
+                                                                        key={pIdx}
+                                                                        onPress={() => applyPlaceToAddress(index, p)}
+                                                                        style={{
+                                                                            backgroundColor: theme.bgDark,
+                                                                            borderColor: theme.border,
+                                                                            borderWidth: 1,
+                                                                            borderRadius: 12,
+                                                                            paddingHorizontal: 8,
+                                                                            paddingVertical: 4,
+                                                                            marginRight: 6
+                                                                        }}
+                                                                    >
+                                                                        <Text style={{ color: theme.accent, fontSize: 11 }}>
+                                                                            📍 {p.city} · {p.suburb} ({p.postalCode})
+                                                                        </Text>
+                                                                    </TouchableOpacity>
+                                                                ))}
+                                                            </ScrollView>
+                                                        </View>
+                                                    )}
+                                                </>
                                             )}
 
                                             <Text style={[styles.label, { color: theme.textSecondary }]}>Province / Region</Text>
@@ -782,23 +886,13 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                                             {isEditMode && addr.postalCode && addr.postalCode.length === 4 && getPlacesByPostalCode(addr.postalCode).length > 0 && (
                                                 <View style={{ marginTop: 4, marginBottom: 8 }}>
                                                     <Text style={{ fontSize: 11, color: theme.accent, fontWeight: '600', marginBottom: 4 }}>
-                                                        📍 Matching SA Places (Tap to apply):
+                                                        📍 Matching Suburbs & Cities for {addr.postalCode} (Tap to apply all):
                                                     </Text>
                                                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                                        {getPlacesByPostalCode(addr.postalCode).slice(0, 6).map((p, pIdx) => (
+                                                        {getPlacesByPostalCode(addr.postalCode).slice(0, 8).map((p, pIdx) => (
                                                             <TouchableOpacity
                                                                 key={pIdx}
-                                                                onPress={() => {
-                                                                    updateAddressItem(index, 'province', p.province);
-                                                                    updateAddressItem(index, 'cityOrTown', p.city);
-                                                                    if (addr.addressType === 'Rural / Village') {
-                                                                        updateAddressItem(index, 'villageName', p.suburb);
-                                                                    } else if (addr.addressType === 'Informal Settlement') {
-                                                                        updateAddressItem(index, 'settlementName', p.suburb);
-                                                                    } else {
-                                                                        updateAddressItem(index, 'suburbOrTownship', p.suburb);
-                                                                    }
-                                                                }}
+                                                                onPress={() => applyPlaceToAddress(index, p)}
                                                                 style={{
                                                                     backgroundColor: theme.bgSurface,
                                                                     borderColor: theme.accent,
@@ -810,7 +904,7 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                                                                 }}
                                                             >
                                                                 <Text style={{ color: theme.textPrimary, fontSize: 12 }}>
-                                                                    {p.suburb} ({p.city})
+                                                                    📍 {p.suburb} ({p.city})
                                                                 </Text>
                                                             </TouchableOpacity>
                                                         ))}

@@ -1,4 +1,4 @@
-import { getPlacesByPostalCode, getPrimaryPlaceForCode, searchPlaces } from '../postalCodeLookup';
+import { getPlacesByPostalCode, getPrimaryPlaceForCode, searchPlaces, searchBySuburb, searchByCity } from '../postalCodeLookup';
 
 describe('postalCodeLookup offline utility', () => {
     test('resolves Johannesburg Central postal code 2001', () => {
@@ -33,9 +33,27 @@ describe('postalCodeLookup offline utility', () => {
         expect(results[0].postalCode).toBeDefined();
     });
 
+    test('drills down by suburb via searchBySuburb', () => {
+        const results = searchBySuburb('Bryanston', 5);
+        expect(results.length).toBeGreaterThan(0);
+        expect(results[0].suburb.toLowerCase()).toContain('bryanston');
+        expect(results[0].city).toBeDefined();
+        expect(results[0].postalCode).toBeDefined();
+    });
+
+    test('drills down by city via searchByCity', () => {
+        const results = searchByCity('Durban', 5);
+        expect(results.length).toBeGreaterThan(0);
+        expect(results[0].city.toLowerCase()).toContain('durban');
+        expect(results[0].suburb).toBeDefined();
+        expect(results[0].postalCode).toBeDefined();
+    });
+
     test('returns empty array for invalid or short queries', () => {
         expect(getPlacesByPostalCode('')).toEqual([]);
         expect(searchPlaces('a')).toEqual([]);
+        expect(searchBySuburb('')).toEqual([]);
+        expect(searchByCity('')).toEqual([]);
         expect(getPlacesByPostalCode('999999')).toEqual([]);
     });
 });
