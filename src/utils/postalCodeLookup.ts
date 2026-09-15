@@ -4,7 +4,6 @@ export interface SAPlace {
     province: string;
     city: string;
     suburb: string;
-    type: 'suburb' | 'township' | 'village' | 'farm';
     postalCode: string;
     boxCode?: string | null;
     streetCode?: string | null;
@@ -67,6 +66,52 @@ export function getPrimaryPlaceForCode(code: string): SAPlace | undefined {
 }
 
 /**
+ * Search places strictly by suburb / place name.
+ * Ideal when typing into the Suburb / Township input.
+ */
+export function searchBySuburb(query: string, limit: number = 6): SAPlace[] {
+    if (!query || query.trim().length < 2) return [];
+    const q = query.trim().toLowerCase();
+
+    const exactPrefix: SAPlace[] = [];
+    const partial: SAPlace[] = [];
+
+    for (const place of allPlaces) {
+        const sub = place.suburb.toLowerCase();
+        if (sub.startsWith(q)) {
+            exactPrefix.push(place);
+        } else if (sub.includes(q)) {
+            partial.push(place);
+        }
+        if (exactPrefix.length + partial.length >= limit * 2) break;
+    }
+    return [...exactPrefix, ...partial].slice(0, limit);
+}
+
+/**
+ * Search places strictly by city / town name.
+ * Drills down to matching suburbs/places and their respective postal codes for that city.
+ */
+export function searchByCity(query: string, limit: number = 6): SAPlace[] {
+    if (!query || query.trim().length < 2) return [];
+    const q = query.trim().toLowerCase();
+
+    const exactPrefix: SAPlace[] = [];
+    const partial: SAPlace[] = [];
+
+    for (const place of allPlaces) {
+        const city = place.city.toLowerCase();
+        if (city.startsWith(q)) {
+            exactPrefix.push(place);
+        } else if (city.includes(q)) {
+            partial.push(place);
+        }
+        if (exactPrefix.length + partial.length >= limit * 2) break;
+    }
+    return [...exactPrefix, ...partial].slice(0, limit);
+}
+
+/**
  * Search South African places by place name, city name, or postal code substring.
  * Returns up to `limit` results (default 6).
  * 100% offline.
@@ -102,6 +147,8 @@ export function searchPlaces(query: string, limit: number = 6): SAPlace[] {
 export default {
     getPlacesByPostalCode,
     getPrimaryPlaceForCode,
+    searchBySuburb,
+    searchByCity,
     searchPlaces,
     allPlaces
 };
