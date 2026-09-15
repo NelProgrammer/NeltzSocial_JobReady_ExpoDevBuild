@@ -264,7 +264,7 @@ export const VisibilityTab: React.FC<VisibilityTabProps> = ({
               ) : (
                 languages.map((lang: any, index: number) => (
                   <View key={`lang_${index}`} style={styles.itemRow}>
-                    <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{lang.Language || `Language #${index + 1}`} ({lang.proficiency || 'Competency'})</Text>
+                    <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{(lang.Language === 'Other' ? (lang.customLanguage || 'Other') : lang.Language) || `Language #${index + 1}`} ({lang.proficiency || 'Competency'})</Text>
                     <Switch value={isVisible(`lang_${index}`, lang)} onValueChange={() => toggleItemVisibility(`lang_${index}`, 'language', index, lang)} disabled={isMain} trackColor={switchColors} />
                   </View>
                 ))

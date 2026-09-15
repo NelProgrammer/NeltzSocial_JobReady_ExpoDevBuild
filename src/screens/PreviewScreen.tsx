@@ -257,11 +257,11 @@ const PreviewScreen = ({ navigation }) => {
             </div>
         ` : '';
 
-        const validLanguages = (languages || []).filter((l, idx) => l.visible !== false && isFieldVisible(`lang_${idx}`) && l.Language && l.Language.trim().length > 0);
+        const validLanguages = (languages || []).filter((l, idx) => l.visible !== false && isFieldVisible(`lang_${idx}`) && l.Language && l.Language.trim().length > 0 && (l.Language !== 'Other' || (l.customLanguage && l.customLanguage.trim().length > 0)));
         const langHtml = validLanguages.length > 0 ? `
             ${sectionHeader('Languages')}
             <ul>
-                ${validLanguages.map(l => `<li><strong>${l.Language}:</strong> ${l.proficiency || 'Fluent'}</li>`).join('')}
+                ${validLanguages.map(l => `<li><strong>${l.Language === 'Other' ? (l.customLanguage || 'Other') : l.Language}:</strong> ${l.proficiency || 'Fluent'}</li>`).join('')}
             </ul>
         ` : '';
 
