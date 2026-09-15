@@ -293,16 +293,18 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
         >
             {/* 1. Names Section */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
-                <Card.Title
-                    title="Names"
-                    subtitle={expandedSection !== 'Names' ? fullNameSummary : undefined}
-                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
-                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
-                    left={(props) => <IconButton {...props} icon="account" iconColor={theme.accent} />}
-                    right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Names' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Names')} />
-                    )}
-                />
+                <TouchableOpacity onPress={() => toggleSection('Names')} activeOpacity={0.8}>
+                    <Card.Title
+                        title="Names"
+                        subtitle={expandedSection !== 'Names' ? `${names.Prefix || ''} ${names.firstName || ''} ${names.Surname || ''}`.trim() : undefined}
+                        titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                        subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
+                        left={(props) => <IconButton {...props} icon="account" iconColor={theme.accent} />}
+                        right={(props) => (
+                            <IconButton {...props} icon={expandedSection === 'Names' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} />
+                        )}
+                    />
+                </TouchableOpacity>
                 {expandedSection === 'Names' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
@@ -359,16 +361,18 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 
             {/* 2. Contact Section */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
-                <Card.Title
-                    title="Contact Details"
-                    subtitle={expandedSection !== 'Contact' ? contactSummary : undefined}
-                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
-                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
-                    left={(props) => <IconButton {...props} icon="phone" iconColor={theme.accent} />}
-                    right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Contact' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Contact')} />
-                    )}
-                />
+                <TouchableOpacity onPress={() => toggleSection('Contact')} activeOpacity={0.8}>
+                    <Card.Title
+                        title="Contact Details"
+                        subtitle={expandedSection !== 'Contact' ? contactSummary : undefined}
+                        titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                        subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
+                        left={(props) => <IconButton {...props} icon="phone" iconColor={theme.accent} />}
+                        right={(props) => (
+                            <IconButton {...props} icon={expandedSection === 'Contact' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} />
+                        )}
+                    />
+                </TouchableOpacity>
                 {expandedSection === 'Contact' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
@@ -421,16 +425,18 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 
             {/* 3. Composite Address Section (Individual Collapsible Accordions) */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
-                <Card.Title
-                    title={`Addresses (${addresses.length})`}
-                    subtitle={expandedSection !== 'Address' ? addressSummary : undefined}
-                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
-                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
-                    left={(props) => <IconButton {...props} icon="map-marker" iconColor={theme.accent} />}
-                    right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Address' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Address')} />
-                    )}
-                />
+                <TouchableOpacity onPress={() => toggleSection('Address')} activeOpacity={0.8}>
+                    <Card.Title
+                        title={`Addresses (${addresses.length})`}
+                        subtitle={expandedSection !== 'Address' ? addressSummary : undefined}
+                        titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                        subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
+                        left={(props) => <IconButton {...props} icon="map-marker" iconColor={theme.accent} />}
+                        right={(props) => (
+                            <IconButton {...props} icon={expandedSection === 'Address' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} />
+                        )}
+                    />
+                </TouchableOpacity>
                 {expandedSection === 'Address' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
@@ -940,16 +946,18 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 
             {/* 4. Identity Section */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
-                <Card.Title
-                    title="Identity"
-                    subtitle={expandedSection !== 'Identity' ? identitySummary : undefined}
-                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
-                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
-                    left={(props) => <IconButton {...props} icon="card-account-details" iconColor={theme.accent} />}
-                    right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Identity' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Identity')} />
-                    )}
-                />
+                <TouchableOpacity onPress={() => toggleSection('Identity')} activeOpacity={0.8}>
+                    <Card.Title
+                        title="Identity"
+                        subtitle={expandedSection !== 'Identity' ? identitySummary : undefined}
+                        titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                        subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
+                        left={(props) => <IconButton {...props} icon="card-account-details" iconColor={theme.accent} />}
+                        right={(props) => (
+                            <IconButton {...props} icon={expandedSection === 'Identity' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} />
+                        )}
+                    />
+                </TouchableOpacity>
                 {expandedSection === 'Identity' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
@@ -983,16 +991,18 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 
             {/* 5. Demographics Section */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
-                <Card.Title
-                    title="Demographics (Optional)"
-                    subtitle={expandedSection !== 'Demographics' ? demographicsSummary : undefined}
-                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
-                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
-                    left={(props) => <IconButton {...props} icon="human-greeting-variant" iconColor={theme.accent} />}
-                    right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Demographics' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Demographics')} />
-                    )}
-                />
+                <TouchableOpacity onPress={() => toggleSection('Demographics')} activeOpacity={0.8}>
+                    <Card.Title
+                        title="Demographics (Optional)"
+                        subtitle={expandedSection !== 'Demographics' ? demographicsSummary : undefined}
+                        titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                        subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
+                        left={(props) => <IconButton {...props} icon="human-greeting-variant" iconColor={theme.accent} />}
+                        right={(props) => (
+                            <IconButton {...props} icon={expandedSection === 'Demographics' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} />
+                        )}
+                    />
+                </TouchableOpacity>
                 {expandedSection === 'Demographics' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
@@ -1092,16 +1102,18 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 
             {/* 6. Licensing Section */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
-                <Card.Title
-                    title="Licensing"
-                    subtitle={expandedSection !== 'Licensing' ? licensingSummary : undefined}
-                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
-                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
-                    left={(props) => <IconButton {...props} icon="car-sports" iconColor={theme.accent} />}
-                    right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Licensing' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Licensing')} />
-                    )}
-                />
+                <TouchableOpacity onPress={() => toggleSection('Licensing')} activeOpacity={0.8}>
+                    <Card.Title
+                        title="Licensing"
+                        subtitle={expandedSection !== 'Licensing' ? licensingSummary : undefined}
+                        titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                        subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
+                        left={(props) => <IconButton {...props} icon="car-sports" iconColor={theme.accent} />}
+                        right={(props) => (
+                            <IconButton {...props} icon={expandedSection === 'Licensing' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} />
+                        )}
+                    />
+                </TouchableOpacity>
                 {expandedSection === 'Licensing' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
@@ -1147,14 +1159,16 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 
             {/* 7. Legal Section */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
-                <Card.Title
-                    title="Legal"
-                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
-                    left={(props) => <IconButton {...props} icon="gavel" iconColor={theme.accent} />}
-                    right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Legal' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Legal')} />
-                    )}
-                />
+                <TouchableOpacity onPress={() => toggleSection('Legal')} activeOpacity={0.8}>
+                    <Card.Title
+                        title="Legal"
+                        titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                        left={(props) => <IconButton {...props} icon="gavel" iconColor={theme.accent} />}
+                        right={(props) => (
+                            <IconButton {...props} icon={expandedSection === 'Legal' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} />
+                        )}
+                    />
+                </TouchableOpacity>
                 {expandedSection === 'Legal' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
@@ -1182,16 +1196,18 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
 
             {/* 8. Languages Section (Dropdown List & Competency Guard) */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
-                <Card.Title
-                    title={`Languages (${languages.length})`}
-                    subtitle={expandedSection !== 'Languages' ? languagesSummary : undefined}
-                    titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
-                    subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
-                    left={(props) => <IconButton {...props} icon="translate" iconColor={theme.accent} />}
-                    right={(props) => (
-                        <IconButton {...props} icon={expandedSection === 'Languages' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} onPress={() => toggleSection('Languages')} />
-                    )}
-                />
+                <TouchableOpacity onPress={() => toggleSection('Languages')} activeOpacity={0.8}>
+                    <Card.Title
+                        title={`Languages (${languages.length})`}
+                        subtitle={expandedSection !== 'Languages' ? languagesSummary : undefined}
+                        titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                        subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
+                        left={(props) => <IconButton {...props} icon="translate" iconColor={theme.accent} />}
+                        right={(props) => (
+                            <IconButton {...props} icon={expandedSection === 'Languages' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} />
+                        )}
+                    />
+                </TouchableOpacity>
                 {expandedSection === 'Languages' && (
                     <Card.Content>
                         <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />

@@ -104,6 +104,12 @@ if ($Suite -ne "") {
     Write-Host "Target Device: $Device" -ForegroundColor Cyan
     Write-Host "============================================================" -ForegroundColor Cyan
 
+    # Ensure target app is brought to foreground
+    $targetPkg = if ($suiteJson.package) { $suiteJson.package } else { "com.neltzsocial.jobready.offline" }
+    Write-Host "Bringing $targetPkg to foreground..." -ForegroundColor DarkGray
+    adb -s $Device shell monkey -p $targetPkg -c android.intent.category.LAUNCHER 1 2>$null | Out-Null
+    Start-Sleep -Milliseconds 3500
+
     $stepIndex = 1
     foreach ($step in $suiteJson.steps) {
         Write-Host "[$stepIndex/$($suiteJson.steps.Count)] $($step.description)" -ForegroundColor Yellow
