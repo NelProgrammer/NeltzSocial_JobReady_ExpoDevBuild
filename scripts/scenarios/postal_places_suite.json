@@ -1,0 +1,28 @@
+{
+  "name": "South African Postal Code & Suburb Auto-Completion Suite",
+  "description": "Tests bidirectional drill-down search between postal code, city, and suburb with one-tap all-field auto-completion in the Personal Details address editor.",
+  "steps": [
+    {
+      "description": "Tap Addresses (2) card header at calibrated y=650",
+      "action": "tap-coords",
+      "coords": "500 650",
+      "delayMs": 1500
+    },
+    {
+      "description": "Capture expanded Addresses view",
+      "action": "capture",
+      "output": "proof_addresses_expanded.png"
+    },
+    {
+      "description": "Scroll down inside Addresses to reveal Suburb, City, and Postal Code fields",
+      "action": "swipe",
+      "coords": "500 1800 500 800 400",
+      "delayMs": 1500
+    },
+    {
+      "description": "Capture address input fields view (Postal Code, Suburb, City, Province)",
+      "action": "capture",
+      "output": "proof_address_inputs.png"
+    }
+  ]
+}
