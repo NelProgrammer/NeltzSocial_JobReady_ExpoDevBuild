@@ -75,6 +75,14 @@ if ($Action -ne "") {
             Write-Host "Typing: '$Text'..." -ForegroundColor Yellow
             adb -s $Device shell input text "$Text"
         }
+        "home" {
+            Write-Host "Sending KEYCODE_HOME..." -ForegroundColor Yellow
+            adb -s $Device shell input keyevent KEYCODE_HOME
+        }
+        "back" {
+            Write-Host "Sending KEYCODE_BACK..." -ForegroundColor Yellow
+            adb -s $Device shell input keyevent KEYCODE_BACK
+        }
         "capture" {
             Capture-ScreenStream -targetDev $Device -outPath $Capture
         }

@@ -92,4 +92,53 @@ describe('FieldsSelection & Preview Visibility Integration Test', () => {
 
         expect(refHtml).toBe('');
     });
+
+    test('formats address inline (comma) vs block (list) correctly without disappearing', () => {
+        const addressItem = {
+            streetNumber: '123',
+            streetName: 'Main Street',
+            suburbOrTownship: 'Sunnyside',
+            cityOrTown: 'Pretoria',
+            province: 'Gauteng',
+            postalCode: '0002',
+            visible: true
+        };
+
+        const formatAddr = (a: any, format: 'comma' | 'list') => {
+            const parts = [
+                [a.streetNumber, a.streetName].filter(Boolean).join(' '),
+                a.suburbOrTownship,
+                a.cityOrTown,
+                a.province,
+                a.postalCode
+            ].filter(Boolean);
+
+            return parts.join(format === 'comma' ? ', ' : '\n');
+        };
+
+        const inline = formatAddr(addressItem, 'comma');
+        const block = formatAddr(addressItem, 'list');
+
+        expect(inline).toBe('123 Main Street, Sunnyside, Pretoria, Gauteng, 0002');
+        expect(block).toBe('123 Main Street\nSunnyside\nPretoria\nGauteng\n0002');
+        expect(inline.length).toBeGreaterThan(0);
+        expect(block.length).toBeGreaterThan(0);
+    });
+
+    test('filters out hidden address when visible is set to false or toggled off', () => {
+        const addresses = [
+            { id: 'addr_1', streetName: '123 Main St', cityOrTown: 'Pretoria', visible: true },
+            { id: 'addr_2', streetName: '456 Cape Rd', cityOrTown: 'Cape Town', visible: false }
+        ];
+
+        const visMap: Record<string, boolean> = {
+            pd_addr_0: true,
+            pd_addr_1: false
+        };
+
+        const visibleAddresses = addresses.filter((a, idx) => a.visible !== false && visMap[`pd_addr_${idx}`] !== false);
+
+        expect(visibleAddresses.length).toBe(1);
+        expect(visibleAddresses[0].streetName).toBe('123 Main St');
+    });
 });

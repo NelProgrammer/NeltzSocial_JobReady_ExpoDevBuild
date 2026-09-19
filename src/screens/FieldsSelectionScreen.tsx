@@ -41,7 +41,7 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
       profileId: 'local_user',
       name: 'Targeted Application CV',
       configType: 'targeted',
-      visibility: {},
+      visibility: resumeData?.visibility || {},
       certificationsVisibility: {},
       fieldParityIndicators: {},
       lastModified: new Date().toISOString()
@@ -108,10 +108,14 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
 
   const isVisible = (itemId: string, itemObj?: any) => {
     if (isMain) return true; // Main Resume stays 100% visible
+    // Active configuration visibility map is authoritative
+    if (activeConfig.visibility && activeConfig.visibility[itemId] !== undefined) {
+      return activeConfig.visibility[itemId] !== false;
+    }
     if (itemObj && itemObj.visible !== undefined) {
       return itemObj.visible !== false;
     }
-    return activeConfig.visibility?.[itemId] !== false;
+    return true;
   };
 
   // Synchronized item visibility toggle
@@ -153,11 +157,18 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
       newData.education.tertiary[index].visible = newStatus;
     } else if (category === 'experience' && newData.experience && newData.experience[index]) {
       newData.experience[index].visible = newStatus;
-    } else if (category === 'address' && newData.personal?.addresses && newData.personal.addresses[index]) {
-      newData.personal.addresses[index].visible = newStatus;
-    } else if (category === 'language' && newData.personal?.languages && newData.personal.languages[index]) {
-      newData.personal.languages[index].visible = newStatus;
     }
+
+    // Ensure personal details collections (addresses and languages) are updated in both 'personal details' and 'personal'
+    ['personal details', 'personal'].forEach(pdKey => {
+      if (newData[pdKey]) {
+        if (category === 'address' && newData[pdKey].addresses && newData[pdKey].addresses[index]) {
+          newData[pdKey].addresses[index].visible = newStatus;
+        } else if (category === 'language' && newData[pdKey].languages && newData[pdKey].languages[index]) {
+          newData[pdKey].languages[index].visible = newStatus;
+        }
+      }
+    });
 
     // Persist full visibility map onto newData for document previewers
     newData.visibility = newVisMap;

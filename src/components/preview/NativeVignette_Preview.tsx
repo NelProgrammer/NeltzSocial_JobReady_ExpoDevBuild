@@ -192,16 +192,23 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
     const bodyFontSize = isDense ? 11 : 12;
     const bodyLineHeight = isDense ? 15 : 17;
 
+    const isContactBullet = uiSettings?.ContactFormat === 'bullet';
+
     const renderHeader = () => {
         if (layout === 'modern') {
             return (
                 <View style={[styles.headerModern, { marginHorizontal: -pagePadding, marginTop: -pagePadding, padding: pagePadding }]}>
                     <Text style={[styles.nameModern, { fontSize: nameFontSize }]}>{fullName}</Text>
-                    <View style={styles.contactRowModern}>
+                    <View style={[styles.contactRowModern, isContactBullet && { flexDirection: 'column', gap: 3 }]}>
                         {contactElements.map((c, i) => (
-                            <Text key={i} style={styles.contactTextModern}>{c}</Text>
+                            <Text key={i} style={styles.contactTextModern}>{isContactBullet ? `• ${c}` : c}</Text>
                         ))}
                     </View>
+                    {addressText ? (
+                        <View style={{ width: '100%', marginTop: 6 }}>
+                            <Text style={styles.contactTextModern}>📍 {addressText}</Text>
+                        </View>
+                    ) : null}
                 </View>
             );
         } else if (layout === 'minimalist') {
@@ -210,10 +217,23 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                     <Text style={[styles.nameMinimalist, { fontSize: nameFontSize - 2 }]}>{fullName}</Text>
                     <Divider style={{ marginVertical: 8 }} />
                     {contactElements.length > 0 && (
-                        <Text style={styles.contactTextMinimalist}>
-                            {contactElements.join(contactSep)}
-                        </Text>
+                        isContactBullet ? (
+                            <View style={{ alignItems: 'center' }}>
+                                {contactElements.map((c, i) => (
+                                    <Text key={i} style={styles.contactTextMinimalist}>• {c}</Text>
+                                ))}
+                            </View>
+                        ) : (
+                            <Text style={styles.contactTextMinimalist}>
+                                {contactElements.join(contactSep)}
+                            </Text>
+                        )
                     )}
+                    {addressText ? (
+                        <Text style={[styles.contactTextMinimalist, { marginTop: 4, textAlign: 'center' }]}>
+                            {addressText}
+                        </Text>
+                    ) : null}
                 </View>
             );
         } else if (layout === 'chronological') {
@@ -222,11 +242,14 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                     <View style={styles.headerChronoMain}>
                         <Text style={[styles.nameChrono, { fontSize: nameFontSize }]}>{fullName}</Text>
                         <Text style={styles.titleChrono}>{expList[0]?.Role || 'Professional'}</Text>
+                        {addressText ? (
+                            <Text style={[styles.contactTextChrono, { marginTop: 4 }]}>📍 {addressText}</Text>
+                        ) : null}
                     </View>
                     {contactElements.length > 0 && (
                         <View style={styles.contactBoxChrono}>
                             {contactElements.map((c, i) => (
-                                <Text key={i} style={styles.contactTextChrono}>{c}</Text>
+                                <Text key={i} style={styles.contactTextChrono}>{isContactBullet ? `• ${c}` : c}</Text>
                             ))}
                         </View>
                     )}
@@ -238,24 +261,45 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                     <Text style={[styles.nameFunc, { fontSize: nameFontSize + 4 }]}>{fullName}</Text>
                     <View style={styles.funcDivider} />
                     {contactElements.length > 0 && (
-                        <Text style={styles.contactTextFunc}>{contactElements.join(contactSep)}</Text>
+                        isContactBullet ? (
+                            <View style={{ alignItems: 'center' }}>
+                                {contactElements.map((c, i) => (
+                                    <Text key={i} style={styles.contactTextFunc}>• {c}</Text>
+                                ))}
+                            </View>
+                        ) : (
+                            <Text style={styles.contactTextFunc}>{contactElements.join(contactSep)}</Text>
+                        )
                     )}
+                    {addressText ? (
+                        <Text style={[styles.contactTextFunc, { marginTop: 4, textAlign: 'center' }]}>
+                            {addressText}
+                        </Text>
+                    ) : null}
                 </View>
             );
         } else {
             return (
                 <View style={styles.headerPro}>
                     <Text style={[styles.namePro, { fontSize: nameFontSize }]}>{fullName}</Text>
-                    <View style={styles.contactRowPro}>
+                    <View style={[styles.contactRowPro, isContactBullet && { flexDirection: 'column' }]}>
                         {contactElements.length > 0 && (
-                            <Text style={styles.contactTextPro}>
-                                {contactElements.join(contactSep)}
-                            </Text>
+                            isContactBullet ? (
+                                contactElements.map((c, i) => (
+                                    <Text key={i} style={styles.contactTextPro}>• {c}</Text>
+                                ))
+                            ) : (
+                                <Text style={styles.contactTextPro}>
+                                    {contactElements.join(contactSep)}
+                                </Text>
+                            )
                         )}
                         {addressText ? (
-                            <Text style={styles.contactTextPro}>
-                                {addressText}
-                            </Text>
+                            <View style={{ width: '100%', marginTop: 4 }}>
+                                <Text style={styles.contactTextPro}>
+                                    📍 {addressText}
+                                </Text>
+                            </View>
                         ) : null}
                     </View>
                 </View>
