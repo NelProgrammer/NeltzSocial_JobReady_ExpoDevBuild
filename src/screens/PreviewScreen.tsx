@@ -191,6 +191,41 @@ const PreviewScreen = ({ navigation }) => {
         let fullName = [rawFirst, middleStr, maidenStr, rawSurname].filter(Boolean).join(' ') || 'Job Applicant';
         if (uiSettings?.NameCase === 'upper') fullName = fullName.toUpperCase();
 
+        const addressList = (pd?.addresses || []).filter((a, idx) => a.visible !== false && isFieldVisible(`pd_addr_${idx}`));
+        const addressStrings = addressList.map((a, idx) => {
+            const parts = [];
+            const isMasked = isFieldVisible(`pd_addr_mask_${idx}`) === false || uiSettings?.AddressMaskStreet;
+            const includeStand = isFieldVisible(`pd_addr_stand_${idx}`) !== false && uiSettings?.AddressIncludeStand !== false;
+            if (a.unitOrFlatNo || a.buildingName) parts.push([a.unitOrFlatNo, a.buildingName].filter(Boolean).join(' '));
+            if (a.unitNo || a.complexName) parts.push([a.unitNo, a.complexName].filter(Boolean).join(' '));
+            if (a.streetName) parts.push(isMasked ? `**** ${a.streetName}` : [a.streetNumber, a.streetName].filter(Boolean).join(' '));
+            if (includeStand && a.standNumber) parts.push(`Stand: ${isMasked ? '****' : a.standNumber}`);
+            if (a.villageName || a.traditionalAuthorityOrTribalCouncil) parts.push([a.standOrErfOrHouseNo, a.villageName, a.traditionalAuthorityOrTribalCouncil].filter(Boolean).join(', '));
+            if (a.shackOrSectionOrStandNo || a.settlementName) parts.push([a.shackOrSectionOrStandNo, a.settlementName, a.sectionOrBlock, a.nearestLandmarkOrZone].filter(Boolean).join(', '));
+            if (a.farmName || a.portionOrPlotNo) parts.push([a.portionOrPlotNo, a.farmName, a.roadOrRoute].filter(Boolean).join(', '));
+            if (a.boxOrBagNumber) parts.push(`${a.boxOrBagType || 'P.O. Box'} ${a.boxOrBagNumber}${a.postOfficeName ? `, ${a.postOfficeName}` : ''}`);
+            if (a.suburbOrTownship || a.suburbOrVillage) parts.push(a.suburbOrTownship || a.suburbOrVillage);
+            if (a.cityOrTown) parts.push(a.cityOrTown);
+            if (uiSettings?.AddressIncludeProvince !== false && a.province) parts.push(a.province);
+            if (uiSettings?.AddressIncludePostalCode !== false && a.postalCode) parts.push(a.postalCode);
+            if (parts.length === 0 && a.streetAddress) parts.push(a.streetAddress);
+            const isInline = uiSettings?.AddressFormat === 'comma';
+            return parts.join(isInline ? ', ' : '<br/>');
+        });
+        const fullAddressHtml = addressStrings.length > 0 ? addressStrings.join(' | ') : (address["Home Address"] ? (address.AddressType ? `[${address.AddressType}] ${formatAddress(address["Home Address"])}` : formatAddress(address["Home Address"])) : '');
+
+        const getContactSep = () => {
+            switch (uiSettings?.ContactSeparator) {
+                case 'pipe': return '|';
+                case 'comma': return ',';
+                case 'slash': return '/';
+                case 'dot':
+                default: return '&bull;';
+            }
+        };
+        const contactSep = getContactSep();
+        const isContactBullet = uiSettings?.ContactFormat === 'bullet';
+
         let headerHtml = '';
         const modernContacts = [
             (contact.Email && isFieldVisible('pd_contact_email')) ? `📧 ${contact.Email}` : '',
@@ -198,14 +233,22 @@ const PreviewScreen = ({ navigation }) => {
             ((contact.AltPhone || contact["Phone-alt"]) && isFieldVisible('pd_contact_alt_phone')) ? `📱 ${contact.AltPhone || contact["Phone-alt"]}` : '',
             (contact.LinkedIn && isFieldVisible('pd_contact_linkedin')) ? `🔗 ${contact.LinkedIn}` : '',
             ((contact.Website || contact.Portfolio) && isFieldVisible('pd_contact_website')) ? `🌐 ${contact.Website || contact.Portfolio}` : '',
-            address.AddressType ? `[${address.AddressType}] ${formatAddress(address["Home Address"] || '')}` : (address["Home Address"] ? formatAddress(address["Home Address"]) : '')
+            fullAddressHtml ? `📍 ${fullAddressHtml}` : ''
         ].filter(Boolean);
+
+        const formatContactsHtml = (contactsArr) => {
+            if (!contactsArr || contactsArr.length === 0) return '';
+            if (isContactBullet) {
+                return `<div class="contact-info" style="line-height: 1.6;">${contactsArr.map(c => `<div>&bull; ${c}</div>`).join('')}</div>`;
+            }
+            return `<div class="contact-info">${contactsArr.join(` &nbsp;${contactSep}&nbsp; `)}</div>`;
+        };
 
         if (Layout === 'modern') {
             headerHtml = `
                 <div class="header-mod">
                     <h1>${fullName}</h1>
-                    ${modernContacts.length > 0 ? `<div class="contact-info">${modernContacts.join(' | ')}</div>` : ''}
+                    ${formatContactsHtml(modernContacts)}
                 </div>
             `;
         } else if (Layout === 'minimalist') {
@@ -217,14 +260,14 @@ const PreviewScreen = ({ navigation }) => {
                 <div class="header-min">
                     <h1>${fullName}</h1>
                     ${minContacts.length > 0 ? `<div class="contact-info">${minContacts.join(' &bull; ')}</div>` : ''}
-                    ${address["Home Address"] ? `<div class="contact-info">${address.AddressType ? `[${address.AddressType}] ` : ''}${formatAddress(address["Home Address"])}</div>` : ''}
+                    ${fullAddressHtml ? `<div class="contact-info">${fullAddressHtml}</div>` : ''}
                 </div>
             `;
         } else {
             headerHtml = `
                 <div class="header-pro">
                     <h1>${fullName}</h1>
-                    ${modernContacts.length > 0 ? `<div class="contact-info">${modernContacts.join(' &nbsp;|&nbsp; ')}</div>` : ''}
+                    ${formatContactsHtml(modernContacts)}
                 </div>
             `;
         }

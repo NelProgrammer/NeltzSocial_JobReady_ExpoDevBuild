@@ -142,7 +142,7 @@ export const ResumeProvider = ({ children }) => {
         ProfCertsFormat: 'bullet',
         NonAcadCertsFormat: 'bullet',
         SystemsUsedFormat: 'bullet',
-        AddressFormat: 'bullet',
+        AddressFormat: 'list',
         Layout: 'professional',
         placeholders: {
             Tech: "- Skill {Details}\n- e.g. React {Advanced}\n- e.g. JavaScript {Intermediate}",
