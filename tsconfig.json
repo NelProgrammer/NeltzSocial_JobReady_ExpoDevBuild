@@ -3,6 +3,10 @@
   "compilerOptions": {
     "jsx": "react",
     "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@jobready/core": ["../NS_JR_Core_TS/src/index.ts"]
+    },
     "types": [
       "node",
       "react",
