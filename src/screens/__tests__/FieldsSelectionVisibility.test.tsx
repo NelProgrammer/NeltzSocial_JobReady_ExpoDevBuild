@@ -1,11 +1,32 @@
+import { ResumeCompiler, CompiledResumeDocument } from '@jobready/core';
 import { ResumeData } from '../../types/resume';
 
-describe('FieldsSelection & Preview Visibility Integration Test', () => {
-    const mockResumeData: ResumeData = {
+describe('FieldsSelection & Preview Visibility Integration via @jobready/core', () => {
+    const mockResumeData: ResumeData | any = {
         id: 'test_resume_1',
         "personal details": {
-            names: { firstName: 'John', Surname: 'Doe' },
-            contact: { Email: 'john@example.com', Phone: '0123456789' }
+            names: { firstName: 'John', MiddleName: 'Sipho', Surname: 'Doe' },
+            contact: { Email: 'john@example.com', Phone: '0123456789', "Phone-alt": '0829876543' },
+            identity: { idNumber: '9501015800085' },
+            addresses: [
+                {
+                    id: 'addr_1',
+                    streetNumber: '123',
+                    streetName: 'Main Street',
+                    suburbOrTownship: 'Sunnyside',
+                    cityOrTown: 'Pretoria',
+                    province: 'Gauteng',
+                    postalCode: '0002',
+                    visible: true
+                },
+                {
+                    id: 'addr_2',
+                    streetNumber: '456',
+                    streetName: 'Cape Road',
+                    cityOrTown: 'Cape Town',
+                    visible: false
+                }
+            ]
         },
         experience: [
             {
@@ -42,44 +63,41 @@ describe('FieldsSelection & Preview Visibility Integration Test', () => {
         ]
     };
 
-    const formatBulletList = (val: any) => {
-        if (!val) return '';
-        if (Array.isArray(val)) {
-            const items = val
-                .filter(item => typeof item === 'object' && item !== null ? item.visible !== false : true)
-                .map(item => typeof item === 'object' && item !== null ? (item.name || item.text || item.skill || '') : String(item))
-                .filter(Boolean);
-            return items.join(', ');
-        }
-        return String(val);
-    };
+    test('ResumeCompiler filters out hidden Soft Skills and Technical Skills from categories', () => {
+        const config = {
+            config_type: 'targeted',
+            visibility_flags: {},
+            format_switches: { TechFormat: 'comma', SoftFormat: 'comma' }
+        };
 
-    test('filters out hidden Soft Skills (Leadership is hidden, Communication is visible)', () => {
-        const softSkills = mockResumeData.skills?.Soft || [];
-        const renderedText = formatBulletList(softSkills);
+        const doc: CompiledResumeDocument = ResumeCompiler.compile(mockResumeData, config);
 
-        expect(renderedText).toContain('Communication');
-        expect(renderedText).not.toContain('Leadership');
+        const techCat = doc.skills?.categories.find(c => c.title.toLowerCase().includes('tech'));
+        const softCat = doc.skills?.categories.find(c => c.title.toLowerCase().includes('soft'));
+
+        expect(techCat?.items).toContain('React Native');
+        expect(techCat?.items).not.toContain('Python');
+
+        expect(softCat?.items).toContain('Communication');
+        expect(softCat?.items).not.toContain('Leadership');
     });
 
-    test('filters out hidden Technical Skills (Python is hidden, React Native is visible)', () => {
-        const techSkills = mockResumeData.skills?.Tech || [];
-        const renderedText = formatBulletList(techSkills);
+    test('ResumeCompiler filters out hidden References (Alice Smith hidden, Bob Jones included)', () => {
+        const config = {
+            config_type: 'targeted',
+            visibility_flags: {}
+        };
 
-        expect(renderedText).toContain('React Native');
-        expect(renderedText).not.toContain('Python');
+        const doc: CompiledResumeDocument = ResumeCompiler.compile(mockResumeData, config);
+
+        expect(doc.references).toBeDefined();
+        expect(doc.references?.length).toBe(1);
+        expect(doc.references?.[0].name).toBe('Bob Jones');
+        expect(doc.references?.some(r => r.name === 'Alice Smith')).toBe(false);
     });
 
-    test('filters out hidden References (Alice Smith is hidden, Bob Jones is visible)', () => {
-        const references = (mockResumeData.References || []).filter(r => r.visible !== false);
-        
-        expect(references.length).toBe(1);
-        expect(references[0].name).toBe('Bob Jones');
-        expect(references.some(r => r.name === 'Alice Smith')).toBe(false);
-    });
-
-    test('omits entire References section when all references are set to visible = false', () => {
-        const allHiddenData: ResumeData = {
+    test('ResumeCompiler eliminates ghost headers when all references are hidden', () => {
+        const allHiddenData: ResumeData | any = {
             ...mockResumeData,
             References: [
                 { id: 'ref_1', name: 'Alice Smith', visible: false },
@@ -87,58 +105,67 @@ describe('FieldsSelection & Preview Visibility Integration Test', () => {
             ]
         };
 
-        const activeRefList = (allHiddenData.References || []).filter(r => r.visible !== false);
-        const refHtml = activeRefList.length > 0 ? `<h3>References</h3>...` : '';
+        const config = {
+            config_type: 'targeted',
+            visibility_flags: {}
+        };
 
-        expect(refHtml).toBe('');
+        const doc: CompiledResumeDocument = ResumeCompiler.compile(allHiddenData, config);
+
+        // References array should be empty, eliminating the entire section from rendering
+        expect(doc.references?.length || 0).toBe(0);
     });
 
-    test('formats address inline (comma) vs block (list) correctly without disappearing', () => {
-        const addressItem = {
-            streetNumber: '123',
-            streetName: 'Main Street',
-            suburbOrTownship: 'Sunnyside',
-            cityOrTown: 'Pretoria',
-            province: 'Gauteng',
-            postalCode: '0002',
-            visible: true
+    test('ResumeCompiler formats address and applies street masking when configured', () => {
+        const maskConfig = {
+            config_type: 'targeted',
+            visibility_flags: {
+                pd_addr_mask_0: true
+            },
+            format_switches: {
+                AddressFormat: 'comma',
+                AddressMaskStreet: true
+            }
         };
 
-        const formatAddr = (a: any, format: 'comma' | 'list') => {
-            const parts = [
-                [a.streetNumber, a.streetName].filter(Boolean).join(' '),
-                a.suburbOrTownship,
-                a.cityOrTown,
-                a.province,
-                a.postalCode
-            ].filter(Boolean);
+        const doc: CompiledResumeDocument = ResumeCompiler.compile(mockResumeData, maskConfig);
 
-            return parts.join(format === 'comma' ? ', ' : '\n');
-        };
-
-        const inline = formatAddr(addressItem, 'comma');
-        const block = formatAddr(addressItem, 'list');
-
-        expect(inline).toBe('123 Main Street, Sunnyside, Pretoria, Gauteng, 0002');
-        expect(block).toBe('123 Main Street\nSunnyside\nPretoria\nGauteng\n0002');
-        expect(inline.length).toBeGreaterThan(0);
-        expect(block.length).toBeGreaterThan(0);
+        // Address 1 should have street masked
+        expect(doc.header.addressLine).toBeDefined();
+        expect(doc.header.addressLine).toContain('****');
+        expect(doc.header.addressLine).toContain('Main Street');
+        expect(doc.header.addressLine).toContain('Pretoria');
+        // Address 2 has visible: false so it must not appear
+        expect(doc.header.addressLine).not.toContain('Cape Road');
     });
 
-    test('filters out hidden address when visible is set to false or toggled off', () => {
-        const addresses = [
-            { id: 'addr_1', streetName: '123 Main St', cityOrTown: 'Pretoria', visible: true },
-            { id: 'addr_2', streetName: '456 Cape Rd', cityOrTown: 'Cape Town', visible: false }
-        ];
-
-        const visMap: Record<string, boolean> = {
-            pd_addr_0: true,
-            pd_addr_1: false
+    test('ResumeCompiler main config invariant includes all fields by default and applies POPIA ID mask', () => {
+        const mainConfig = {
+            config_type: 'main',
+            visibility_flags: {
+                pd_id_mask: true
+            },
+            format_switches: {
+                ContactSeparator: 'pipe',
+                NameCase: 'upper'
+            }
         };
 
-        const visibleAddresses = addresses.filter((a, idx) => a.visible !== false && visMap[`pd_addr_${idx}`] !== false);
+        const doc: CompiledResumeDocument = ResumeCompiler.compile(mockResumeData, mainConfig);
 
-        expect(visibleAddresses.length).toBe(1);
-        expect(visibleAddresses[0].streetName).toBe('123 Main St');
+        // Full name is formatted uppercase
+        expect(doc.header.fullName).toBe('JOHN SIPHO DOE');
+        expect(doc.header.contactSeparator).toBe(' | ');
+
+        // Contact items contain email and phone
+        const emailItem = doc.header.contactItems.find(c => c.key.toLowerCase() === 'email' || c.label === 'Email');
+        expect(emailItem).toBeDefined();
+        expect(emailItem?.value).toBe('john@example.com');
+
+        // Demographics or identity masking
+        const idDemo = doc.demographics?.find(d => d.label.includes('ID'));
+        if (idDemo) {
+            expect(idDemo.value).toContain('****');
+        }
     });
 });

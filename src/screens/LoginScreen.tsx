@@ -68,7 +68,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
   return (
     <LinearGradient colors={['#0f172a', '#1e293b']} style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12, paddingBottom: Math.max(insets.bottom, 20) }]}>
+        <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, 16) + 8, paddingBottom: Math.max(insets.bottom, 20) }]}>
           {/* Exit App Button — Top Left */}
           <TouchableOpacity style={styles.exitBtnTopLeft} onPress={showExitConfirmation}>
             <MaterialCommunityIcons name="power" size={16} color="#fff" />

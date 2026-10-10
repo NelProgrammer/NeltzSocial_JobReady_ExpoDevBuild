@@ -66,6 +66,14 @@
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.ts"
     ],
+    "moduleDirectories": [
+      "node_modules",
+      "<rootDir>/node_modules"
+    ],
+    "moduleNameMapper": {
+      "^@jobready/core$": "<rootDir>/../NS_JR_Core_TS/src/index.ts",
+      "^@babel/runtime/(.*)$": "<rootDir>/node_modules/@babel/runtime/$1"
+    },
     "globals": {
       "IS_REACT_ACT_ENVIRONMENT": true
     }

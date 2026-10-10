@@ -14,6 +14,7 @@ import { VIGNETTE_CSS } from '../constants/VignetteStyles';
 import SmartPreviewer from '../components/preview/SmartPreviewer';
 import ExportActionModal from '../components/export/ExportActionModal';
 import { generateExportFileName } from '../services/ExportEngineService';
+import { ResumeCompiler, CompiledResumeDocument } from '@jobready/core';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
 
@@ -55,74 +56,36 @@ const PreviewScreen = ({ navigation }) => {
     const generateHtml = () => {
         if (!resumeData) return "<html><body><h1>No Data</h1></body></html>";
 
-        const { 
-            "personal details": pd, 
-            experience: expList, 
-            education: eduList, 
-            skills: skillsObj,
-            Skills: skillsCapObj, 
-            References: refListCap,
-            references: refListLow, 
-            "professional summary": summary 
-        } = resumeData;
-
-        const skills = skillsObj || skillsCapObj || {};
-        const refList = (refListCap || refListLow || []).filter(r => r.visible !== false && ((r.name || r.Name || '').trim().length > 0 || (r.role || r.Role || r.relation || '').trim().length > 0));
         const Layout = uiSettings?.Layout || uiSettings?.["Document Settings"]?.Layout || 'professional';
-        const names = pd?.names || {};
-        const contact = pd?.contact || {};
-        const address = pd?.address || {};
-        const identity = pd?.identity || {};
-        const licensing = pd?.licensing || {};
-        const demographics = pd?.demographics || {};
-        const legal = pd?.legal || {};
-        const languages = pd?.languages || [];
 
-        // Formatting Helpers
-        const formatAddress = (addrStr) => {
-            if (!addrStr) return '';
-            if (uiSettings?.AddressFormat === 'bullet' || uiSettings?.AddressFormat === 'list') {
-                return addrStr.replace(/\n/g, '<br/>');
-            }
-            return addrStr.replace(/\n/g, ', ');
+        // Authoritative Core_TS Compilation: strict visibility, POPIA masking, zero ghost headers
+        const compilerConfig = {
+            config_type: (uiSettings?.isMain !== false) ? 'main' : 'targeted',
+            visibility_flags: uiSettings?.visibility_flags || uiSettings?.visibility || resumeData?.visibility || {},
+            format_switches: uiSettings || {},
+            formattingSettings: uiSettings || {}
         };
 
-        const formatBulletList = (val, format) => {
-            if (!val) return '';
-            let text = '';
-            if (Array.isArray(val)) {
-                text = val
-                    .filter(item => typeof item === 'object' && item !== null ? item.visible !== false : true)
-                    .map(item => typeof item === 'object' && item !== null ? (item.name || item.text || item.skill || '') : String(item))
-                    .filter(Boolean)
-                    .join('\n');
-            } else {
-                text = String(val);
+        const doc: CompiledResumeDocument = ResumeCompiler.compile(resumeData, compilerConfig);
+        const { header, summary, demographics = [], workExperience = [], education = {}, skills = { categories: [], displayFormat: 'bullet' }, languages = [], references = [] } = doc;
+
+        const fullName = header.fullName || 'Job Applicant';
+        const contactSep = header.contactSeparator || '&bull;';
+        const isContactBullet = uiSettings?.ContactFormat === 'bullet';
+        const modernContacts = header.contactItems.map(c => c.displayString);
+        if (header.addressLine) {
+            modernContacts.push(`📍 ${header.addressLine}`);
+        }
+
+        const formatContactsHtml = (contactsArr) => {
+            if (!contactsArr || contactsArr.length === 0) return '';
+            if (isContactBullet) {
+                return `<div class="contact-info" style="line-height: 1.6;">${contactsArr.map(c => `<div>&bull; ${c}</div>`).join('')}</div>`;
             }
-            if (!text.trim()) return '';
-            if (format === 'comma') {
-                const lines = text.split('\n')
-                    .map(line => line.replace(/^-\s*/, '').trim())
-                    .filter(line => line.length > 0);
-                return lines.join(', ');
-            } else {
-                const lines = text.split('\n')
-                    .map(line => line.replace(/^-\s*/, '').trim())
-                    .filter(line => line.length > 0);
-                if (lines.length === 0) return '';
-                return `<ul style="margin: 5px 0 10px 0; padding-left: 20px; list-style-type: disc;">` + 
-                    lines.map(line => `<li>${line}</li>`).join('') + 
-                    `</ul>`;
-            }
+            return `<div class="contact-info">${contactsArr.join(` &nbsp;${contactSep}&nbsp; `)}</div>`;
         };
 
-        const maskId = (idStr) => {
-            if (!idStr) return '';
-            if (identity.idMask !== false && idStr.length >= 6) {
-                return `${idStr.substring(0, 6)} **** ***`;
-            }
-            return idStr;
-        };
+        const sectionHeader = (title) => Layout === 'minimalist' ? `<h3 class="min-h3">${title.toUpperCase()}</h3>` : `<h3>${title}</h3>`;
 
         // CSS Styles
         const styles = `
@@ -172,78 +135,7 @@ const PreviewScreen = ({ navigation }) => {
             .meta-item strong { display: inline-block; width: 120px; color: #555; }
         `;
 
-        // Master Field Visibility Map
-        const vis = resumeData.visibility || {};
-        const isFieldVisible = (key) => vis[key] !== false;
-
-        // Names formatting
-        const rawFirst = isFieldVisible('pd_name_first') ? (names.firstName || '') : '';
-        const rawSurname = isFieldVisible('pd_name_surname') ? (names.Surname || '') : '';
-        let middleStr = '';
-        if (isFieldVisible('pd_name_middle') && (names.middleName || names.MiddleName)) {
-            const m = names.middleName || names.MiddleName;
-            middleStr = uiSettings?.MiddleNameFormat === 'initial' ? `${m.charAt(0)}.` : (uiSettings?.MiddleNameFormat !== 'omit' ? m : '');
-        }
-        let maidenStr = '';
-        if (isFieldVisible('pd_name_maiden') && names.MaidenName) {
-            maidenStr = uiSettings?.MaidenNameFormat === 'hyphen' ? `- ${names.MaidenName}` : (uiSettings?.MaidenNameFormat !== 'omit' ? `(née ${names.MaidenName})` : '');
-        }
-        let fullName = [rawFirst, middleStr, maidenStr, rawSurname].filter(Boolean).join(' ') || 'Job Applicant';
-        if (uiSettings?.NameCase === 'upper') fullName = fullName.toUpperCase();
-
-        const addressList = (pd?.addresses || []).filter((a, idx) => a.visible !== false && isFieldVisible(`pd_addr_${idx}`));
-        const addressStrings = addressList.map((a, idx) => {
-            const parts = [];
-            const isMasked = isFieldVisible(`pd_addr_mask_${idx}`) === false || uiSettings?.AddressMaskStreet;
-            const includeStand = isFieldVisible(`pd_addr_stand_${idx}`) !== false && uiSettings?.AddressIncludeStand !== false;
-            if (a.unitOrFlatNo || a.buildingName) parts.push([a.unitOrFlatNo, a.buildingName].filter(Boolean).join(' '));
-            if (a.unitNo || a.complexName) parts.push([a.unitNo, a.complexName].filter(Boolean).join(' '));
-            if (a.streetName) parts.push(isMasked ? `**** ${a.streetName}` : [a.streetNumber, a.streetName].filter(Boolean).join(' '));
-            if (includeStand && a.standNumber) parts.push(`Stand: ${isMasked ? '****' : a.standNumber}`);
-            if (a.villageName || a.traditionalAuthorityOrTribalCouncil) parts.push([a.standOrErfOrHouseNo, a.villageName, a.traditionalAuthorityOrTribalCouncil].filter(Boolean).join(', '));
-            if (a.shackOrSectionOrStandNo || a.settlementName) parts.push([a.shackOrSectionOrStandNo, a.settlementName, a.sectionOrBlock, a.nearestLandmarkOrZone].filter(Boolean).join(', '));
-            if (a.farmName || a.portionOrPlotNo) parts.push([a.portionOrPlotNo, a.farmName, a.roadOrRoute].filter(Boolean).join(', '));
-            if (a.boxOrBagNumber) parts.push(`${a.boxOrBagType || 'P.O. Box'} ${a.boxOrBagNumber}${a.postOfficeName ? `, ${a.postOfficeName}` : ''}`);
-            if (a.suburbOrTownship || a.suburbOrVillage) parts.push(a.suburbOrTownship || a.suburbOrVillage);
-            if (a.cityOrTown) parts.push(a.cityOrTown);
-            if (uiSettings?.AddressIncludeProvince !== false && a.province) parts.push(a.province);
-            if (uiSettings?.AddressIncludePostalCode !== false && a.postalCode) parts.push(a.postalCode);
-            if (parts.length === 0 && a.streetAddress) parts.push(a.streetAddress);
-            const isInline = uiSettings?.AddressFormat === 'comma';
-            return parts.join(isInline ? ', ' : '<br/>');
-        });
-        const fullAddressHtml = addressStrings.length > 0 ? addressStrings.join(' | ') : (address["Home Address"] ? (address.AddressType ? `[${address.AddressType}] ${formatAddress(address["Home Address"])}` : formatAddress(address["Home Address"])) : '');
-
-        const getContactSep = () => {
-            switch (uiSettings?.ContactSeparator) {
-                case 'pipe': return '|';
-                case 'comma': return ',';
-                case 'slash': return '/';
-                case 'dot':
-                default: return '&bull;';
-            }
-        };
-        const contactSep = getContactSep();
-        const isContactBullet = uiSettings?.ContactFormat === 'bullet';
-
         let headerHtml = '';
-        const modernContacts = [
-            (contact.Email && isFieldVisible('pd_contact_email')) ? `📧 ${contact.Email}` : '',
-            (contact.Phone && isFieldVisible('pd_contact_phone')) ? `📱 ${contact.Phone}` : '',
-            ((contact.AltPhone || contact["Phone-alt"]) && isFieldVisible('pd_contact_alt_phone')) ? `📱 ${contact.AltPhone || contact["Phone-alt"]}` : '',
-            (contact.LinkedIn && isFieldVisible('pd_contact_linkedin')) ? `🔗 ${contact.LinkedIn}` : '',
-            ((contact.Website || contact.Portfolio) && isFieldVisible('pd_contact_website')) ? `🌐 ${contact.Website || contact.Portfolio}` : '',
-            fullAddressHtml ? `📍 ${fullAddressHtml}` : ''
-        ].filter(Boolean);
-
-        const formatContactsHtml = (contactsArr) => {
-            if (!contactsArr || contactsArr.length === 0) return '';
-            if (isContactBullet) {
-                return `<div class="contact-info" style="line-height: 1.6;">${contactsArr.map(c => `<div>&bull; ${c}</div>`).join('')}</div>`;
-            }
-            return `<div class="contact-info">${contactsArr.join(` &nbsp;${contactSep}&nbsp; `)}</div>`;
-        };
-
         if (Layout === 'modern') {
             headerHtml = `
                 <div class="header-mod">
@@ -252,15 +144,10 @@ const PreviewScreen = ({ navigation }) => {
                 </div>
             `;
         } else if (Layout === 'minimalist') {
-            const minContacts = [
-                (contact.Email && isFieldVisible('pd_contact_email')) ? contact.Email : '',
-                (contact.Phone && isFieldVisible('pd_contact_phone')) ? contact.Phone : ''
-            ].filter(Boolean);
             headerHtml = `
                 <div class="header-min">
                     <h1>${fullName}</h1>
-                    ${minContacts.length > 0 ? `<div class="contact-info">${minContacts.join(' &bull; ')}</div>` : ''}
-                    ${fullAddressHtml ? `<div class="contact-info">${fullAddressHtml}</div>` : ''}
+                    ${modernContacts.length > 0 ? `<div class="contact-info">${modernContacts.join(' &bull; ')}</div>` : ''}
                 </div>
             `;
         } else {
@@ -272,160 +159,116 @@ const PreviewScreen = ({ navigation }) => {
             `;
         }
 
-        const sectionHeader = (title) => Layout === 'minimalist' ? `<h3 class="min-h3">${title.toUpperCase()}</h3>` : `<h3>${title}</h3>`;
-
-        const demoItems = [];
-        if (identity.idNumber && isFieldVisible('pd_identity_number')) {
-            const mask = uiSettings?.IdMask !== false && isFieldVisible('pd_identity_mask');
-            const displayVal = mask && identity.idNumber.length >= 6 ? `${identity.idNumber.substring(0, 6)} **** ***` : identity.idNumber;
-            demoItems.push(`<strong>ID Number:</strong> ${displayVal}`);
-        }
-        if (demographics.Nationality && isFieldVisible('pd_identity_nationality')) demoItems.push(`<strong>Nationality:</strong> ${demographics.Nationality}`);
-        if (demographics.Gender && demographics.Gender !== 'None' && isFieldVisible('pd_identity_gender')) demoItems.push(`<strong>Gender:</strong> ${demographics.Gender}`);
-        if (demographics.Race && demographics.Race !== 'Other' && isFieldVisible('pd_identity_race')) demoItems.push(`<strong>Race:</strong> ${demographics.Race}`);
-        if ((demographics.MaritalStatus || demographics.maritalStatus) && isFieldVisible('pd_identity_marital')) demoItems.push(`<strong>Marital Status:</strong> ${demographics.MaritalStatus || demographics.maritalStatus}`);
-        if (licensing.Drivers && licensing.Drivers !== 'None' && isFieldVisible('pd_license_drivers')) demoItems.push(`<strong>Drivers License:</strong> ${licensing.Drivers}`);
-        if (licensing.PrDP && isFieldVisible('pd_license_prdp')) demoItems.push(`<strong>PrDP:</strong> Valid`);
-        if (licensing.OwnVehicle && isFieldVisible('pd_license_vehicle')) demoItems.push(`<strong>Vehicle:</strong> Own Transport`);
-        if (legal["Criminal Record"] !== undefined && isFieldVisible('pd_identity_criminal')) demoItems.push(`<strong>Criminal Record:</strong> ${legal["Criminal Record"] ? (legal.Details || 'Yes') : 'Clear / None'}`);
-
         const isDemoComma = uiSettings?.DemoFormat === 'comma';
-        const identityHtml = demoItems.length > 0 ? `
+        const identityHtml = demographics.length > 0 ? `
             <div class="meta-section">
                 ${Layout === 'minimalist' ? sectionHeader('Personal Information') : ''}
-                ${isDemoComma ? `<div style="font-size: 13px; color: #444; line-height: 1.6;">${demoItems.join(' &nbsp;·&nbsp; ')}</div>` : `
+                ${isDemoComma ? `<div style="font-size: 13px; color: #444; line-height: 1.6;">${demographics.map(d => `<strong>${d.label}:</strong> ${d.value}`).join(' &nbsp;·&nbsp; ')}</div>` : `
                 <div class="meta-grid">
-                    ${demoItems.map(item => `<div class="meta-item">${item}</div>`).join('')}
+                    ${demographics.map(d => `<div class="meta-item"><strong>${d.label}:</strong> ${d.value}</div>`).join('')}
                 </div>`}
             </div>
         ` : '';
 
-        const validLanguages = (languages || []).filter((l, idx) => l.visible !== false && isFieldVisible(`lang_${idx}`) && l.Language && l.Language.trim().length > 0 && (l.Language !== 'Other' || (l.customLanguage && l.customLanguage.trim().length > 0)));
-        const langHtml = validLanguages.length > 0 ? `
-            ${sectionHeader('Languages')}
-            <ul>
-                ${validLanguages.map(l => `<li><strong>${l.Language === 'Other' ? (l.customLanguage || 'Other') : l.Language}:</strong> ${l.proficiency || 'Fluent'}</li>`).join('')}
-            </ul>
-        ` : '';
-
-        const visibleExp = (expList || []).filter((job, idx) => job.visible !== false && isFieldVisible(`exp_${idx}`) && ((job.Organization && job.Organization.trim().length > 0) || (job.Role && job.Role.trim().length > 0)));
-        const respFormat = uiSettings?.RespFormat || uiSettings?.ResponsibilityFormat;
-        const expHtml = visibleExp && visibleExp.length > 0 ? `
+        const expHtml = workExperience.length > 0 ? `
             ${sectionHeader('Professional Experience')}
-            ${visibleExp.map(job => {
-                const dateRange = [job["Start Date"], job["End Date"] || (job["Start Date"] ? 'Present' : '')].filter(Boolean).join(' - ');
-                return `
+            ${workExperience.map(job => `
                 <div class="job-item" style="margin-bottom: 20px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
-                        <span>${job.Organization || 'Organization'}${job.Department ? ` (${job.Department})` : ''}</span>
-                        ${dateRange ? `<span>${dateRange}</span>` : ''}
+                        <span>${job.organization || 'Organization'}${job.department ? ` (${job.department})` : ''}</span>
+                        ${job.period ? `<span>${job.period}</span>` : ''}
                     </div>
-                    ${job.Role ? `<div class="job-role" style="font-style: italic; color: #555; margin-bottom: 5px;">${job.Role}</div>` : ''}
-                    ${formatBulletList(job["Key Responsibilities"], respFormat) ? `<div class="job-desc" style="font-size: 14px; line-height: 1.5; white-space: pre-line; margin-bottom: 5px;">${formatBulletList(job["Key Responsibilities"], respFormat)}</div>` : ''}
-                    ${job.Achievements && formatBulletList(job.Achievements, 'bullet') ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Key Achievements:</strong> ${formatBulletList(job.Achievements, 'bullet')}</div>` : ''}
-                    ${job["Systems Used"] && formatBulletList(job["Systems Used"], uiSettings?.SystemsUsedFormat) ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Systems & Tools Used:</strong> ${formatBulletList(job["Systems Used"], uiSettings?.SystemsUsedFormat)}</div>` : ''}
-                    ${job["Reason for Leaving"] ? `<div style="font-size: 12.5px; margin-top: 5px; font-style: italic; color: #777;">Reason for leaving: ${job["Reason for Leaving"]}</div>` : ''}
+                    ${job.role ? `<div class="job-role" style="font-style: italic; color: #555; margin-bottom: 5px;">${job.role}</div>` : ''}
+                    ${job.responsibilities && job.responsibilities.length > 0 ? `
+                        <div class="job-desc" style="font-size: 14px; line-height: 1.5; margin-bottom: 5px;">
+                            ${job.responsibilitiesLayout === 'bullet' ? `<ul style="margin: 5px 0 10px 0; padding-left: 20px;">${job.responsibilities.map(r => `<li>${r}</li>`).join('')}</ul>` : job.responsibilities.join(', ')}
+                        </div>
+                    ` : ''}
+                    ${job.achievements && job.achievements.length > 0 ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Key Achievements:</strong> <ul style="margin: 5px 0 10px 0; padding-left: 20px;">${job.achievements.map(a => `<li>${a}</li>`).join('')}</ul></div>` : ''}
+                    ${job.systemsUsed && job.systemsUsed.length > 0 ? `<div style="font-size: 13.5px; margin-top: 5px; margin-bottom: 5px;"><strong>Systems & Tools Used:</strong> ${job.systemsUsed.join(', ')}</div>` : ''}
+                    ${job.reasonForLeaving ? `<div style="font-size: 12.5px; margin-top: 5px; font-style: italic; color: #777;">Reason for leaving: ${job.reasonForLeaving}</div>` : ''}
                 </div>
-            `;}).join('')}
+            `).join('')}
         ` : '';
 
-        const visibleTertiary = (eduList?.tertiary || []).filter((edu, idx) => edu.visible !== false && isFieldVisible(`edu_tertiary_${idx}`) && ((edu.Institution && edu.Institution.trim().length > 0) || (edu["Qualification Name"] && edu["Qualification Name"].trim().length > 0)));
-        const visibleArtisanal = (eduList?.artisanalCertifications || []).filter((cert, idx) => cert.visible !== false && isFieldVisible(`edu_art_${idx}`) && ((cert.trade && cert.trade.trim().length > 0) || (cert.name && cert.name.trim().length > 0)));
-        const visibleTechCerts = (eduList?.technicalCertifications || []).filter((cert, idx) => cert.visible !== false && isFieldVisible(`edu_techcert_${idx}`) && cert.name && cert.name.trim().length > 0);
-        const visibleRegCerts = (eduList?.regulatoryCertifications || []).filter((cert, idx) => cert.visible !== false && isFieldVisible(`edu_regcert_${idx}`) && cert.name && cert.name.trim().length > 0);
-        const hasHighschool = eduList?.highschool?.["Year Completed"] && eduList?.highschool?.visible !== false && isFieldVisible('edu_highschool');
-
-        const hasEducationContent = visibleTertiary.length > 0 || visibleArtisanal.length > 0 || visibleTechCerts.length > 0 || visibleRegCerts.length > 0 || hasHighschool;
-
+        const hasEducationContent = !!(education.tertiary?.length || education.artisanal?.length || education.technicalCerts?.length || education.regulatoryCerts?.length || education.highschool);
         const eduHtml = hasEducationContent ? `
             ${sectionHeader('Education & Certifications')}
-            ${visibleTertiary.map(edu => `
-                 <div class="edu-item" style="margin-bottom: 15px;">
+            ${(education.tertiary || []).map(edu => `
+                <div class="edu-item" style="margin-bottom: 15px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
-                        <span>${edu.Institution}</span>
-                        <span>${edu.date_obtained || edu.dateObtained || edu.Year || ''}</span>
+                        <span>${edu.institution}</span>
+                        <span>${edu.year || ''}</span>
                     </div>
-                    <div>${edu["Qualification Name"]}</div>
+                    <div>${edu.qualification}${edu.nqfLevel ? ` (NQF ${edu.nqfLevel})` : ''}</div>
                 </div>
             `).join('')}
-            ${visibleArtisanal.map(cert => `
-                 <div class="edu-item" style="margin-bottom: 12px;">
+            ${(education.artisanal || []).map(cert => `
+                <div class="edu-item" style="margin-bottom: 12px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
-                        <span>🔧 ${cert.trade || cert.name}</span>
-                        <span>${cert.date_obtained || cert.dateObtained || cert.yearObtained || ''}</span>
+                        <span>🔧 ${cert.trade}</span>
+                        <span>${cert.dateTested || ''}</span>
                     </div>
-                    <div style="font-size: 13px; color: #555;">${cert.issuingBodyOrSeta ? `Centre/SETA: ${cert.issuingBodyOrSeta}` : ''}${cert.contractOrCertificateNumber ? ` (Cert: ${cert.contractOrCertificateNumber})` : ''}</div>
+                    <div style="font-size: 13px; color: #555;">${cert.testingCentre ? `Centre: ${cert.testingCentre}` : ''}${cert.certificateNumber ? ` (Cert: ${cert.certificateNumber})` : ''}</div>
                 </div>
             `).join('')}
-            ${visibleTechCerts.map(cert => `
-                 <div class="edu-item" style="margin-bottom: 12px;">
+            ${(education.technicalCerts || []).map(cert => `
+                <div class="edu-item" style="margin-bottom: 12px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
                         <span>💻 ${cert.name}</span>
-                        <span>${cert.date_obtained || cert.dateObtained || cert.yearObtained || ''}</span>
+                        <span>${cert.dateIssued || ''}</span>
                     </div>
-                    <div style="font-size: 13px; color: #555;">${cert.provider ? `Provider: ${cert.provider}` : ''}${cert.certNumber ? ` (ID: ${cert.certNumber})` : ''}</div>
+                    <div style="font-size: 13px; color: #555;">${cert.issuingBody || ''}</div>
                 </div>
             `).join('')}
-            ${visibleRegCerts.map(cert => `
-                 <div class="edu-item" style="margin-bottom: 12px;">
+            ${(education.regulatoryCerts || []).map(cert => `
+                <div class="edu-item" style="margin-bottom: 12px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
                         <span>⚖️ ${cert.name}</span>
-                        <span>${cert.date_obtained || cert.dateObtained || cert.yearObtained || ''}</span>
+                        <span>${cert.dateIssued || ''}</span>
                     </div>
-                    <div style="font-size: 13px; color: #555;">${cert.issuingBody ? `Authority: ${cert.issuingBody}` : ''}${cert.licenseNumber ? ` (License: ${cert.licenseNumber})` : ''}</div>
+                    <div style="font-size: 13px; color: #555;">${cert.issuingBody || ''}</div>
                 </div>
             `).join('')}
-            ${hasHighschool ? `
+            ${education.highschool ? `
                 <div class="edu-item" style="margin-bottom: 15px;">
-                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
-                        <span>🏫 ${eduList.highschool["Province Department"]}</span>
-                        <span>${eduList.highschool["Year Completed"]}</span>
+                    <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
+                        <span>🏫 ${education.highschool.schoolName || education.highschool.department || 'High School'}</span>
+                        <span>${education.highschool.yearCompleted || ''}</span>
                     </div>
-                    <div>${eduList.highschool["Highest Grade Passed"] || eduList.highschool["Highest Grade/Std"] || ''}</div>
+                    <div>${education.highschool.grade || 'Completed'}${education.highschool.stream ? ` · Stream: ${education.highschool.stream}` : ''}</div>
                 </div>
             ` : ''}
         ` : '';
 
-        const techText = formatBulletList(skills.Tech, uiSettings?.TechFormat);
-        const softText = formatBulletList(skills.Soft, uiSettings?.SoftFormat);
-        const profCertsText = formatBulletList(skills.Certifications || skills.professionalCertifications || skills["Professional Certs"] || skills.Certs, uiSettings?.ProfCertsFormat);
-        const nonAcadText = formatBulletList(skills.NonAcadCerts || skills["Non-Academic Certs"], uiSettings?.NonAcadCertsFormat);
+        const skillsHtml = skills.categories && skills.categories.length > 0 ? `
+            ${sectionHeader('Skills & Certifications')}
+            ${skills.categories.map(cat => `
+                <div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;">
+                    <strong>${cat.title}:</strong> ${skills.displayFormat === 'bullet' ? `<ul style="margin: 5px 0 10px 0; padding-left: 20px;">${cat.items.map(item => `<li>${item}</li>`).join('')}</ul>` : cat.items.join(', ')}
+                </div>
+            `).join('')}
+        ` : '';
 
-        const hasVisibleSkills = techText || softText || profCertsText || nonAcadText;
+        const langHtml = languages.length > 0 ? `
+            ${sectionHeader('Languages')}
+            <ul>
+                ${languages.map(l => `<li><strong>${l.language}:</strong> ${l.proficiency}</li>`).join('')}
+            </ul>
+        ` : '';
 
-        const skillsHtml = hasVisibleSkills ? `
-             ${sectionHeader('Skills & Certifications')}
-             ${techText ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Technical Skills:</strong> ${techText}</div>` : ''}
-             ${softText ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Soft Skills:</strong> ${softText}</div>` : ''}
-             ${profCertsText ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Certifications:</strong> ${profCertsText}</div>` : ''}
-             ${nonAcadText ? `<div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;"><strong>Non-Academic Certifications:</strong> ${nonAcadText}</div>` : ''}
-         ` : '';
-
-        const refHtml = refList && refList.length > 0 ? `
-             ${sectionHeader('References')}
-             <div class="ref-grid" style="${Layout === 'minimalist' ? 'text-align: center;' : ''}">
-                ${refList.map((ref, idx) => {
-                    if (!isFieldVisible(`ref_${idx}`)) return '';
-                    const showContact = isFieldVisible(`ref_contact_${idx}`);
-                    const cell = (ref.cellPhone && showContact) ? `📱 Cell: ${ref.cellPhone}` : '';
-                    const work = (ref.workPhone && showContact) ? `☎️ Work: ${ref.workPhone}` : '';
-                    const email = (ref.email && showContact) ? `📧 ${ref.email}` : '';
-                    const contactLines = [cell, work, email].filter(Boolean).join('<br/>');
-                    const refRole = ref.role || ref.Role || ref.relation || ref.relationship || '';
-                    const refOrg = ref.company || ref.organization || ref.Organization || ref.org || '';
-                    const refRoleOrg = [refRole, refOrg].filter(Boolean).join(' at ') || 'Reference';
-
-                    return `
+        const refHtml = references.length > 0 ? `
+            ${sectionHeader('References')}
+            <div class="ref-grid" style="${Layout === 'minimalist' ? 'text-align: center;' : ''}">
+                ${references.map(ref => `
                     <div class="ref-item" style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;">
-                        <strong>${ref.name || ref.Name || 'Reference'}</strong><br/>
-                        ${refRoleOrg}<br/>
-                        ${contactLines}
+                        <strong>${ref.name}</strong><br/>
+                        ${[ref.role, ref.company].filter(Boolean).join(' at ') || 'Reference'}<br/>
+                        ${[ref.cellPhone || ref.workPhone, ref.email].filter(Boolean).join('<br/>')}
                     </div>
-                    `;
-                }).join('')}
-             </div>
-         ` : '';
-
+                `).join('')}
+            </div>
+        ` : '';
 
         return `
             <html>
@@ -436,7 +279,7 @@ const PreviewScreen = ({ navigation }) => {
                         <div class="vignette-sheet">
                             ${headerHtml}
                             ${identityHtml}
-                            ${summary && isFieldVisible('summary_visibility') ? `${sectionHeader('Executive Summary')}<p>${summary}</p>` : ''}
+                            ${summary ? `${sectionHeader('Executive Summary')}<p>${summary}</p>` : ''}
                             ${expHtml}
                             ${eduHtml}
                             ${skillsHtml}

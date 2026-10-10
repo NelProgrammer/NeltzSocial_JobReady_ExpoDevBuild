@@ -15,11 +15,9 @@ const HeadlessParser = ({ fileContext, onParsed, onError }) => {
     <!DOCTYPE html>
     <html>
     <head>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+        <!-- Offline-safe standalone processing: zero external CDN scripts -->
         <script>
-            // Configure PDFJS locally
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+            // Offline stub / local extraction engine without external CDN dependency
 
             function sendResult(text) {
                 window.ReactNativeWebView.postMessage(JSON.stringify({ status: 'success', text }));

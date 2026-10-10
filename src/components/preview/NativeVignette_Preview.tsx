@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, useWindowDimensions } from 'react-native'
 import { Surface, Text, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ResumeData } from '../../types/resume';
+import { ResumeCompiler, CompiledResumeDocument } from '@jobready/core';
 
 const A4_RATIO = 1.4142;
 const VIGNETTE_PADDING = 12;
@@ -49,141 +50,24 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
 
     const glowColor = getGlowColor();
 
-    const pd = data["personal details"] || data.personal || {};
-    const names = pd.names || {};
-    const contact = pd.contact || {};
-    const address = pd.address || {};
-    const identity = pd.identity || {};
-    const licensing = pd.licensing || {};
-    const demographics = pd.demographics || {};
-    const legal = pd.legal || {};
-    const languages = pd.languages || [];
-    const expList = data.experience || [];
-    const eduList = data.education || { tertiary: [], highschool: {} };
-    const skills = data.skills || data.Skills || {};
-    const summary = data["professional summary"];
-    const refList = (data.References || data.references || []).filter((r: any) => r.visible !== false);
-
-    // Master Field Visibility Map
-    const vis = data.visibility || {};
-    const isFieldVisible = (key: string) => vis[key] !== false;
-
-    // Names presentation respecting visibility and formatting tokens
-    const rawFirst = isFieldVisible('pd_name_first') ? (names.firstName || '') : '';
-    const rawSurname = isFieldVisible('pd_name_surname') ? (names.Surname || '') : '';
-    let middleStr = '';
-    if (isFieldVisible('pd_name_middle') && (names.middleName || names.MiddleName)) {
-        const m = names.middleName || names.MiddleName;
-        if (uiSettings?.MiddleNameFormat === 'initial') {
-            middleStr = `${m.charAt(0)}.`;
-        } else if (uiSettings?.MiddleNameFormat !== 'omit') {
-            middleStr = m;
-        }
-    }
-    let maidenStr = '';
-    if (isFieldVisible('pd_name_maiden') && names.MaidenName) {
-        if (uiSettings?.MaidenNameFormat === 'hyphen') {
-            maidenStr = `- ${names.MaidenName}`;
-        } else if (uiSettings?.MaidenNameFormat !== 'omit') {
-            maidenStr = `(née ${names.MaidenName})`;
-        }
-    }
-
-    let fullName = [rawFirst, middleStr, maidenStr, rawSurname].filter(Boolean).join(' ');
-    if (!fullName.trim()) fullName = 'Job Applicant';
-    if (uiSettings?.NameCase === 'upper') {
-        fullName = fullName.toUpperCase();
-    }
-
-    // Contact separator
-    const getContactSeparator = () => {
-        switch (uiSettings?.ContactSeparator) {
-            case 'pipe': return ' | ';
-            case 'comma': return ', ';
-            case 'slash': return ' / ';
-            case 'dot':
-            default: return ' • ';
-        }
+    // Authoritative Core_TS Compilation: strict visibility, POPIA masking, zero ghost headers
+    const compilerConfig = {
+        config_type: (uiSettings?.isMain !== false) ? 'main' : 'targeted',
+        visibility_flags: uiSettings?.visibility_flags || uiSettings?.visibility || data?.visibility || {},
+        format_switches: uiSettings || {},
+        formattingSettings: uiSettings || {}
     };
-    const contactSep = getContactSeparator();
 
-    // Contact elements respecting visibility
-    const contactElements: string[] = [];
-    if (contact.Email && isFieldVisible('pd_contact_email')) {
-        contactElements.push(uiSettings?.ContactDisplayMode === 'keyValue' ? `Email: ${contact.Email}` : (uiSettings?.ContactDisplayMode === 'valuesOnly' ? contact.Email : `📧 ${contact.Email}`));
-    }
-    if (contact.Phone && isFieldVisible('pd_contact_phone')) {
-        contactElements.push(uiSettings?.ContactDisplayMode === 'keyValue' ? `Phone: ${contact.Phone}` : (uiSettings?.ContactDisplayMode === 'valuesOnly' ? contact.Phone : `📱 ${contact.Phone}`));
-    }
-    if ((contact.AltPhone || contact["Phone-alt"]) && isFieldVisible('pd_contact_alt_phone')) {
-        const p = contact.AltPhone || contact["Phone-alt"];
-        contactElements.push(uiSettings?.ContactDisplayMode === 'keyValue' ? `Alt Phone: ${p}` : (uiSettings?.ContactDisplayMode === 'valuesOnly' ? p : `📱 ${p}`));
-    }
-    if (contact.LinkedIn && isFieldVisible('pd_contact_linkedin')) {
-        contactElements.push(uiSettings?.ContactDisplayMode === 'keyValue' ? `LinkedIn: ${contact.LinkedIn}` : (uiSettings?.ContactDisplayMode === 'valuesOnly' ? contact.LinkedIn : `🔗 ${contact.LinkedIn}`));
-    }
-    if ((contact.Website || contact.Portfolio) && isFieldVisible('pd_contact_website')) {
-        const w = contact.Website || contact.Portfolio;
-        contactElements.push(uiSettings?.ContactDisplayMode === 'keyValue' ? `Website: ${w}` : (uiSettings?.ContactDisplayMode === 'valuesOnly' ? w : `🌐 ${w}`));
-    }
+    const doc: CompiledResumeDocument = ResumeCompiler.compile(data, compilerConfig);
+    const { header, summary, demographics = [], workExperience = [], education = {}, skills = { categories: [], displayFormat: 'bullet' }, languages = [], references = [], density } = doc;
 
-    // Addresses respecting individual visibility
-    const addressList = (pd.addresses || []).filter((a: any, idx: number) => a.visible !== false && isFieldVisible(`pd_addr_${idx}`));
-    const addressStrings = addressList.map((a: any, idx: number) => {
-        const parts: string[] = [];
-        const isMasked = isFieldVisible(`pd_addr_mask_${idx}`) === false || uiSettings?.AddressMaskStreet;
-        const includeStand = isFieldVisible(`pd_addr_stand_${idx}`) !== false && uiSettings?.AddressIncludeStand !== false;
-
-        if (a.unitOrFlatNo || a.buildingName) {
-            parts.push([a.unitOrFlatNo, a.buildingName].filter(Boolean).join(' '));
-        }
-        if (a.unitNo || a.complexName) {
-            parts.push([a.unitNo, a.complexName].filter(Boolean).join(' '));
-        }
-        if (a.streetName) {
-            const streetLine = isMasked ? `**** ${a.streetName}` : [a.streetNumber, a.streetName].filter(Boolean).join(' ');
-            parts.push(streetLine);
-        }
-        if (includeStand && a.standNumber) {
-            parts.push(`Stand: ${isMasked ? '****' : a.standNumber}`);
-        }
-        if (a.villageName || a.traditionalAuthorityOrTribalCouncil) {
-            parts.push([a.standOrErfOrHouseNo, a.villageName, a.traditionalAuthorityOrTribalCouncil].filter(Boolean).join(', '));
-        }
-        if (a.shackOrSectionOrStandNo || a.settlementName) {
-            parts.push([a.shackOrSectionOrStandNo, a.settlementName, a.sectionOrBlock, a.nearestLandmarkOrZone].filter(Boolean).join(', '));
-        }
-        if (a.farmName || a.portionOrPlotNo) {
-            parts.push([a.portionOrPlotNo, a.farmName, a.roadOrRoute].filter(Boolean).join(', '));
-        }
-        if (a.boxOrBagNumber) {
-            parts.push(`${a.boxOrBagType || 'P.O. Box'} ${a.boxOrBagNumber}${a.postOfficeName ? `, ${a.postOfficeName}` : ''}`);
-        }
-        if (a.suburbOrTownship || a.suburbOrVillage) {
-            parts.push(a.suburbOrTownship || a.suburbOrVillage);
-        }
-        if (a.cityOrTown) {
-            parts.push(a.cityOrTown);
-        }
-        if (uiSettings?.AddressIncludeProvince !== false && a.province) {
-            parts.push(a.province);
-        }
-        if (uiSettings?.AddressIncludePostalCode !== false && a.postalCode) {
-            parts.push(a.postalCode);
-        }
-        if (parts.length === 0 && a.streetAddress) {
-            parts.push(a.streetAddress);
-        }
-
-        const isInline = uiSettings?.AddressFormat === 'comma';
-        return parts.join(isInline ? ', ' : '\n');
-    });
-
-    const addressText = addressStrings.length > 0 ? addressStrings.join(' | ') : (address["Home Address"] ? address["Home Address"] : '');
+    const fullName = header.fullName || 'Job Applicant';
+    const contactElements = header.contactItems.map(c => c.displayString);
+    const contactSep = header.contactSeparator || ' • ';
+    const addressText = header.addressLine || '';
 
     // Calculate content density for 1-Page Fitting
-    const totalItemCount = expList.length + (eduList.tertiary?.length || 0) + (eduList.artisanalCertifications?.length || 0) + (refList.length || 0) + (skills.Tech ? 1 : 0) + (summary ? 1 : 0);
-    const isDense = fitMode === 'page' || totalItemCount > 5;
+    const isDense = fitMode === 'page' || density.isDense;
 
     // Density Scale Tokens
     const pagePadding = isDense ? 20 : 24;
@@ -241,7 +125,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                 <View style={styles.headerChrono}>
                     <View style={styles.headerChronoMain}>
                         <Text style={[styles.nameChrono, { fontSize: nameFontSize }]}>{fullName}</Text>
-                        <Text style={styles.titleChrono}>{expList[0]?.Role || 'Professional'}</Text>
+                        <Text style={styles.titleChrono}>{workExperience[0]?.role || 'Professional'}</Text>
                         {addressText ? (
                             <Text style={[styles.contactTextChrono, { marginTop: 4 }]}>📍 {addressText}</Text>
                         ) : null}
@@ -316,14 +200,13 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
     };
 
     if (exportFormat === 'word_text') {
-        const validWordExp = expList.filter((job: any) => job.visible !== false && ((job.Organization && job.Organization.trim().length > 0) || (job.Role && job.Role.trim().length > 0)));
-        const validWordEdu = (eduList.tertiary || []).filter((edu: any) => edu.visible !== false && ((edu.Institution && edu.Institution.trim().length > 0) || (edu["Qualification Name"] && edu["Qualification Name"].trim().length > 0)));
+        const tertiaryEdu = education.tertiary || [];
 
         return (
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={[styles.glowWrapper, glow && { borderColor: glowColor, borderWidth: 4, elevation: 15 }]}>
                     <Surface style={[styles.page, { width: pageWidth, minHeight: pageHeight, padding: pagePadding }]} elevation={4}>
-                        <Text style={styles.plainTextHeader}>{names.firstName} {names.Surname}</Text>
+                        <Text style={styles.plainTextHeader}>{fullName}</Text>
                         {contactElements.length > 0 && <Text style={styles.plainTextContact}>{contactElements.join(' | ')}</Text>}
                         {addressText ? <Text style={styles.plainTextContact}>{addressText}</Text> : null}
                         <Divider style={{ marginVertical: 10 }} />
@@ -335,30 +218,28 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                             </View>
                         )}
                         
-                        {validWordExp.length > 0 && (
+                        {workExperience.length > 0 && (
                             <View style={[styles.section, { marginBottom: sectionMargin }]}>
                                 {renderSectionHeader('Professional Experience')}
-                                {validWordExp.map((job: any, idx: number) => {
-                                    const dateRange = [job["Start Date"], job["End Date"] || (job["Start Date"] ? 'Present' : '')].filter(Boolean).join(' - ');
-                                    const resp = formatFieldItems(job["Key Responsibilities"], uiSettings?.RespFormat || uiSettings?.ResponsibilityFormat);
-                                    return (
-                                        <View key={idx} style={styles.entry}>
-                                            <Text style={styles.plainTextBold}>{job.Organization || 'Organization'} | {job.Role || 'Role'}</Text>
-                                            {dateRange ? <Text style={styles.plainTextSub}>{dateRange}</Text> : null}
-                                            {resp ? <Text style={styles.plainTextBody}>{resp}</Text> : null}
-                                        </View>
-                                    );
-                                })}
+                                {workExperience.map((job, idx) => (
+                                    <View key={job.id || idx} style={styles.entry}>
+                                        <Text style={styles.plainTextBold}>{job.organization} | {job.role}</Text>
+                                        {job.period ? <Text style={styles.plainTextSub}>{job.period}</Text> : null}
+                                        {job.responsibilities && job.responsibilities.length > 0 ? (
+                                            <Text style={styles.plainTextBody}>{job.responsibilities.join('\n')}</Text>
+                                        ) : null}
+                                    </View>
+                                ))}
                             </View>
                         )}
 
-                        {validWordEdu.length > 0 && (
+                        {tertiaryEdu.length > 0 && (
                             <View style={[styles.section, { marginBottom: sectionMargin }]}>
                                 {renderSectionHeader('Education')}
-                                {validWordEdu.map((edu: any, idx: number) => (
-                                    <View key={idx} style={styles.entry}>
-                                        <Text style={styles.plainTextBold}>{edu.Institution} | {edu["Qualification Name"]}</Text>
-                                        <Text style={styles.plainTextSub}>{edu.Year}</Text>
+                                {tertiaryEdu.map((edu, idx) => (
+                                    <View key={edu.id || idx} style={styles.entry}>
+                                        <Text style={styles.plainTextBold}>{edu.institution} | {edu.qualification}</Text>
+                                        {edu.year ? <Text style={styles.plainTextSub}>{edu.year}</Text> : null}
                                     </View>
                                 ))}
                             </View>
@@ -369,84 +250,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
         );
     }
 
-    // Helper to safely format multi-item arrays or strings according to 'comma' vs 'bullet'/'list'
-    const formatFieldItems = (val: any, format?: string) => {
-        if (!val) return '';
-        let items: string[] = [];
-        if (Array.isArray(val)) {
-            items = val
-                .filter(item => typeof item === 'object' && item !== null ? item.visible !== false : true)
-                .map(item => typeof item === 'object' && item !== null ? (item.name || item.text || item.skill || '') : String(item))
-                .map(s => s.trim())
-                .filter(Boolean);
-        } else {
-            items = String(val)
-                .split('\n')
-                .map(line => line.replace(/^[-•*]\s*/, '').trim())
-                .filter(Boolean);
-        }
-        if (items.length === 0) return '';
-        if (format === 'comma') {
-            return items.join(', ');
-        }
-        // Default: Bulleted List
-        return items.map(item => `• ${item}`).join('\n');
-    };
-
-    // Prepared Demographic Items respecting visibility
-    const demoItems: { label: string; value: string }[] = [];
-    if (identity.idNumber && isFieldVisible('pd_identity_number')) {
-        const mask = uiSettings?.IdMask !== false && isFieldVisible('pd_identity_mask');
-        const displayVal = mask && identity.idNumber.length >= 6 ? `${identity.idNumber.substring(0, 6)} **** ***` : identity.idNumber;
-        demoItems.push({ label: 'ID Number', value: displayVal });
-    }
-    if (demographics.Nationality && isFieldVisible('pd_identity_nationality')) {
-        demoItems.push({ label: 'Nationality', value: demographics.Nationality });
-    }
-    if (demographics.Gender && demographics.Gender !== 'None' && isFieldVisible('pd_identity_gender')) {
-        demoItems.push({ label: 'Gender', value: demographics.Gender });
-    }
-    if (demographics.Race && demographics.Race !== 'Other' && isFieldVisible('pd_identity_race')) {
-        demoItems.push({ label: 'Race', value: demographics.Race });
-    }
-    if ((demographics.MaritalStatus || demographics.maritalStatus) && isFieldVisible('pd_identity_marital')) {
-        demoItems.push({ label: 'Marital Status', value: demographics.MaritalStatus || demographics.maritalStatus });
-    }
-    if ((demographics.Disability || demographics.disability) && (demographics.Disability !== 'None') && isFieldVisible('pd_identity_disability')) {
-        demoItems.push({ label: 'Disability', value: demographics.Disability || demographics.disability });
-    }
-    if (licensing.Drivers && licensing.Drivers !== 'None' && isFieldVisible('pd_license_drivers')) {
-        demoItems.push({ label: 'Drivers License', value: licensing.Drivers });
-    }
-    if (licensing.PrDP && isFieldVisible('pd_license_prdp')) {
-        demoItems.push({ label: 'PrDP Permit', value: 'Valid Professional Driving Permit' });
-    }
-    if (licensing.OwnVehicle && isFieldVisible('pd_license_vehicle')) {
-        demoItems.push({ label: 'Vehicle', value: 'Own Transport' });
-    }
-    if (legal["Criminal Record"] !== undefined && isFieldVisible('pd_identity_criminal')) {
-        demoItems.push({ label: 'Criminal Record', value: legal["Criminal Record"] ? (legal.Details || 'Yes') : 'Clear / None' });
-    }
-
     const isDemoComma = uiSettings?.DemoFormat === 'comma';
-
-    // Filter valid non-empty collections to prevent ghost placeholders
-    const validExpList = expList.filter((job: any) => job.visible !== false && ((job.Organization && job.Organization.trim().length > 0) || (job.Role && job.Role.trim().length > 0)));
-    const validTertiary = (eduList.tertiary || []).filter((edu: any) => edu.visible !== false && ((edu.Institution && edu.Institution.trim().length > 0) || (edu["Qualification Name"] && edu["Qualification Name"].trim().length > 0)));
-    const validArtisanal = (eduList.artisanalCertifications || []).filter((cert: any, idx: number) => cert.visible !== false && isFieldVisible(`edu_art_${idx}`) && ((cert.trade && cert.trade.trim().length > 0) || (cert.name && cert.name.trim().length > 0)));
-    const validTechCerts = (eduList.technicalCertifications || []).filter((cert: any) => cert.visible !== false && cert.name && cert.name.trim().length > 0);
-    const validRegCerts = (eduList.regulatoryCertifications || []).filter((cert: any) => cert.visible !== false && cert.name && cert.name.trim().length > 0);
-    const hasHighschool = eduList.highschool && (eduList.highschool["Province Department"] || eduList.highschool["Year Completed"]) && eduList.highschool.visible !== false;
-    const hasEducation = validTertiary.length > 0 || validArtisanal.length > 0 || validTechCerts.length > 0 || validRegCerts.length > 0 || hasHighschool;
-
-    const techText = formatFieldItems(skills.Tech, uiSettings?.TechFormat);
-    const softText = formatFieldItems(skills.Soft, uiSettings?.SoftFormat);
-    const certsText = formatFieldItems(skills.Certifications || skills.Certs || skills.professionalCertifications, uiSettings?.ProfCertsFormat);
-    const nonAcadText = formatFieldItems(skills.NonAcadCerts, uiSettings?.NonAcadCertsFormat);
-    const hasSkills = !!(techText || softText || certsText || nonAcadText);
-
-    const validLanguages = languages.filter((l: any) => l.visible !== false && l.Language && l.Language.trim().length > 0 && (l.Language !== 'Other' || (l.customLanguage && l.customLanguage.trim().length > 0)));
-    const validRefs = refList.filter((ref: any) => (ref.name || ref.Name || '').trim().length > 0 || (ref.role || ref.Role || ref.relation || '').trim().length > 0);
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -455,25 +259,29 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                 {renderHeader()}
 
                 {/* Section Priority Logic: Functional Layout Expertise */}
-                {layout === 'functional' && hasSkills && (
+                {layout === 'functional' && skills.categories && skills.categories.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Expertise & Skills')}
-                        {techText ? <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Technical:</Text> {techText}</Text> : null}
-                        {softText ? <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}><Text style={{ fontWeight: 'bold' }}>Core Competencies:</Text> {softText}</Text> : null}
+                        {skills.categories.map((cat, idx) => (
+                            <Text key={idx} style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
+                                <Text style={{ fontWeight: 'bold' }}>{cat.title}: </Text>
+                                {cat.items.join(', ')}
+                            </Text>
+                        ))}
                     </View>
                 )}
 
-                {/* Personal Info Meta Section */}
-                {demoItems.length > 0 && (
+                {/* Personal Info Demographics Section */}
+                {demographics.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Personal Information')}
                         {isDemoComma ? (
                             <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
-                                {demoItems.map(d => `${d.label}: ${d.value}`).join(' · ')}
+                                {demographics.map(d => `${d.label}: ${d.value}`).join(' · ')}
                             </Text>
                         ) : (
                             <View style={styles.metaGrid}>
-                                {demoItems.map((item, idx) => (
+                                {demographics.map((item, idx) => (
                                     <View key={idx} style={styles.metaItem}>
                                         <Text style={styles.metaLabel}>{item.label}:</Text>
                                         <Text style={styles.metaValue}>{item.value}</Text>
@@ -484,197 +292,138 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                     </View>
                 )}
 
-                {summary && isFieldVisible('summary_visibility') ? (
+                {summary ? (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader(layout === 'functional' ? 'Professional Profile' : 'Professional Summary')}
                         <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{summary}</Text>
                     </View>
                 ) : null}
 
-                {validExpList.length > 0 && (
+                {workExperience.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Work Experience')}
-                        {validExpList.map((job: any, idx: number) => {
-                            const dateRange = [job["Start Date"], job["End Date"] || (job["Start Date"] ? 'Present' : '')].filter(Boolean).join(' - ');
-                            const respText = formatFieldItems(job["Key Responsibilities"], uiSettings?.RespFormat || uiSettings?.ResponsibilityFormat);
-                            const achieveText = formatFieldItems(job.Achievements, 'bullet');
-                            const systemsText = formatFieldItems(job["Systems Used"], uiSettings?.SystemsUsedFormat);
-
-                            return (
-                                <View key={idx} style={styles.entry}>
-                                    <View style={styles.entryHeader}>
-                                        <Text style={styles.entryTitle} numberOfLines={1}>{job.Organization || 'Organization'}</Text>
-                                        {dateRange ? <Text style={styles.entryDate}>{dateRange}</Text> : null}
-                                    </View>
-                                    {job.Role ? <Text style={styles.entrySubTitle}>{job.Role}</Text> : null}
-                                    {respText ? (
-                                        <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1 }]}>
-                                            {respText}
-                                        </Text>
-                                    ) : null}
-                                    {achieveText ? (
-                                        <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1, marginTop: 4 }]}>
-                                            <Text style={{ fontWeight: 'bold' }}>Key Achievements:{'\n'}</Text>
-                                            {achieveText}
-                                        </Text>
-                                    ) : null}
-                                    {systemsText ? (
-                                        <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1, marginTop: 4 }]}>
-                                            <Text style={{ fontWeight: 'bold' }}>Systems Used: </Text>
-                                            {systemsText}
-                                        </Text>
-                                    ) : null}
+                        {workExperience.map((job, idx) => (
+                            <View key={job.id || idx} style={styles.entry}>
+                                <View style={styles.entryHeader}>
+                                    <Text style={styles.entryTitle} numberOfLines={1}>{job.organization || 'Organization'}</Text>
+                                    {job.period ? <Text style={styles.entryDate}>{job.period}</Text> : null}
                                 </View>
-                            );
-                        })}
+                                {job.role ? <Text style={styles.entrySubTitle}>{job.role}</Text> : null}
+                                {job.responsibilities && job.responsibilities.length > 0 ? (
+                                    <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1 }]}>
+                                        {job.responsibilitiesLayout === 'bullet'
+                                            ? job.responsibilities.map(r => `• ${r}`).join('\n')
+                                            : job.responsibilities.join(', ')}
+                                    </Text>
+                                ) : null}
+                                {job.achievements && job.achievements.length > 0 ? (
+                                    <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1, marginTop: 4 }]}>
+                                        <Text style={{ fontWeight: 'bold' }}>Key Achievements:{'\n'}</Text>
+                                        {job.achievements.map(a => `• ${a}`).join('\n')}
+                                    </Text>
+                                ) : null}
+                                {job.systemsUsed && job.systemsUsed.length > 0 ? (
+                                    <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1, marginTop: 4 }]}>
+                                        <Text style={{ fontWeight: 'bold' }}>Systems Used: </Text>
+                                        {job.systemsUsed.join(', ')}
+                                    </Text>
+                                ) : null}
+                            </View>
+                        ))}
                     </View>
                 )}
 
-                {hasEducation && (
+                {(education.tertiary?.length || education.artisanal?.length || education.technicalCerts?.length || education.regulatoryCerts?.length || education.highschool) ? (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Education')}
-                        {validTertiary.map((edu: any, idx: number) => {
-                            const subTitle = [edu["Qualification Name"], edu.Completed === false && edu["Qualification Name"] ? '(In Progress)' : ''].filter(Boolean).join(' ');
-                            return (
-                                <View key={idx} style={styles.entry}>
-                                    <View style={styles.entryHeader}>
-                                        <Text style={styles.entryTitle} numberOfLines={1}>{edu.Institution || 'Institution'}</Text>
-                                        {edu.Year ? <Text style={styles.entryDate}>{edu.Year}</Text> : null}
-                                    </View>
-                                    {subTitle ? <Text style={styles.entrySubTitle}>{subTitle}</Text> : null}
-                                    {edu["Key Modules"] && (Array.isArray(edu["Key Modules"]) ? edu["Key Modules"].length > 0 : String(edu["Key Modules"]).trim().length > 0) && (
-                                        <Text style={[styles.entryDesc, { fontSize: bodyFontSize - 1, lineHeight: bodyLineHeight - 1 }]}>
-                                            <Text style={{ fontWeight: 'bold' }}>Key Modules: </Text>
-                                            {Array.isArray(edu["Key Modules"]) ? edu["Key Modules"].join(', ') : edu["Key Modules"]}
-                                        </Text>
-                                    )}
-                                </View>
-                            );
-                        })}
-                        {validArtisanal.map((cert: any, idx: number) => (
-                            <View key={`art_${idx}`} style={styles.entry}>
+                        {education.tertiary?.map((edu, idx) => (
+                            <View key={edu.id || idx} style={styles.entry}>
                                 <View style={styles.entryHeader}>
-                                    <Text style={styles.entryTitle} numberOfLines={1}>🔧 {cert.trade || cert.name}</Text>
-                                    <Text style={styles.entryDate}>{cert.date_obtained || cert.dateObtained || cert.yearObtained || ''}</Text>
+                                    <Text style={styles.entryTitle} numberOfLines={1}>{edu.institution || 'Institution'}</Text>
+                                    {edu.year ? <Text style={styles.entryDate}>{edu.year}</Text> : null}
                                 </View>
-                                <Text style={styles.entrySubTitle}>{[cert.issuingBodyOrSeta ? `Centre/SETA: ${cert.issuingBodyOrSeta}` : '', cert.contractOrCertificateNumber ? `Cert No: ${cert.contractOrCertificateNumber}` : ''].filter(Boolean).join(' · ')}</Text>
+                                <Text style={styles.entrySubTitle}>{[edu.qualification, edu.completed === false ? '(In Progress)' : '', edu.nqfLevel ? `NQF ${edu.nqfLevel}` : ''].filter(Boolean).join(' · ')}</Text>
                             </View>
                         ))}
-                        {validTechCerts.map((cert: any, idx: number) => (
-                            <View key={`tc_${idx}`} style={styles.entry}>
+                        {education.artisanal?.map((cert, idx) => (
+                            <View key={cert.id || `art_${idx}`} style={styles.entry}>
+                                <View style={styles.entryHeader}>
+                                    <Text style={styles.entryTitle} numberOfLines={1}>🔧 {cert.trade}</Text>
+                                    {cert.dateTested ? <Text style={styles.entryDate}>{cert.dateTested}</Text> : null}
+                                </View>
+                                <Text style={styles.entrySubTitle}>{[cert.testingCentre ? `Centre: ${cert.testingCentre}` : '', cert.certificateNumber ? `Cert No: ${cert.certificateNumber}` : ''].filter(Boolean).join(' · ')}</Text>
+                            </View>
+                        ))}
+                        {education.technicalCerts?.map((cert, idx) => (
+                            <View key={cert.id || `tc_${idx}`} style={styles.entry}>
                                 <View style={styles.entryHeader}>
                                     <Text style={styles.entryTitle} numberOfLines={1}>💻 {cert.name}</Text>
-                                    <Text style={styles.entryDate}>{cert.date_obtained || cert.yearObtained || ''}</Text>
+                                    {cert.dateIssued ? <Text style={styles.entryDate}>{cert.dateIssued}</Text> : null}
                                 </View>
-                                <Text style={styles.entrySubTitle}>{[cert.provider ? `Provider: ${cert.provider}` : '', cert.certNumber ? `ID: ${cert.certNumber}` : ''].filter(Boolean).join(' · ')}</Text>
+                                {cert.issuingBody ? <Text style={styles.entrySubTitle}>{cert.issuingBody}</Text> : null}
                             </View>
                         ))}
-                        {validRegCerts.map((cert: any, idx: number) => (
-                            <View key={`rc_${idx}`} style={styles.entry}>
+                        {education.regulatoryCerts?.map((cert, idx) => (
+                            <View key={cert.id || `rc_${idx}`} style={styles.entry}>
                                 <View style={styles.entryHeader}>
                                     <Text style={styles.entryTitle} numberOfLines={1}>⚖️ {cert.name}</Text>
-                                    <Text style={styles.entryDate}>{cert.date_obtained || cert.yearObtained || ''}</Text>
+                                    {cert.dateIssued ? <Text style={styles.entryDate}>{cert.dateIssued}</Text> : null}
                                 </View>
-                                <Text style={styles.entrySubTitle}>{[cert.issuingBody ? `Authority: ${cert.issuingBody}` : '', cert.licenseNumber ? `License: ${cert.licenseNumber}` : ''].filter(Boolean).join(' · ')}</Text>
+                                {cert.issuingBody ? <Text style={styles.entrySubTitle}>{cert.issuingBody}</Text> : null}
                             </View>
                         ))}
-                        {hasHighschool && (
+                        {education.highschool ? (
                             <View style={styles.entry}>
                                 <View style={styles.entryHeader}>
-                                    <Text style={styles.entryTitle} numberOfLines={1}>{eduList.highschool["Province Department"] || 'High School'}</Text>
-                                    {eduList.highschool["Year Completed"] ? <Text style={styles.entryDate}>{eduList.highschool["Year Completed"]}</Text> : null}
+                                    <Text style={styles.entryTitle} numberOfLines={1}>{education.highschool.schoolName || education.highschool.department || 'High School'}</Text>
+                                    {education.highschool.yearCompleted ? <Text style={styles.entryDate}>{education.highschool.yearCompleted}</Text> : null}
                                 </View>
-                                <Text style={styles.entrySubTitle}>
-                                    {eduList.highschool["Highest Grade Passed"] || eduList.highschool["Highest Grade/Std"] || 'Completed'}
-                                    {eduList.highschool["Subjects Stream"] ? ` · Stream: ${eduList.highschool["Subjects Stream"]}` : ''}
-                                </Text>
+                                <Text style={styles.entrySubTitle}>{[education.highschool.grade || 'Completed', education.highschool.stream ? `Stream: ${education.highschool.stream}` : ''].filter(Boolean).join(' · ')}</Text>
                             </View>
-                        )}
+                        ) : null}
                     </View>
-                )}
+                ) : null}
 
-                {hasSkills && (
+                {skills.categories && skills.categories.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Skills & Certifications')}
-                        {techText ? (
-                            <View style={{ marginBottom: 6 }}>
+                        {skills.categories.map((cat, idx) => (
+                            <View key={idx} style={{ marginBottom: 6 }}>
                                 <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
-                                    <Text style={{ fontWeight: 'bold' }}>Technical Skills: </Text>
-                                    {uiSettings?.TechFormat === 'comma' ? techText : ''}
+                                    <Text style={{ fontWeight: 'bold' }}>{cat.title}: </Text>
+                                    {skills.displayFormat === 'bullet' ? '' : cat.items.join(', ')}
                                 </Text>
-                                {uiSettings?.TechFormat !== 'comma' && (
+                                {skills.displayFormat === 'bullet' && (
                                     <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight, paddingLeft: 8 }]}>
-                                        {techText}
+                                        {cat.items.map(item => `• ${item}`).join('\n')}
                                     </Text>
                                 )}
                             </View>
-                        ) : null}
-                        {softText ? (
-                            <View style={{ marginBottom: 6 }}>
-                                <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
-                                    <Text style={{ fontWeight: 'bold' }}>Soft Skills: </Text>
-                                    {uiSettings?.SoftFormat === 'comma' ? softText : ''}
-                                </Text>
-                                {uiSettings?.SoftFormat !== 'comma' && (
-                                    <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight, paddingLeft: 8 }]}>
-                                        {softText}
-                                    </Text>
-                                )}
-                            </View>
-                        ) : null}
-                        {certsText ? (
-                            <View style={{ marginBottom: 6 }}>
-                                <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
-                                    <Text style={{ fontWeight: 'bold' }}>Certifications: </Text>
-                                    {uiSettings?.ProfCertsFormat === 'comma' ? certsText : ''}
-                                </Text>
-                                {uiSettings?.ProfCertsFormat !== 'comma' && (
-                                    <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight, paddingLeft: 8 }]}>
-                                        {certsText}
-                                    </Text>
-                                )}
-                            </View>
-                        ) : null}
-                        {nonAcadText ? (
-                            <View style={{ marginBottom: 6 }}>
-                                <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
-                                    <Text style={{ fontWeight: 'bold' }}>Non-Academic Certifications: </Text>
-                                    {uiSettings?.NonAcadCertsFormat === 'comma' ? nonAcadText : ''}
-                                </Text>
-                                {uiSettings?.NonAcadCertsFormat !== 'comma' && (
-                                    <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight, paddingLeft: 8 }]}>
-                                        {nonAcadText}
-                                    </Text>
-                                )}
-                            </View>
-                        ) : null}
-                    </View>
-                )}
-
-                {validLanguages.length > 0 && (
-                    <View style={[styles.section, { marginBottom: sectionMargin }]}>
-                        {renderSectionHeader('Languages')}
-                        {validLanguages.map((l: any, idx: number) => (
-                            <Text key={idx} style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{(l.Language === 'Other' ? (l.customLanguage || 'Other') : l.Language)}: {l.proficiency || 'Fluent'}</Text>
                         ))}
                     </View>
                 )}
 
-                {validRefs.length > 0 && (
+                {languages.length > 0 && (
+                    <View style={[styles.section, { marginBottom: sectionMargin }]}>
+                        {renderSectionHeader('Languages')}
+                        {languages.map((l, idx) => (
+                            <Text key={idx} style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>{l.displayString}</Text>
+                        ))}
+                    </View>
+                )}
+
+                {references.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('References')}
                         <View style={styles.refGrid}>
-                            {validRefs.map((ref: any, idx: number) => {
-                                const refRole = ref.role || ref.Role || ref.relation || ref.relationship || '';
-                                const refOrg = ref.company || ref.org || ref.organization || '';
-                                const refRoleOrg = [refRole, refOrg].filter(Boolean).join(' at ');
-                                const refContact = [ref.cellPhone || ref.workPhone || ref.phone || ref.contact || '', ref.email].filter(Boolean).join(' · ');
-
+                            {references.map((ref, idx) => {
+                                const roleCompany = [ref.role, ref.company].filter(Boolean).join(' at ');
+                                const contact = [ref.cellPhone || ref.workPhone, ref.email].filter(Boolean).join(' · ');
                                 return (
-                                    <View key={idx} style={styles.refItem}>
-                                        <Text style={styles.refName}>{ref.name || ref.Name || 'Reference'}</Text>
-                                        {refRoleOrg ? <Text style={styles.refDetail}>{refRoleOrg}</Text> : null}
-                                        {refContact ? <Text style={styles.refDetail}>{refContact}</Text> : null}
+                                    <View key={ref.id || idx} style={styles.refItem}>
+                                        <Text style={styles.refName}>{ref.name}</Text>
+                                        {roleCompany ? <Text style={styles.refDetail}>{roleCompany}</Text> : null}
+                                        {contact ? <Text style={styles.refDetail}>{contact}</Text> : null}
                                     </View>
                                 );
                             })}
