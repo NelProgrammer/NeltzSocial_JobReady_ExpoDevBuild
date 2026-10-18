@@ -72,12 +72,17 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
       try {
         const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
         const id = controller ? setTimeout(() => controller.abort(), 3000) : null;
-        const res = await fetch(`${authCtx.backendUrl || 'http://localhost:8000'}/auth/profiles`, {
+        const res = await fetch(`${authCtx.backendUrl || 'http://localhost:8000'}/health`, {
           signal: controller?.signal
         });
         if (id) clearTimeout(id);
         if (isMounted) {
-          setDbStatus(res.ok ? 'ONLINE' : 'DEGRADED');
+          if (!res.ok) {
+            setDbStatus('DEGRADED');
+          } else {
+            const body = await res.json().catch(() => ({}));
+            setDbStatus(body.database_connected ? 'ONLINE' : 'DEGRADED');
+          }
         }
       } catch (err) {
         if (isMounted) {

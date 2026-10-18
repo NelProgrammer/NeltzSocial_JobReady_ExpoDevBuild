@@ -97,7 +97,18 @@ export const AuthProvider = ({ children }) => {
   // Background profile synchronization with server (Non-blocking)
   const syncRemoteProfilesBackground = async (localProfiles) => {
     try {
-      const response = await fetchWithTimeout(`${backendUrl}/auth/profiles`, {}, 3000);
+      const lastActiveId = await Storage.get(Storage.KEYS.LAST_ACTIVE_ID);
+      const tokenBearer =
+        (localProfiles || []).find((p) => p.id === lastActiveId)?.accessToken ||
+        (localProfiles || []).find((p) => p.accessToken)?.accessToken;
+      if (!tokenBearer) {
+        return;
+      }
+      const response = await fetchWithTimeout(
+        `${backendUrl}/auth/profiles`,
+        { headers: { Authorization: `Bearer ${tokenBearer}` } },
+        3000
+      );
       if (response && response.ok) {
         const serverProfiles = await response.json();
         const currentLocal = (await Storage.get(Storage.KEYS.PROFILES)) || localProfiles || [];
