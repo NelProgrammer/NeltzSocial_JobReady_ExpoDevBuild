@@ -187,7 +187,7 @@ export const ResumeProvider = ({ children }) => {
                 const serverTime = serverManifestMap.get(item.id);
                 if (serverTime === undefined) {
                     toUpload.push(item.id);
-                } else if (item.lastModified > serverTime * 1000) {
+                } else if (item.lastModified > serverTime) {
                     toUpload.push(item.id);
                 }
             }
@@ -197,7 +197,7 @@ export const ResumeProvider = ({ children }) => {
                 const localTime = localMetaMap.get(item.id);
                 if (localTime === undefined) {
                     toDownloadIds.push(item.id);
-                } else if (item.last_modified * 1000 > localTime) {
+                } else if (item.last_modified > localTime) {
                     toDownloadIds.push(item.id);
                 }
             }
@@ -218,7 +218,7 @@ export const ResumeProvider = ({ children }) => {
                             await Storage.saveResumeData(profileId, serverRes.id, serverRes.data_json);
                             
                             const metaIndex = updatedMeta.findIndex(m => m.id === serverRes.id);
-                            const lastModMs = serverRes.last_modified * 1000;
+                            const lastModMs = serverRes.last_modified;
                             
                             if (metaIndex >= 0) {
                                 updatedMeta[metaIndex] = {
@@ -258,7 +258,7 @@ export const ResumeProvider = ({ children }) => {
                             profile_id: profileId,
                             name: metaItem.name,
                             data_json: data,
-                            last_modified: metaItem.lastModified / 1000
+                            last_modified: metaItem.lastModified
                         });
                     }
                 }
@@ -288,7 +288,7 @@ export const ResumeProvider = ({ children }) => {
                                     updatedMeta[metaIndex] = {
                                         ...updatedMeta[metaIndex],
                                         name: conflict.name,
-                                        lastModified: conflict.last_modified * 1000
+                                        lastModified: conflict.last_modified
                                     };
                                 }
                             }
@@ -330,7 +330,7 @@ export const ResumeProvider = ({ children }) => {
                 const serverTime = serverManifestMap.get(item.id);
                 if (localSettings) {
                     const localTime = localSettings.lastModified || 0;
-                    if (serverTime === undefined || localTime > serverTime * 1000) {
+                    if (serverTime === undefined || localTime > serverTime) {
                         toUpload.push(item.id);
                     }
                 }
@@ -339,7 +339,7 @@ export const ResumeProvider = ({ children }) => {
             for (const item of serverManifest) {
                 const localSettings = await Storage.loadUiSettings(profileId, item.resume_id);
                 const localTime = localSettings ? (localSettings.lastModified || 0) : 0;
-                if (item.last_modified * 1000 > localTime) {
+                if (item.last_modified > localTime) {
                     toDownloadIds.push(item.resume_id);
                 }
             }
@@ -362,7 +362,7 @@ export const ResumeProvider = ({ children }) => {
                                 references_settings: serverSet.references_settings || {},
                                 languages_settings: serverSet.languages_settings || {},
                                 placeholders: serverSet.placeholders || {},
-                                lastModified: serverSet.last_modified * 1000
+                                lastModified: serverSet.last_modified
                             });
                         }
                     }
@@ -390,7 +390,7 @@ export const ResumeProvider = ({ children }) => {
                             references_settings: settings.references_settings || {},
                             languages_settings: settings.languages_settings || {},
                             placeholders: settings.placeholders || {},
-                            last_modified: (settings.lastModified || Date.now()) / 1000
+                            last_modified: settings.lastModified || Date.now()
                         });
                     }
                 }

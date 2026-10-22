@@ -260,15 +260,16 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
           Alert.alert('Error', 'Please enter a profile name or email');
           return;
         }
-        await createProfile(inputName.trim());
+        const email = inputName.includes('@') ? inputName.trim() : '';
+        await createProfile(inputName.trim(), {}, { email, password: inputPassword.trim() || undefined });
         Alert.alert('Success', 'Local Profile created successfully!');
       } else if (mode === 'UPGRADE_ONLINE') {
         if (!inputEmail.trim() || !inputPassword.trim()) {
           Alert.alert('Error', 'Please enter email and password');
           return;
         }
-        await createProfile(inputEmail.trim());
-        Alert.alert('Success', 'Upgraded to Online Remote Profile!');
+        await createProfile(inputEmail.trim(), {}, { email: inputEmail.trim(), password: inputPassword.trim() });
+        Alert.alert('Success', 'Signed up or logged in through Job 2.');
       } else if (mode === 'CHANGE_PASSWORD') {
         if (!newPassword.trim()) {
           Alert.alert('Error', 'Please enter a new password');
@@ -666,7 +667,13 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
           <Text style={styles.footerTitleText}>JobReady Hub</Text>
           <Text style={styles.footerSubtitleText}>Career & Interview Suite</Text>
         </View>
-        <TouchableOpacity style={[styles.footerSettingsBtn, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} onPress={() => { setMode('SETTINGS'); setModalVisible(true); }} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={[styles.footerSettingsBtn, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]}
+          onPress={() => { setMode('SETTINGS'); setModalVisible(true); }}
+          activeOpacity={0.7}
+          accessibilityLabel="App Settings"
+          accessibilityRole="button"
+        >
           <MaterialCommunityIcons name="cog-outline" size={22} color="#94a3b8" />
         </TouchableOpacity>
       </Surface>
@@ -853,8 +860,21 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
                     }}
                     style={{ flex: 1, backgroundColor: activeTheme.bgDark, borderColor: (backendUrl || '').includes('192.168.') ? activeTheme.accent : activeTheme.border, borderWidth: 1, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 8, alignItems: 'center' }}
                   >
-                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>🏠 Local LAN</Text>
-                    <Text style={{ color: '#94a3b8', fontSize: 9 }}>192.168.100.101</Text>
+                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>🏠 Python</Text>
+                    <Text style={{ color: '#94a3b8', fontSize: 9 }}>:8000</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      const lanUrl = 'http://192.168.100.101:3000';
+                      setServerUrlInput(lanUrl);
+                      if (setCustomBackendUrl) await setCustomBackendUrl(lanUrl);
+                      setServerSaveMessage('Set to Node LAN!');
+                      setTimeout(() => setServerSaveMessage(null), 3000);
+                    }}
+                    style={{ flex: 1, backgroundColor: activeTheme.bgDark, borderColor: (backendUrl || '').includes(':3000') ? activeTheme.accent : activeTheme.border, borderWidth: 1, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 8, alignItems: 'center' }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>🏠 Node</Text>
+                    <Text style={{ color: '#94a3b8', fontSize: 9 }}>:3000</Text>
                   </TouchableOpacity>
                 </View>
 

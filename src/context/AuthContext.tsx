@@ -1,20 +1,26 @@
 // @ts-nocheck
 import React, { createContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Storage } from '../utils/storage';
 import { getBackendUrl } from '../utils/backendUrl';
 import { AuthContextType } from '../types/context';
+import {
+  deriveDisplayNameFromEmail,
+  generateAbbreviationProfileId,
+  createGuestPlaceholder,
+  createLocalProfileRecord,
+  createServerProfileRecord,
+  commitActiveProfile,
+  ensureOfflineSessionState,
+  replaceSessionWithGuest,
+  deleteProfileState,
+  rewriteStorageKey,
+  upgradedGuestProfile,
+  QUICK_START_NAME,
+  EXPO_IDENTITY_KEYS,
+} from '@jobready/core';
 
-export const deriveDisplayNameFromEmail = (email: string) => {
-  if (!email || !email.includes('@')) return email || '';
-  return email.split('@')[0];
-};
-
-export const generateAbbreviationProfileId = (firstName: string, middleName?: string | null, surname?: string) => {
-  const fn2 = (firstName || '').trim().substring(0, 2).toLowerCase();
-  const mn2 = (middleName || '').trim().length > 0 ? (middleName || '').trim().substring(0, 2).toLowerCase() : '';
-  const sn2 = (surname || '').trim().substring(0, 2).toLowerCase();
-  return `prfl_${fn2}${mn2}${sn2}`;
-};
+export { deriveDisplayNameFromEmail, generateAbbreviationProfileId };
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -82,17 +88,6 @@ export const AuthProvider = ({ children }) => {
       console.error('[Auth] Failed to set custom backend URL', e);
     }
   };
-
-  const createGuestPlaceholder = () => ({
-    id: 'guest_' + Date.now(),
-    name: 'Guest',
-    email: '',
-    isGuest: true,
-    isLocal: true,
-    password: null,
-    created: new Date().toISOString(),
-    lastLogin: Date.now(),
-  });
 
   // Background profile synchronization with server (Non-blocking)
   const syncRemoteProfilesBackground = async (localProfiles) => {
@@ -166,23 +161,15 @@ export const AuthProvider = ({ children }) => {
       try {
         // 1. Load Local Profiles from AsyncStorage immediately
         const storedProfiles = await Storage.get(Storage.KEYS.PROFILES) || [];
-        profilesArray = storedProfiles;
-        
-        // Bootstrap a guest profile if empty and NOT in test environment
-        if (profilesArray.length === 0 && process.env.NODE_ENV !== 'test') {
-          const guest = createGuestPlaceholder();
-          profilesArray = [guest];
-          await Storage.set(Storage.KEYS.PROFILES, profilesArray);
-        }
+        const lastActiveId = await Storage.get(Storage.KEYS.LAST_ACTIVE_ID);
+        const bootstrapped = ensureOfflineSessionState(storedProfiles, lastActiveId, {
+          bootstrapGuest: process.env.NODE_ENV !== 'test',
+        });
+        profilesArray = bootstrapped.profiles;
+        await Storage.set(Storage.KEYS.PROFILES, profilesArray);
         setProfiles(profilesArray);
 
-        // 2. Check for Active Session from AsyncStorage
-        const lastActiveId = await Storage.get(Storage.KEYS.LAST_ACTIVE_ID);
-        let activeProfile = profilesArray.find(p => p.id === lastActiveId);
-
-        if (!activeProfile && profilesArray.length > 0 && process.env.NODE_ENV !== 'test') {
-          activeProfile = profilesArray[0];
-        }
+        let activeProfile = profilesArray.find(p => p.id === bootstrapped.activeId);
 
         if (activeProfile) {
           if (activeProfile.passwordChangeCountdown !== undefined && activeProfile.passwordChangeCountdown > 0) {
@@ -222,22 +209,31 @@ export const AuthProvider = ({ children }) => {
   const login = async (profileId) => {
     try {
       const profile = (profiles || []).find(p => p.id === profileId);
-      if (profile) {
-        let updatedProfile = { ...profile, lastLogin: Date.now() };
-        if (updatedProfile.passwordChangeCountdown !== undefined && updatedProfile.passwordChangeCountdown > 0) {
-          updatedProfile.passwordChangeCountdown -= 1;
+      if (!profile) return;
+
+      if (profile.email && profile.password && !profile.accessToken) {
+        try {
+          await signupOrLogin(profile.email, profile.password, profile.name || deriveDisplayNameFromEmail(profile.email), profile.socialLinks || {});
+          return;
+        } catch (e) {
+          console.warn('[Auth] Online login on switch unavailable, using local profile:', e.message);
         }
-
-        const updatedProfiles = profiles.map(p =>
-          p.id === profileId ? updatedProfile : p
-        );
-
-        await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
-        await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, profileId);
-
-        setProfiles(updatedProfiles);
-        setUser(updatedProfile);
       }
+
+      let updatedProfile = { ...profile, lastLogin: Date.now() };
+      if (updatedProfile.passwordChangeCountdown !== undefined && updatedProfile.passwordChangeCountdown > 0) {
+        updatedProfile.passwordChangeCountdown -= 1;
+      }
+
+      const updatedProfiles = profiles.map(p =>
+        p.id === profileId ? updatedProfile : p
+      );
+
+      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
+      await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, profileId);
+
+      setProfiles(updatedProfiles);
+      setUser(updatedProfile);
     } catch (e) {
       console.error('[Auth] Login failed', e);
     }
@@ -250,15 +246,12 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         return;
       }
-      const guest = createGuestPlaceholder();
-      const nonGuestProfiles = (profiles || []).filter(p => !p.isGuest);
-      const updatedProfiles = [...nonGuestProfiles, guest];
+      const next = replaceSessionWithGuest(profiles || []);
+      await Storage.set(Storage.KEYS.PROFILES, next.profiles);
+      await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, next.guest.id);
 
-      await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
-      await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, guest.id);
-
-      setProfiles(updatedProfiles);
-      setUser(guest);
+      setProfiles(next.profiles);
+      setUser(next.guest);
     } catch (e) {
       console.error('[Auth] Logout failed', e);
     }
@@ -266,17 +259,13 @@ export const AuthProvider = ({ children }) => {
 
   const deleteProfile = async (targetId: string) => {
     try {
-      const remaining = (profiles || []).filter(p => p.id !== targetId);
-      let updatedList = remaining;
+      const next = deleteProfileState(profiles || [], targetId, user?.id);
+      let updatedList = next.profiles;
       let nextActiveUser = user;
 
-      // If active user is deleted, fallback to guest profile
-      if (user?.id === targetId) {
-        const guest = createGuestPlaceholder();
-        const nonGuestProfiles = remaining.filter(p => !p.isGuest);
-        updatedList = [...nonGuestProfiles, guest];
-        nextActiveUser = guest;
-        await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, guest.id);
+      if (next.guest) {
+        nextActiveUser = next.guest;
+        await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, next.guest.id);
       }
 
       await Storage.set(Storage.KEYS.PROFILES, updatedList);
@@ -291,43 +280,26 @@ export const AuthProvider = ({ children }) => {
     try {
       if (!user || !user.isGuest) return user;
 
-      const newProfileId = generateAbbreviationProfileId(firstName, middleName, surname);
-      const displayName = `${firstName} ${surname}`.trim();
-      const defaultPassword = dob || '19900101';
-
       const upgradedProfile = {
-        id: newProfileId,
-        name: displayName,
-        email: '',
-        isGuest: false,
-        isLocal: true,
-        password: defaultPassword,
+        ...upgradedGuestProfile({ firstName, middleName, surname, idNumber, dob }),
         passwordChangeCountdown: 5,
         created: new Date().toISOString(),
-        lastLogin: Date.now(),
-        socialLinks: {},
-        linkedSocials: [],
       };
+      const newProfileId = upgradedProfile.id;
 
-      const updatedProfiles = (profiles || [])
-        .filter(p => p.id !== user.id)
-        .concat(upgradedProfile);
+      const updatedProfiles = commitActiveProfile(
+        (profiles || []).filter(p => p.id !== user.id),
+        upgradedProfile,
+      );
 
-      // Migrate existing resume data from old guest profile to new upgraded profile
       try {
-        const oldMeta = await Storage.loadMeta(user.id);
-        if (oldMeta && oldMeta.length > 0) {
-          await Storage.saveMeta(newProfileId, oldMeta);
-          for (const m of oldMeta) {
-            const resData = await Storage.loadResumeData(user.id, m.id);
-            if (resData) {
-              await Storage.saveResumeData(newProfileId, m.id, resData);
-            }
-            const uiSettings = await Storage.loadUiSettings(user.id, m.id);
-            if (uiSettings) {
-              await Storage.saveUiSettings(newProfileId, m.id, uiSettings);
-            }
-          }
+        const keys = await AsyncStorage.getAllKeys();
+        for (const key of keys) {
+          const nextKey = rewriteStorageKey(key, user.id, newProfileId, EXPO_IDENTITY_KEYS.dataPrefixes);
+          if (!nextKey || nextKey === key) continue;
+          const value = await AsyncStorage.getItem(key);
+          if (value != null) await AsyncStorage.setItem(nextKey, value);
+          await AsyncStorage.removeItem(key);
         }
       } catch (migErr) {
         console.warn('[Auth] Error migrating guest resume data to upgraded profile:', migErr);
@@ -389,75 +361,101 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const createProfile = async (name, socialLinks = {}) => {
-    try {
-      const isEmailInput = name && name.includes('@');
-      const derivedName = isEmailInput ? deriveDisplayNameFromEmail(name) : name;
-
-      const mockToken = 'mock_' + derivedName.replace(/\s+/g, '_').toLowerCase() + '_' + Date.now();
-
-      const response = await fetchWithTimeout(`${backendUrl}/auth/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          provider: 'google',
-          token: mockToken
-        })
-      }, 3000);
-
-      if (response.ok) {
-        const result = await response.json();
-        const newProfile = {
-          id: result.profile_id,
-          name: result.name || derivedName,
-          email: result.email || (isEmailInput ? name : ''),
-          accessToken: result.access_token,
-          created: new Date().toISOString(),
-          lastLogin: Date.now(),
-          socialLinks: socialLinks,
-          linkedSocials: ['google']
-        };
-
-        const updatedProfiles = [...(profiles || []).filter(p => !p.isGuest), newProfile];
-        await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
-        await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfile.id);
-
-        setProfiles(updatedProfiles);
-        setUser(newProfile);
-        return newProfile;
-      }
-    } catch (e) {
-      console.warn('[Auth] Remote verify failed, falling back to local creation:', e.message);
-    }
-
-    const isEmailInput = name && name.includes('@');
-    const derivedName = isEmailInput ? deriveDisplayNameFromEmail(name) : name;
-    const localId = 'prfl_' + Date.now().toString(36);
-
-    const newProfile = {
-      id: localId,
-      name: derivedName,
-      email: isEmailInput ? name : '',
-      isGuest: false,
-      isLocal: true,
-      password: 'Password123',
-      created: new Date().toISOString(),
-      lastLogin: Date.now(),
-      socialLinks: socialLinks,
-      linkedSocials: []
-    };
-
-    const updatedProfiles = [...(profiles || []).filter(p => !p.isGuest), newProfile];
+  const saveActiveProfile = async (newProfile) => {
+    const updatedProfiles = commitActiveProfile(profiles || [], newProfile);
     await Storage.set(Storage.KEYS.PROFILES, updatedProfiles);
     await Storage.set(Storage.KEYS.LAST_ACTIVE_ID, newProfile.id);
-
     setProfiles(updatedProfiles);
     setUser(newProfile);
     return newProfile;
   };
 
+  const createLocalProfile = async (name, socialLinks = {}, extras = {}) => {
+    return saveActiveProfile({
+      ...createLocalProfileRecord(name, socialLinks, extras),
+      created: new Date().toISOString(),
+    });
+  };
+
+  const applyServerAuth = async (result, socialLinks = {}, extras = {}) => {
+    return saveActiveProfile({
+      ...createServerProfileRecord(result, { ...extras, socialLinks }),
+      created: new Date().toISOString(),
+    });
+  };
+
+  const signupOrLogin = async (email, password, name, socialLinks = {}) => {
+    const signupRes = await fetchWithTimeout(
+      `${backendUrl}/auth/signup`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, name }),
+      },
+      5000,
+    );
+    if (signupRes.ok) {
+      return applyServerAuth(await signupRes.json(), socialLinks, { email, password, name, linkedSocials: ['email'] });
+    }
+    const loginRes = await fetchWithTimeout(
+      `${backendUrl}/auth/login`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      },
+      5000,
+    );
+    if (loginRes.ok) {
+      return applyServerAuth(await loginRes.json(), socialLinks, { email, password, name, linkedSocials: ['email'] });
+    }
+    throw new Error(`Online signup/login failed (${signupRes.status}/${loginRes.status})`);
+  };
+
+  const createProfile = async (name, socialLinks = {}, credentials = {}) => {
+    const email = credentials.email || (name && name.includes('@') ? name : '');
+    const password = credentials.password;
+    const derivedName = email ? deriveDisplayNameFromEmail(email) : name;
+    const forceLocal = Boolean(socialLinks.local);
+
+    if (email && password && !forceLocal) {
+      try {
+        return await signupOrLogin(email, password, derivedName, socialLinks);
+      } catch (e) {
+        console.warn('[Auth] Job 2 signup/login unavailable, keeping a local profile:', e.message);
+        return createLocalProfile(derivedName, socialLinks, { email, password });
+      }
+    }
+
+    const socialProvider = credentials.provider || (!forceLocal && Object.keys(socialLinks).find((k) => k !== 'local'));
+    const socialToken = credentials.token;
+    if (socialProvider && socialToken && !forceLocal) {
+      try {
+        const response = await fetchWithTimeout(
+          `${backendUrl}/auth/verify`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ provider: socialProvider, token: socialToken }),
+          },
+          5000,
+        );
+        if (response.ok) {
+          return applyServerAuth(await response.json(), socialLinks, {
+            linkedSocials: [socialProvider],
+            name: derivedName,
+          });
+        }
+      } catch (e) {
+        console.warn('[Auth] Social verify unavailable, keeping a local profile:', e.message);
+      }
+    }
+
+    return createLocalProfile(derivedName, socialLinks, { email, password });
+  };
+
   const quickStart = async () => {
-    return createProfile('Quick Start User', { local: true });
+    return createProfile(QUICK_START_NAME, { local: true });
   };
 
   return (

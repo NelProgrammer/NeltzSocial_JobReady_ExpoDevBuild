@@ -23,7 +23,8 @@
       },
       "softwareKeyboardLayoutMode": "pan",
       "edgeToEdgeEnabled": false,
-      "package": "com.neltzsocial.jobready.offline"
+      "package": "com.neltzsocial.jobready.offline",
+      "usesCleartextTraffic": true
     },
     "web": {
       "favicon": "./assets/favicon.png"
