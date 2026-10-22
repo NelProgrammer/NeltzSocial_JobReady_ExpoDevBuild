@@ -1,12 +1,17 @@
 {
   "name": "Preview Format & CSV Subtitle Cleanup Verification Suite",
-  "description": "Verifies that accordion subtitles no longer show 'CSV:', 'at' connectors are clean, format toggles switch between bulleted and comma, and preview ghost artifacts are eliminated.",
+  "description": "Walks Hub → Resume Builder → Fields → Preview and asserts each screen's title text.",
   "steps": [
     {
-      "description": "Return to Hub to ensure clean starting state",
+      "description": "Return to Hub",
       "action": "tap-target",
       "target": "footer_home",
       "delayMs": 1000
+    },
+    {
+      "description": "Hub is showing",
+      "action": "assert-ui",
+      "expect": ["JobReady Hub"]
     },
     {
       "description": "Tap Resume Builder from Hub",
@@ -15,48 +20,59 @@
       "delayMs": 1500
     },
     {
+      "description": "Career Data opened",
+      "action": "assert-ui",
+      "expect": ["Career Data"]
+    },
+    {
       "description": "Switch to Skills tab",
       "action": "tap-tab",
       "target": "skills",
-      "delayMs": 1000
+      "delayMs": 800
     },
     {
-      "description": "Capture Skills tab proof (Verifying clean subtitle without 'CSV:')",
+      "description": "Capture Skills tab proof",
       "action": "capture",
-      "output": "suite_skills_clean_subtitle.png"
+      "output": "suite_skills_clean_subtitle.png",
+      "expect": ["Career Data", "Technical Skills"],
+      "forbid": ["CSV:"]
     },
     {
       "description": "Switch to Education tab",
       "action": "tap-tab",
       "target": "education",
-      "delayMs": 1000
+      "delayMs": 800
     },
     {
-      "description": "Capture Education tab proof (Verifying clean subtitle without 'CSV:')",
+      "description": "Capture Education tab proof",
       "action": "capture",
-      "output": "suite_education_clean_subtitle.png"
+      "output": "suite_education_clean_subtitle.png",
+      "expect": ["Career Data", "High School"],
+      "forbid": ["CSV:"]
     },
     {
-      "description": "Tap Configure Fields button to enter Fields Selection screen",
+      "description": "Tap Configure Fields",
       "action": "tap-target",
       "target": "configure_btn",
       "delayMs": 1500
     },
     {
-      "description": "Capture Fields Selection proof (Verifying Experience and References without dangling 'at')",
+      "description": "Capture Fields Selection proof",
       "action": "capture",
-      "output": "suite_fields_clean_at.png"
+      "output": "suite_fields_clean_at.png",
+      "expect": ["Field Visibility"]
     },
     {
-      "description": "Tap Preview CV button to enter Preview screen",
-      "action": "tap-coords",
-      "coords": "507 2265",
+      "description": "Tap Preview CV",
+      "action": "tap-text",
+      "text": "Preview CV",
       "delayMs": 2000
     },
     {
-      "description": "Capture Resume Preview proof (Verifying clean headers, no lone '|', no ghost placeholders)",
+      "description": "Capture Resume Preview proof",
       "action": "capture",
-      "output": "suite_preview_clean_proof.png"
+      "output": "suite_preview_clean_proof.png",
+      "expect": ["Resume Preview"]
     }
   ]
 }

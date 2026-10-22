@@ -434,7 +434,13 @@ const PreviewScreen = ({ navigation }) => {
             {!isFullScreenPreview && (
                 <View style={[styles.headerBanner, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                     <View style={styles.headerRow}>
-                        <TouchableOpacity style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]} onPress={() => navigation.goBack()} activeOpacity={0.7}>
+                        <TouchableOpacity
+                            style={[styles.navBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]}
+                            onPress={() => navigation.goBack()}
+                            activeOpacity={0.7}
+                            accessibilityLabel="Back"
+                            accessibilityRole="button"
+                        >
                             <MaterialCommunityIcons name="arrow-left" size={20} color={theme.textPrimary} />
                         </TouchableOpacity>
                         <View style={{ alignItems: 'center' }}>
@@ -510,7 +516,13 @@ const PreviewScreen = ({ navigation }) => {
 
             {/* Persistent Sticky Footer Card */}
             <View style={[styles.footerCard, { backgroundColor: theme.bgDark, borderColor: theme.border, height: 56 + Math.max(insets.bottom, 0), paddingBottom: Math.max(insets.bottom, 4) }]}>
-                <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub')} activeOpacity={0.7}>
+                <TouchableOpacity
+                    style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}
+                    onPress={() => navigation.navigate('Hub')}
+                    activeOpacity={0.7}
+                    accessibilityLabel="JobReady Hub"
+                    accessibilityRole="button"
+                >
                     <MaterialCommunityIcons name="home-outline" size={22} color={theme.textPrimary} />
                 </TouchableOpacity>
 
