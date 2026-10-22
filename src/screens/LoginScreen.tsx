@@ -10,6 +10,8 @@ import { useNavigation } from '@react-navigation/native';
 type Profile = {
   id: string;
   name: string;
+  isGuest?: boolean;
+  isLocal?: boolean;
   socialLinks?: { google?: boolean };
   lastLogin?: number;
 };
@@ -22,6 +24,8 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [newName, setNewName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const lastBackPress = useRef<number>(0);
 
   useEffect(() => {
@@ -59,8 +63,15 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
   };
 
   const handleCreateProfile = () => {
-    if (newName.trim()) {
-      createProfile(newName.trim());
+    const name = newName.trim();
+    const mail = email.trim();
+    const pass = password.trim();
+    if (mail && pass) {
+      createProfile(mail, {}, { email: mail, password: pass, name: name || mail.split('@')[0] });
+      return;
+    }
+    if (name) {
+      createProfile(name);
       setNewName('');
     }
   };
@@ -116,7 +127,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
                     <Avatar.Icon size={32} icon="account" style={{ backgroundColor: "#6366f1" }} />
                     <View style={{ marginLeft: 12 }}>
                       <Text style={styles.profileName}>{p.name}</Text>
-                      <Text style={styles.profileSub}>{p.socialLinks?.google ? 'Social Account' : 'Local Profile'}</Text>
+                      <Text style={styles.profileSub}>{p.isGuest ? 'GUEST' : p.isLocal ? 'LOCAL' : p.socialLinks?.google ? 'SOCIAL' : 'ONLINE'}</Text>
                     </View>
                   </TouchableOpacity>
                   <IconButton icon="trash-can-outline" iconColor="rgba(255,0,0,0.4)" size={20} onPress={() => deleteProfile(p.id)} />
@@ -133,7 +144,7 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
             {/* 3. CREATE PROFILE */}
             <View style={styles.createContainer}>
               <TextInput
-                placeholder="Enter Name..."
+                placeholder="Display name"
                 value={newName}
                 onChangeText={setNewName}
                 mode="outlined"
@@ -142,8 +153,31 @@ const LoginScreen: React.FC<LoginScreenProps> = () => {
                 placeholderTextColor="rgba(255,255,255,0.4)"
                 dense
               />
+              <TextInput
+                placeholder="Email (Job 2 signup/login)"
+                value={email}
+                onChangeText={setEmail}
+                mode="outlined"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={styles.input}
+                textColor="#fff"
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                dense
+              />
+              <TextInput
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                mode="outlined"
+                secureTextEntry
+                style={styles.input}
+                textColor="#fff"
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                dense
+              />
               <Button mode="contained" onPress={handleCreateProfile} style={styles.createBtn} buttonColor="#6366f1">
-                Create
+                Create / Sign in
               </Button>
             </View>
 
@@ -211,7 +245,7 @@ const styles = StyleSheet.create({
   profileInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   profileName: { color: '#fff', fontWeight: 'bold' },
   profileSub: { color: 'rgba(255,255,255,0.4)', fontSize: 10 },
-  createContainer: { flexDirection: 'row', gap: 8 },
+  createContainer: { flexDirection: 'column', gap: 8 },
   input: { flex: 1, backgroundColor: 'transparent' },
   createBtn: { justifyContent: 'center', borderRadius: 12 },
   footerNote: { textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 16 },
