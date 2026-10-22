@@ -136,7 +136,13 @@ const EditorScreen: React.FC<EditorScreenProps> = ({ route, navigation }) => {
 
       {/* Persistent Sticky Footer Card */}
       <View style={[styles.footerCard, { backgroundColor: theme.bgDark, borderColor: theme.border, height: 56 + Math.max(insets.bottom, 0), paddingBottom: Math.max(insets.bottom, 4) }]}>
-        <TouchableOpacity style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]} onPress={() => navigation.navigate('Hub')} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={[styles.footerIconBtn, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}
+          onPress={() => navigation.navigate('Hub')}
+          activeOpacity={0.7}
+          accessibilityLabel="JobReady Hub"
+          accessibilityRole="button"
+        >
           <MaterialCommunityIcons name="home-outline" size={22} color={theme.textPrimary} />
         </TouchableOpacity>
 

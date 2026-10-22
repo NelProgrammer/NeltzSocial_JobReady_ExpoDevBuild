@@ -1,0 +1,265 @@
+{
+  "name": "Seed Profile Create + Warehouse Upgrade Suite",
+  "description": "Four-state Alice/Bob seed: Job 2 HTTP, Postgres, device UI, and on-device AsyncStorage. SUCCESS only if all four match.",
+  "requireFourState": true,
+  "steps": [
+    {
+      "description": "Generate CSVs and load Alice/Bob through Job 2 HTTP",
+      "action": "load-seed",
+      "delayMs": 200
+    },
+    {
+      "description": "Job 2 health with live warehouse",
+      "action": "assert-http",
+      "path": "/health",
+      "expect": ["\"database_connected\":true", "\"status\":\"online\""]
+    },
+    {
+      "description": "Job 2 login as Alice seed",
+      "action": "assert-http",
+      "method": "POST",
+      "path": "/auth/login",
+      "body": { "email": "alice.seed@jobready.dev", "password": "SeedPass1!" },
+      "expect": ["access_token", "alice.seed@jobready.dev"],
+      "saveToken": true
+    },
+    {
+      "description": "Job 2 login as Bob seed",
+      "action": "assert-http",
+      "method": "POST",
+      "path": "/auth/login",
+      "body": { "email": "bob.seed@jobready.dev", "password": "SeedPass1!" },
+      "expect": ["access_token", "bob.seed@jobready.dev"]
+    },
+    {
+      "description": "Alice user exists in Postgres",
+      "action": "assert-db",
+      "sql": "SELECT email FROM users WHERE email = 'alice.seed@jobready.dev';",
+      "expect": ["alice.seed@jobready.dev"]
+    },
+    {
+      "description": "Bob user exists in Postgres",
+      "action": "assert-db",
+      "sql": "SELECT email FROM users WHERE email = 'bob.seed@jobready.dev';",
+      "expect": ["bob.seed@jobready.dev"]
+    },
+    {
+      "description": "Alice profile row is linked to the user",
+      "action": "assert-db",
+      "sql": "SELECT p.email FROM profiles p JOIN users u ON u.id = p.user_id WHERE u.email = 'alice.seed@jobready.dev';",
+      "expect": ["alice.seed@jobready.dev"]
+    },
+    {
+      "description": "Alice master resume row exists",
+      "action": "assert-db",
+      "sql": "SELECT r.id FROM resumes r JOIN profiles p ON p.id = r.profile_id JOIN users u ON u.id = p.user_id WHERE u.email = 'alice.seed@jobready.dev' AND r.id = 'resume_alice_seed';",
+      "expect": ["resume_alice_seed"]
+    },
+    {
+      "description": "Alice first name from seed payload is on the resume row",
+      "action": "assert-db",
+      "sql": "SELECT first_name, surname FROM resumes WHERE id = 'resume_alice_seed';",
+      "expect": ["Alice"]
+    },
+    {
+      "description": "Reset device session (wipe prior SOCIAL) so upgrade path is real",
+      "action": "clear-app",
+      "delayMs": 800
+    },
+    {
+      "description": "Dismiss exit dialog if present after relaunch",
+      "action": "dismiss-exit",
+      "delayMs": 400
+    },
+    {
+      "description": "If LoginScreen: Quick Start (Offline) to LOCAL",
+      "action": "tap-text",
+      "text": "Quick Start (Offline)",
+      "optional": true,
+      "delayMs": 3000
+    },
+    {
+      "description": "Hub after clear is Guest or already LOCAL",
+      "action": "assert-ui",
+      "expect": ["JobReady Hub", "Suites"]
+    },
+    {
+      "description": "If GUEST: open Create Permanent Local from stage pill",
+      "action": "tap-text",
+      "text": "GUEST",
+      "optional": true,
+      "delayMs": 1200
+    },
+    {
+      "description": "If create-local form open: focus name field",
+      "action": "tap-text",
+      "text": "Profile Name or Email",
+      "optional": true,
+      "delayMs": 400
+    },
+    {
+      "description": "If create-local form open: type local name (no email, avoid Job 2 signup)",
+      "action": "type-text",
+      "text": "SeedLocal",
+      "delayMs": 400
+    },
+    {
+      "description": "If create-local form open: save local profile",
+      "action": "tap-text",
+      "text": "Save & Apply",
+      "optional": true,
+      "delayMs": 2500
+    },
+    {
+      "description": "Dismiss local-create success alert",
+      "action": "tap-text",
+      "text": "OK",
+      "optional": true,
+      "delayMs": 1000
+    },
+    {
+      "description": "Hub shows LOCAL stage before settings/upgrade",
+      "action": "assert-ui",
+      "expect": ["JobReady Hub", "LOCAL"]
+    },
+    {
+      "description": "Open App Settings to point offline APK at local Job 2",
+      "action": "tap-target",
+      "target": "footer_gear",
+      "delayMs": 1200
+    },
+    {
+      "description": "Settings panel shows backend config",
+      "action": "assert-ui",
+      "expect": ["App Settings & Themes", "Backend Sync Server"]
+    },
+    {
+      "description": "Scroll settings to reveal Node LAN preset",
+      "action": "swipe",
+      "coords": "540 1450 540 950 300",
+      "delayMs": 700
+    },
+    {
+      "description": "Select Node LAN Job 2 (:3000)",
+      "action": "tap-text",
+      "text": ":3000",
+      "delayMs": 2500
+    },
+    {
+      "description": "Active server is Node Job 2 on :3000",
+      "action": "assert-ui",
+      "expect": [":3000"],
+      "forbid": ["api.jobready.neltzsocial.com"]
+    },
+    {
+      "description": "Scroll to Done Settings",
+      "action": "swipe",
+      "coords": "540 1500 540 900 350",
+      "delayMs": 600
+    },
+    {
+      "description": "Done with settings (returns modal to profile VIEW)",
+      "action": "tap-text",
+      "text": "Done Settings",
+      "delayMs": 1200
+    },
+    {
+      "description": "Close profile menu so LOCAL stage pill is tappable",
+      "action": "tap-text",
+      "text": "Close",
+      "delayMs": 1000
+    },
+    {
+      "description": "Hub still LOCAL after pointing at Job 2",
+      "action": "assert-ui",
+      "expect": ["JobReady Hub", "LOCAL"]
+    },
+    {
+      "description": "Open online upgrade from LOCAL stage pill",
+      "action": "tap-text",
+      "text": "LOCAL",
+      "delayMs": 1500
+    },
+    {
+      "description": "Upgrade form is open",
+      "action": "assert-ui",
+      "expect": ["Email Address", "Upgrade to Online Remote Profile"]
+    },
+    {
+      "description": "Focus email field",
+      "action": "tap-text",
+      "text": "Email Address",
+      "delayMs": 500
+    },
+    {
+      "description": "Type Alice seed email",
+      "action": "type-text",
+      "text": "alice.seed@jobready.dev",
+      "delayMs": 500
+    },
+    {
+      "description": "Email field holds full Alice address",
+      "action": "assert-ui",
+      "expect": ["alice.seed@jobready.dev"]
+    },
+    {
+      "description": "Focus password field",
+      "action": "tap-text",
+      "text": "Password",
+      "delayMs": 500
+    },
+    {
+      "description": "Type Alice seed password",
+      "action": "type-text",
+      "text": "SeedPass1!",
+      "delayMs": 500
+    },
+    {
+      "description": "Dismiss keyboard (one BACK) so Save is tappable",
+      "action": "key",
+      "key": "KEYCODE_BACK",
+      "delayMs": 800
+    },
+    {
+      "description": "Submit online upgrade",
+      "action": "tap-text",
+      "text": "Save & Apply",
+      "delayMs": 8000
+    },
+    {
+      "description": "Dismiss success/error alert if present",
+      "action": "tap-text",
+      "text": "OK",
+      "optional": true,
+      "delayMs": 1500
+    },
+    {
+      "description": "Cancel exit dialog if BACK over-dismissed",
+      "action": "dismiss-exit",
+      "delayMs": 500
+    },
+    {
+      "description": "Hub shows remote Alice after Job 2 login (SOCIAL/ONLINE, not form)",
+      "action": "capture",
+      "output": "suite_seed_alice_hub.png",
+      "expect": ["Alice", "alice.seed@jobready.dev", "SOCIAL"],
+      "forbid": ["Email Address", "Upgrade to Online Remote Profile"]
+    },
+    {
+      "description": "Wait for AsyncStorage flush before cold-relaunch proof",
+      "action": "wait",
+      "delayMs": 4000
+    },
+    {
+      "description": "Local storage / cold-relaunch persistence holds Alice after upgrade",
+      "action": "assert-local",
+      "expect": ["SOCIAL", "alice.seed@jobready.dev"]
+    },
+    {
+      "description": "Warehouse still has Alice resume after device upgrade",
+      "action": "assert-db",
+      "sql": "SELECT u.email, r.id, r.first_name FROM users u JOIN profiles p ON p.user_id = u.id JOIN resumes r ON r.profile_id = p.id WHERE u.email = 'alice.seed@jobready.dev' ORDER BY r.id;",
+      "expect": ["alice.seed@jobready.dev", "resume_alice_seed", "Alice"]
+    }
+  ]
+}

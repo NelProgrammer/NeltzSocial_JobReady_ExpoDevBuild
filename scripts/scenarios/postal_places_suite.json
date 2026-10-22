@@ -1,28 +1,43 @@
 {
   "name": "South African Postal Code & Suburb Auto-Completion Suite",
-  "description": "Tests bidirectional drill-down search between postal code, city, and suburb with one-tap all-field auto-completion in the Personal Details address editor.",
+  "description": "Opens Addresses from Career Data by on-screen text, not a stale y=650 tap.",
   "steps": [
     {
-      "description": "Tap Addresses (2) card header at calibrated y=650",
-      "action": "tap-coords",
-      "coords": "500 650",
+      "description": "Open Resume Builder if still on Hub",
+      "action": "tap-text",
+      "text": "Resume Builder",
+      "delayMs": 1200
+    },
+    {
+      "description": "Personal tab",
+      "action": "tap-tab",
+      "target": "personal",
+      "delayMs": 800
+    },
+    {
+      "description": "Tap Addresses card by label",
+      "action": "tap-text",
+      "text": "Addresses",
       "delayMs": 1500
     },
     {
       "description": "Capture expanded Addresses view",
       "action": "capture",
-      "output": "proof_addresses_expanded.png"
+      "output": "proof_addresses_expanded.png",
+      "expect": ["Address 1"]
     },
     {
-      "description": "Scroll down inside Addresses to reveal Suburb, City, and Postal Code fields",
+      "description": "Scroll address fields into view",
       "action": "swipe",
       "coords": "500 1800 500 800 400",
-      "delayMs": 1500
+      "delayMs": 1200
     },
     {
-      "description": "Capture address input fields view (Postal Code, Suburb, City, Province)",
+      "description": "Capture address input fields",
       "action": "capture",
-      "output": "proof_address_inputs.png"
+      "output": "proof_address_inputs.png",
+      "expect": ["Career Data"],
+      "forbid": ["Are you sure you want to close JobReady"]
     }
   ]
 }

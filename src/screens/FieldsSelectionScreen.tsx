@@ -303,6 +303,8 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
           style={[styles.footerIconBtn, { backgroundColor: theme.bgDark, borderColor: theme.border }]}
           onPress={() => navigation.navigate('Hub')}
           activeOpacity={0.7}
+          accessibilityLabel="JobReady Hub"
+          accessibilityRole="button"
         >
           <MaterialCommunityIcons name="home-outline" size={22} color={theme.textPrimary} />
         </TouchableOpacity>

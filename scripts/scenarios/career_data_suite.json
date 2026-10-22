@@ -1,67 +1,89 @@
 {
   "name": "Career Data Full Tab & Edge Case Verification Suite",
-  "description": "Navigates all 5 Career Data tabs, tests Edit Mode toggle, enters cultural naming edge cases, and captures proof screenshots.",
+  "description": "Opens Resume Builder from Hub, walks all 5 Career Data tabs, and fails unless each tab's live UI text is present.",
   "steps": [
+    {
+      "description": "Open Resume Builder from Hub if needed",
+      "action": "tap-text",
+      "text": "Resume Builder",
+      "delayMs": 1500
+    },
+    {
+      "description": "Must be on Career Data",
+      "action": "assert-ui",
+      "expect": ["Career Data"]
+    },
     {
       "description": "Switch to Personal Details tab",
       "action": "tap-tab",
       "target": "personal",
-      "delayMs": 1000
+      "delayMs": 800
     },
     {
       "description": "Capture Personal Details proof",
       "action": "capture",
-      "output": "suite_personal_tab.png"
+      "output": "suite_personal_tab.png",
+      "expect": ["Career Data", "Personal", "Names"],
+      "forbid": ["Are you sure you want to close JobReady"]
     },
     {
       "description": "Switch to Education tab",
       "action": "tap-tab",
       "target": "education",
-      "delayMs": 1000
+      "delayMs": 800
     },
     {
-      "description": "Capture Education proof (verifying dark theme #0f172a)",
+      "description": "Capture Education proof",
       "action": "capture",
-      "output": "suite_education_tab.png"
+      "output": "suite_education_tab.png",
+      "expect": ["Career Data", "Education", "High School"]
     },
     {
       "description": "Switch to Experience tab",
       "action": "tap-tab",
       "target": "experience",
-      "delayMs": 1000
+      "delayMs": 800
     },
     {
-      "description": "Capture Experience proof (verifying dark theme #0f172a)",
+      "description": "Capture Experience proof",
       "action": "capture",
-      "output": "suite_experience_tab.png"
+      "output": "suite_experience_tab.png",
+      "expect": ["Career Data", "Experience"]
     },
     {
       "description": "Switch to References tab",
       "action": "tap-tab",
       "target": "references",
-      "delayMs": 1000
+      "delayMs": 800
     },
     {
-      "description": "Capture References proof (verifying dark theme #0f172a)",
+      "description": "Capture References proof",
       "action": "capture",
-      "output": "suite_references_tab.png"
+      "output": "suite_references_tab.png",
+      "expect": ["Career Data", "References"]
     },
     {
       "description": "Switch to Skills tab",
       "action": "tap-tab",
       "target": "skills",
-      "delayMs": 1000
+      "delayMs": 800
     },
     {
-      "description": "Capture Skills proof (verifying dark theme #0f172a)",
+      "description": "Capture Skills proof",
       "action": "capture",
-      "output": "suite_skills_tab.png"
+      "output": "suite_skills_tab.png",
+      "expect": ["Career Data", "Skills", "Technical Skills"]
     },
     {
       "description": "Return to Personal Details tab",
       "action": "tap-tab",
       "target": "personal",
-      "delayMs": 1000
+      "delayMs": 800
+    },
+    {
+      "description": "Personal tab restored",
+      "action": "assert-ui",
+      "expect": ["Career Data", "Names"]
     }
   ]
 }
