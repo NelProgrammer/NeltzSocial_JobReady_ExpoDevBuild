@@ -56,7 +56,7 @@ export const translateParsedTextToResume = (text) => {
             highschool: { "Province Department": "", "Year Completed": "", "Subjects Stream": "" }, 
             tertiary: [] 
         },
-        "Skills": { Tech: "", Soft: "", Certs: "" },
+        "Skills": { Tech: [], Soft: [], NonAcadCerts: [], SystemsUsed: [] },
         "References": []
     };
 
@@ -126,12 +126,18 @@ const flushSection = (section, buffer, data) => {
     } else if (section === 'experience') {
         data.experience.push({
             id: 'exp_' + Date.now(),
-            "Job Title": "Imported Role",
-            Employer: "Extracted Experience",
+            Role: "Imported Role",
+            Organization: "Extracted Experience",
             "Start Date": "",
             "End Date": "",
-            "Current Job": false,
-            Responsibilities: fullText
+            "Key Responsibilities": fullText.split('\n').map((line) => line.replace(/^[-•*]\s*/, '').trim()).filter(Boolean).map((text, i) => ({
+                id: `resp_imp_${i}`,
+                text,
+                name: text,
+                visible: true
+            })),
+            Achievements: [],
+            "Systems Used": []
         });
     } else if (section === 'education') {
         data.education.tertiary.push({
@@ -141,7 +147,10 @@ const flushSection = (section, buffer, data) => {
             "Year Completed": ""
         });
     } else if (section === 'skills') {
-        data["Skills"].Tech = fullText.substring(0, 200);
-        data["Skills"].Soft = fullText.length > 200 ? fullText.substring(200, 400) : "";
+        const skillLines = fullText.split(/[\n,]+/).map((part) => part.trim()).filter(Boolean);
+        data["Skills"].Tech = skillLines.map((name, i) => ({ id: `tech_imp_${i}`, name, text: name, howObtained: 'Course', yearsInUse: '', visible: true }));
+        data["Skills"].Soft = [];
+        data["Skills"].NonAcadCerts = [];
+        data["Skills"].SystemsUsed = [];
     }
 };

@@ -76,7 +76,19 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
     const demographics = pd.demographics || {};
     const legal = pd.legal || {};
     const languages = pd.languages || [];
+    const professionalSummary = String(
+        resumeData["professional summary"] || resumeData.professional_summary || resumeData.summary || ''
+    );
     const [nationalities, setNationalities] = useState<any[]>([]);
+
+    const updateProfessionalSummary = (text: string) => {
+        if (!isEditMode) return;
+        const next = { ...resumeData, "professional summary": text };
+        delete next.summary;
+        delete next.professional_summary;
+        delete next.professionalSummary;
+        updateResumeData(next);
+    };
 
     React.useEffect(() => {
         try {
@@ -359,7 +371,41 @@ const PersonalDetails: React.FC<PersonalDetailsProps> = ({ isEditMode = true }) 
                 )}
             </Card>
 
-            {/* 2. Contact Section */}
+            {/* 2. Executive Professional Summary (parity with Web Career Data) */}
+            <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+                <TouchableOpacity onPress={() => toggleSection('Summary')} activeOpacity={0.8}>
+                    <Card.Title
+                        title="Executive Professional Summary"
+                        subtitle={expandedSection !== 'Summary'
+                            ? (professionalSummary.trim() ? professionalSummary.trim() : 'No summary added')
+                            : undefined}
+                        titleStyle={{ color: theme.textPrimary, fontWeight: 'bold' }}
+                        subtitleStyle={{ color: theme.textSecondary, fontSize: 11 }}
+                        subtitleNumberOfLines={2}
+                        left={(props) => <IconButton {...props} icon="text-box-outline" iconColor={theme.accent} />}
+                        right={(props) => (
+                            <IconButton {...props} icon={expandedSection === 'Summary' ? "chevron-up" : "chevron-down"} iconColor={theme.textPrimary} />
+                        )}
+                    />
+                </TouchableOpacity>
+                {expandedSection === 'Summary' && (
+                    <Card.Content>
+                        <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
+                        <TextInput
+                            label="Professional Bio / Value Proposition"
+                            value={professionalSummary}
+                            onChangeText={updateProfessionalSummary}
+                            style={styles.input}
+                            multiline
+                            numberOfLines={4}
+                            placeholder="Short professional summary for the CV..."
+                            editable={isEditMode}
+                        />
+                    </Card.Content>
+                )}
+            </Card>
+
+            {/* 3. Contact Section */}
             <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
                 <TouchableOpacity onPress={() => toggleSection('Contact')} activeOpacity={0.8}>
                     <Card.Title

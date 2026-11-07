@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Text, IconButton, Button, Portal, Dialog, TextInput } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,7 +48,7 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
     }
   ]);
 
-  const [selectedConfigId, setSelectedConfigId] = useState<string>('targeted_sales');
+  const [selectedConfigId, setSelectedConfigId] = useState<string>('main_config');
   const [createDialogVisible, setCreateDialogVisible] = useState<boolean>(false);
   const [newConfigName, setNewConfigName] = useState<string>('');
 
@@ -79,12 +79,35 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
     { label: '➕ Create Targeted Resume...', value: '__CREATE__' }
   ];
 
+  const persistCompileConfig = (config: ResumeConfiguration, visMap?: Record<string, boolean>) => {
+    const isMainConfig = config.configType === 'main';
+    const currentVis = visMap || config.visibility || {};
+    const flags = isMainConfig
+      ? Object.fromEntries(Object.entries(currentVis).filter(([k]) => k.toLowerCase().includes('mask') || k === 'idMask'))
+      : currentVis;
+    if (updateUiSettings) {
+      updateUiSettings({
+        ...(uiSettings || {}),
+        isMain: isMainConfig,
+        visibility_flags: flags,
+        visibility: flags
+      });
+    }
+  };
+
+  useEffect(() => {
+    persistCompileConfig(activeConfig);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleDropdownSelect = (item: any) => {
     if (item.value === '__CREATE__') {
       setNewConfigName('');
       setCreateDialogVisible(true);
     } else {
       setSelectedConfigId(item.value);
+      const next = configurations.find(c => c.id === item.value);
+      if (next) persistCompileConfig(next);
     }
   };
 
@@ -106,8 +129,13 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
     setCreateDialogVisible(false);
   };
 
+  const isPopiaFlag = (itemId: string) => {
+    const k = String(itemId).toLowerCase();
+    return itemId === 'idMask' || itemId === 'pd_identity_mask' || itemId.startsWith('pd_addr_mask_') || itemId.startsWith('addr_mask_') || k.includes('mask');
+  };
+
   const isVisible = (itemId: string, itemObj?: any) => {
-    if (isMain) return true; // Main Resume stays 100% visible
+    if (isMain && !isPopiaFlag(itemId)) return true; // Main Resume stays 100% visible for standard fields
     // Active configuration visibility map is authoritative
     if (activeConfig.visibility && activeConfig.visibility[itemId] !== undefined) {
       return activeConfig.visibility[itemId] !== false;
@@ -120,7 +148,7 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
 
   // Synchronized item visibility toggle
   const toggleItemVisibility = (itemId: string, category: string, index: number, itemObj?: any) => {
-    if (isMain) return; // Main Resume locked ALL-ON
+    if (isMain && !isPopiaFlag(itemId)) return; // Main Resume standard fields locked ALL-ON, POPIA toggles editable
 
     const currentVis = isVisible(itemId, itemObj);
     const newStatus = !currentVis;
@@ -130,6 +158,7 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
     const newVisMap = { ...currentVisMap, [itemId]: newStatus };
     const updatedConfigs = configurations.map(c => c.id === selectedConfigId ? { ...c, visibility: newVisMap } : c);
     setConfigurations(updatedConfigs);
+    persistCompileConfig({ ...activeConfig, visibility: newVisMap }, newVisMap);
 
     // 2. Persist visibility directly into resumeData in ResumeContext
     if (!resumeData || !updateResumeData) return;
@@ -157,6 +186,16 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
       newData.education.tertiary[index].visible = newStatus;
     } else if (category === 'experience' && newData.experience && newData.experience[index]) {
       newData.experience[index].visible = newStatus;
+    } else if (category.startsWith('edu:') && newData.education) {
+      const keys = category.slice(4).split('.');
+      let cursor: any = newData.education;
+      for (let i = 0; i < keys.length - 1; i++) cursor = cursor?.[keys[i]];
+      const arr = cursor?.[keys[keys.length - 1]];
+      if (arr?.[index] && typeof arr[index] === 'object') arr[index].visible = newStatus;
+    } else if (category.startsWith('skill:')) {
+      const bucket = category.slice(6);
+      const bag = newData.skills || newData.Skills;
+      if (bag?.[bucket]?.[index] && typeof bag[bucket][index] === 'object') bag[bucket][index].visible = newStatus;
     }
 
     // Ensure personal details collections (addresses and languages) are updated in both 'personal details' and 'personal'
@@ -285,6 +324,7 @@ const FieldsSelectionScreen: React.FC<FieldsSelectionScreenProps> = ({ navigatio
             theme={theme}
             switchColors={switchColors}
             isMain={isMain}
+            resumeData={resumeData}
           />
         )}
       </View>

@@ -1,0 +1,127 @@
+{
+  "id": "res_thabo_full",
+  "personal details": {
+    "names": { "firstName": "Thabo", "middleName": "Sipho", "Surname": "Mokoena" },
+    "identity": { "idNumber": "9202025082081" },
+    "contact": {
+      "Email": "thabo.mokoena@example.co.za",
+      "Phone": "0821234567",
+      "LinkedIn": "linkedin.com/in/thabom"
+    },
+    "demographics": {
+      "Nationality": "South African",
+      "Gender": "Male",
+      "Race": "African / Black",
+      "MaritalStatus": "Single"
+    },
+    "licensing": { "Drivers": "Code B", "PrDP": false, "OwnVehicle": true },
+    "legal": { "Criminal Record": false, "Details": "" },
+    "addresses": [
+      {
+        "id": "addr_home",
+        "addressType": "Home / Physical",
+        "streetAddress": "142 Commissioner Street",
+        "standNumber": "412",
+        "suburbOrTownship": "Marshalltown",
+        "cityOrTown": "Johannesburg",
+        "province": "Gauteng",
+        "postalCode": "2001",
+        "visible": true
+      }
+    ],
+    "languages": [
+      { "Language": "isiZulu", "proficiency": "Native / Bilingual", "visible": true },
+      { "Language": "English", "proficiency": "Fluent", "visible": true }
+    ]
+  },
+  "professional summary": "Experienced full-stack software engineer shipping high-throughput payments in South Africa.",
+  "experience": [
+    {
+      "id": "job_1",
+      "Role": "Senior Software Engineer",
+      "Organization": "FinTech ZA",
+      "Start Date": "2021-01",
+      "End Date": "Present",
+      "Key Responsibilities": [
+        { "id": "job_1_r1", "text": "Architected high-throughput payment gateways", "name": "Architected high-throughput payment gateways", "visible": true },
+        { "id": "job_1_r2", "text": "Led a team of 6 engineers", "name": "Led a team of 6 engineers", "visible": true }
+      ],
+      "Systems Used": [
+        { "id": "job_1_s1", "name": "Node.js", "text": "Node.js", "visible": true },
+        { "id": "job_1_s2", "name": "PostgreSQL", "text": "PostgreSQL", "visible": true },
+        { "id": "job_1_s3", "name": "Docker", "text": "Docker", "visible": true }
+      ],
+      "Achievements": [
+        { "id": "job_1_a1", "text": "Cut payload size 40%", "name": "Cut payload size 40%", "visible": true }
+      ],
+      "visible": true
+    },
+    {
+      "id": "job_2",
+      "Role": "Junior Developer",
+      "Organization": "Startup Hub",
+      "Start Date": "2019-06",
+      "End Date": "2020-12",
+      "Key Responsibilities": [
+        { "id": "job_2_r1", "text": "Bug fixes and unit testing", "name": "Bug fixes and unit testing", "visible": true }
+      ],
+      "Achievements": [],
+      "Systems Used": [],
+      "visible": true
+    }
+  ],
+  "education": {
+    "highschool": { "SchoolName": "Parktown Boys High", "Year Completed": "2014" },
+    "tertiary": [
+      {
+        "id": "tert_1",
+        "Institution": "University of the Witwatersrand",
+        "Qualification Name": "BSc Computer Science",
+        "NQF Level": "Level 7",
+        "Year": "2018",
+        "Completed": true,
+        "visible": true
+      }
+    ],
+    "technicalCertifications": [
+      {
+        "id": "tech_1",
+        "name": "Certified Kubernetes Administrator (CKA)",
+        "provider": "Linux Foundation / CNCF",
+        "yearObtained": "2022",
+        "visible": true
+      }
+    ],
+    "professionalCertifications": [
+      { "id": "prof_1", "name": "PMP", "issuingBody": "PMI", "date_obtained": "2019", "visible": true }
+    ],
+    "itCertificates": [
+      { "id": "it_1", "name": "CompTIA A+", "provider": "CompTIA", "yearObtained": "2023", "visible": true }
+    ]
+  },
+  "skills": {
+    "Tech": [
+      { "id": "tech_ts", "name": "TypeScript", "text": "TypeScript", "howObtained": "Course", "yearsInUse": "", "visible": true },
+      { "id": "tech_py", "name": "Python", "text": "Python", "howObtained": "Course", "yearsInUse": "", "visible": true },
+      { "id": "tech_react", "name": "React", "text": "React", "howObtained": "Course", "yearsInUse": "", "visible": true },
+      { "id": "tech_api", "name": "FastAPI", "text": "FastAPI", "howObtained": "Course", "yearsInUse": "", "visible": true }
+    ],
+    "Soft": [
+      { "id": "soft_solve", "name": "Problem Solving", "text": "Problem Solving", "visible": true },
+      { "id": "soft_lead", "name": "Leadership", "text": "Leadership", "visible": true }
+    ],
+    "NonAcadCerts": [],
+    "SystemsUsed": []
+  },
+  "hobbies": "Hiking, Chess, Photography",
+  "References": [
+    {
+      "id": "ref_1",
+      "name": "Sarah Connor",
+      "role": "Head of Engineering",
+      "company": "FinTech ZA",
+      "cellPhone": "0839876543",
+      "visible": true
+    }
+  ]
+}

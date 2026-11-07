@@ -6,6 +6,7 @@ import { ThemedTextInput as TextInput } from './common/ThemedTextInput';
 import { ResumeContext } from '../context/ResumeContext';
 import { useThemeContext } from '../context/ThemeContext';
 import { ResumeSkills, TechSkillItem, SoftSkillItem, NonAcadCertItem, SystemUsedItem } from '../types/resume';
+import { appendComposite, createNonAcadCertItem, createSoftSkillItem, createSystemUsedItem, createTechSkillItem, namedItemsFromAny } from '@jobready/core';
 
 interface SkillsProps {
     isEditMode?: boolean;
@@ -47,16 +48,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
     };
 
     const getSkillItems = (field: keyof ResumeSkills): any[] => {
-        const raw = skills[field];
-        if (Array.isArray(raw)) return raw;
-        if (typeof raw === 'string' && raw.trim().length > 0) {
-            return raw.split('\n').filter(line => line.trim().length > 0).map((line, idx) => ({
-                id: `sk_${String(field).toLowerCase()}_${idx}_${Date.now()}`,
-                name: line.replace(/^-\s*/, '').trim(),
-                visible: true
-            }));
-        }
-        return [];
+        return namedItemsFromAny(skills[field], `sk_${String(field).toLowerCase()}`);
     };
 
     const getCategoryCsvSummary = (field: keyof ResumeSkills) => {
@@ -76,29 +68,17 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
 
     const addSkillItem = (field: keyof ResumeSkills) => {
         if (!isEditMode) return;
-        const current = getSkillItems(field);
-        const newItemId = `sk_${String(field).toLowerCase()}_${Date.now()}_${current.length + 1}`;
-        let newItem: any = {
-            id: newItemId,
-            name: '',
-            visible: true
+        const factories: Record<string, () => any> = {
+            Tech: createTechSkillItem,
+            Soft: createSoftSkillItem,
+            NonAcadCerts: createNonAcadCertItem,
+            SystemsUsed: createSystemUsedItem
         };
-
-        if (field === 'Tech') {
-            newItem.howObtained = 'Course';
-            newItem.yearsInUse = '';
-        } else if (field === 'NonAcadCerts') {
-            newItem.provider = '';
-            newItem.yearObtained = '';
-        } else if (field === 'SystemsUsed') {
-            newItem.yearsInUse = '';
-        }
-
-        updateSkillItems(field, [...current, newItem]);
-
-        // Auto-expand category & new sub-item
+        const factory = factories[String(field)] || createSoftSkillItem;
+        const newItem = factory();
+        updateSkillItems(field, appendComposite(getSkillItems(field), newItem));
         setExpandedCategories(prev => ({ ...prev, [field]: true }));
-        setExpandedItems(prev => ({ ...prev, [newItemId]: true }));
+        setExpandedItems(prev => ({ ...prev, [newItem.id]: true }));
     };
 
     const updateItemProperty = (field: keyof ResumeSkills, index: number, prop: string, value: any) => {
@@ -153,7 +133,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                                 const subTitle = [item.howObtained, item.yearsInUse ? `${item.yearsInUse} yrs` : ''].filter(Boolean).join(' · ');
 
                                 return (
-                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <View key={`${itemId}-${index}`} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
                                             <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {item.name ? `⚡ ${item.name}` : `Technical Skill #${index + 1}`}
@@ -270,7 +250,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                                 const isItemExpanded = !!expandedItems[itemId];
 
                                 return (
-                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <View key={`${itemId}-${index}`} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
                                             <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {item.name ? `🧠 ${item.name}` : `Soft Skill #${index + 1}`}
@@ -359,7 +339,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                                 const subTitle = [item.provider, item.yearObtained].filter(Boolean).join(' · ');
 
                                 return (
-                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <View key={`${itemId}-${index}`} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
                                             <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {item.name ? `📜 ${item.name}` : `Certification #${index + 1}`}
@@ -466,7 +446,7 @@ const Skills: React.FC<SkillsProps> = ({ isEditMode = true }) => {
                                 const subTitle = item.yearsInUse ? `${item.yearsInUse} yrs` : '';
 
                                 return (
-                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <View key={`${itemId}-${index}`} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
                                             <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {item.name ? `🛠️ ${item.name}` : `System / Software #${index + 1}`}

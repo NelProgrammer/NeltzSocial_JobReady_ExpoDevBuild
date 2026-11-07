@@ -68,6 +68,38 @@ describe('Experience Sub-List Data Normalization Logic Tests', () => {
         expect(list[1].text).toBe('Code reviews and mentoring');
     });
 
+    test('shows plain string array items in the editor list so preview cannot hide them', () => {
+        const getSubList = (exp: WorkExperience, field: SubField, prefix: string): SubExperienceItem[] => {
+            const raw = (exp as any)[field];
+            if (Array.isArray(raw)) {
+                return raw.flatMap((item: any, idx: number) => {
+                    if (typeof item === 'string') {
+                        const text = item.replace(/^[-•*]\s*/, '').trim();
+                        return text ? [{ id: `${prefix}_${idx}`, text, name: text, visible: true }] : [];
+                    }
+                    if (!item || typeof item !== 'object') return [];
+                    const text = String(item.text || item.name || '').trim();
+                    return [{ ...item, id: item.id || `${prefix}_${idx}`, text, name: text }];
+                });
+            }
+            return [];
+        };
+
+        const job: any = {
+            id: 'exp_103',
+            Organization: 'FinTech ZA',
+            Role: 'Engineer',
+            "Start Date": '2021',
+            "End Date": 'Present',
+            "Key Responsibilities": [{ id: 'resp_1', text: 'Architected gateways', name: 'Architected gateways' }],
+            Achievements: [{ id: 'ach_1', text: 'Cut payload size 40%', name: 'Cut payload size 40%' }]
+        };
+
+        const achievements = getSubList(job, 'Achievements', 'ach');
+        expect(achievements.length).toBe(1);
+        expect(achievements[0].text).toBe('Cut payload size 40%');
+    });
+
     test('generates CSV summary for experience sub-items', () => {
         const getCsvSummary = (items: SubExperienceItem[]) => {
             const texts = items.map(i => (i.text || i.name || '').trim()).filter(Boolean);

@@ -59,7 +59,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
     };
 
     const doc: CompiledResumeDocument = ResumeCompiler.compile(data, compilerConfig);
-    const { header, summary, demographics = [], workExperience = [], education = {}, skills = { categories: [], displayFormat: 'bullet' }, languages = [], references = [], density } = doc;
+    const { header, summary, demographics = [], workExperience = [], education = {}, skills = { categories: [], displayFormat: 'bullet' }, languages = [], references = [], extraSections = [], density } = doc;
 
     const fullName = header.fullName || 'Job Applicant';
     const contactElements = header.contactItems.map(c => c.displayString);
@@ -77,6 +77,21 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
     const bodyLineHeight = isDense ? 15 : 17;
 
     const isContactBullet = uiSettings?.ContactFormat === 'bullet';
+
+    const accessibilitySummary = [
+        fullName,
+        ...contactElements,
+        addressText,
+        summary,
+        ...workExperience.flatMap((job) => [job.organization, job.role, ...(job.responsibilities || [])]),
+        ...(education.tertiary || []).flatMap((edu) => [edu.institution, edu.qualification]),
+        education.highschool?.schoolName,
+        ...(education.technicalCerts || []).map((cert) => cert.name),
+        ...(education.professionalCerts || []).map((cert) => cert.name),
+        ...(education.collections || []).flatMap((col) => (col.items || []).map((item) => item.name)),
+        ...(skills.categories || []).flatMap((cat) => cat.items || []),
+        ...(extraSections || []).flatMap((sec) => [sec.title, ...(sec.lines || [])]),
+    ].filter(Boolean).join(', ');
 
     const renderHeader = () => {
         if (layout === 'modern') {
@@ -203,7 +218,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
         const tertiaryEdu = education.tertiary || [];
 
         return (
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView accessible accessibilityLabel={accessibilitySummary} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={[styles.glowWrapper, glow && { borderColor: glowColor, borderWidth: 4, elevation: 15 }]}>
                     <Surface style={[styles.page, { width: pageWidth, minHeight: pageHeight, padding: pagePadding }]} elevation={4}>
                         <Text style={styles.plainTextHeader}>{fullName}</Text>
@@ -222,7 +237,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                             <View style={[styles.section, { marginBottom: sectionMargin }]}>
                                 {renderSectionHeader('Professional Experience')}
                                 {workExperience.map((job, idx) => (
-                                    <View key={job.id || idx} style={styles.entry}>
+                                    <View key={`job-${idx}-${job.id || 'item'}`} style={styles.entry}>
                                         <Text style={styles.plainTextBold}>{job.organization} | {job.role}</Text>
                                         {job.period ? <Text style={styles.plainTextSub}>{job.period}</Text> : null}
                                         {job.responsibilities && job.responsibilities.length > 0 ? (
@@ -233,15 +248,22 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                             </View>
                         )}
 
-                        {tertiaryEdu.length > 0 && (
+                        {(tertiaryEdu.length > 0 || education.highschool) && (
                             <View style={[styles.section, { marginBottom: sectionMargin }]}>
                                 {renderSectionHeader('Education')}
                                 {tertiaryEdu.map((edu, idx) => (
-                                    <View key={edu.id || idx} style={styles.entry}>
-                                        <Text style={styles.plainTextBold}>{edu.institution} | {edu.qualification}</Text>
+                                    <View key={`edu-${idx}-${edu.id || 'item'}`} style={styles.entry}>
+                                        <Text style={styles.plainTextBold}>{[edu.institution, edu.qualification].filter(Boolean).join(' | ')}</Text>
                                         {edu.year ? <Text style={styles.plainTextSub}>{edu.year}</Text> : null}
+                                        {edu.keyModules?.length ? <Text style={styles.plainTextSub}>{edu.keyModules.map((mod) => `• ${mod}`).join('\n')}</Text> : null}
                                     </View>
                                 ))}
+                                {education.highschool?.schoolName ? (
+                                    <View style={styles.entry}>
+                                        <Text style={styles.plainTextBold}>{education.highschool.schoolName}</Text>
+                                        {education.highschool.yearCompleted ? <Text style={styles.plainTextSub}>{education.highschool.yearCompleted}</Text> : null}
+                                    </View>
+                                ) : null}
                             </View>
                         )}
                     </Surface>
@@ -253,7 +275,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
     const isDemoComma = uiSettings?.DemoFormat === 'comma';
 
     return (
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView accessible accessibilityLabel={accessibilitySummary} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             <View style={[styles.glowWrapper, glow && { borderColor: glowColor, borderWidth: 4, elevation: 15 }]}>
                 <Surface style={[styles.page, { width: pageWidth, minHeight: pageHeight, padding: pagePadding }]} elevation={4}>
                 {renderHeader()}
@@ -303,9 +325,9 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Work Experience')}
                         {workExperience.map((job, idx) => (
-                            <View key={job.id || idx} style={styles.entry}>
+                            <View key={`job-${idx}-${job.id || 'item'}`} style={styles.entry}>
                                 <View style={styles.entryHeader}>
-                                    <Text style={styles.entryTitle} numberOfLines={1}>{job.organization || 'Organization'}</Text>
+                                    <Text style={styles.entryTitle} numberOfLines={1}>{job.organization}</Text>
                                     {job.period ? <Text style={styles.entryDate}>{job.period}</Text> : null}
                                 </View>
                                 {job.role ? <Text style={styles.entrySubTitle}>{job.role}</Text> : null}
@@ -333,20 +355,50 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                     </View>
                 )}
 
-                {(education.tertiary?.length || education.artisanal?.length || education.technicalCerts?.length || education.regulatoryCerts?.length || education.highschool) ? (
+                {(education.tertiary?.length || education.highschool) ? (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('Education')}
-                        {education.tertiary?.map((edu, idx) => (
-                            <View key={edu.id || idx} style={styles.entry}>
+                        {education.tertiary?.map((edu, idx) => {
+                            const institutionFirst = (uiSettings?.EduOrder || 'institutionFirst') !== 'qualificationFirst';
+                            const title = institutionFirst
+                                ? (edu.institution || edu.qualification)
+                                : (edu.qualification || edu.institution);
+                            const subtitleParts = institutionFirst
+                                ? [edu.qualification, edu.completed === false ? '(In Progress)' : '', edu.nqfLevel ? `NQF ${edu.nqfLevel}` : '']
+                                : [edu.institution, edu.completed === false ? '(In Progress)' : '', edu.nqfLevel ? `NQF ${edu.nqfLevel}` : ''];
+                            if (!title) return null;
+                            return (
+                            <View key={`edu-${idx}-${edu.id || 'item'}`} style={styles.entry}>
                                 <View style={styles.entryHeader}>
-                                    <Text style={styles.entryTitle} numberOfLines={1}>{edu.institution || 'Institution'}</Text>
+                                    <Text style={styles.entryTitle} numberOfLines={2}>{title}</Text>
                                     {edu.year ? <Text style={styles.entryDate}>{edu.year}</Text> : null}
                                 </View>
-                                <Text style={styles.entrySubTitle}>{[edu.qualification, edu.completed === false ? '(In Progress)' : '', edu.nqfLevel ? `NQF ${edu.nqfLevel}` : ''].filter(Boolean).join(' · ')}</Text>
+                                {subtitleParts.filter(Boolean).length > 0 ? (
+                                    <Text style={styles.entrySubTitle}>{subtitleParts.filter(Boolean).join(' · ')}</Text>
+                                ) : null}
+                                {edu.keyModules?.length ? (
+                                    <Text style={styles.plainTextSub}>{edu.keyModules.map((mod) => `• ${mod}`).join('\n')}</Text>
+                                ) : null}
                             </View>
-                        ))}
+                            );
+                        })}
+                        {education.highschool && (education.highschool.schoolName || education.highschool.department || education.highschool.yearCompleted) ? (
+                            <View style={styles.entry}>
+                                <View style={styles.entryHeader}>
+                                    <Text style={styles.entryTitle} numberOfLines={2}>{education.highschool.schoolName || education.highschool.department}</Text>
+                                    {education.highschool.yearCompleted ? <Text style={styles.entryDate}>{education.highschool.yearCompleted}</Text> : null}
+                                </View>
+                                <Text style={styles.entrySubTitle}>{[education.highschool.grade, education.highschool.stream ? `Stream: ${education.highschool.stream}` : ''].filter(Boolean).join(' · ') || 'High School'}</Text>
+                            </View>
+                        ) : null}
+                    </View>
+                ) : null}
+
+                {(education.artisanal?.length || education.technicalCerts?.length || education.regulatoryCerts?.length || education.professionalCerts?.length || education.collections?.length) ? (
+                    <View style={[styles.section, { marginBottom: sectionMargin }]}>
+                        {renderSectionHeader('Certifications')}
                         {education.artisanal?.map((cert, idx) => (
-                            <View key={cert.id || `art_${idx}`} style={styles.entry}>
+                            <View key={`art-${idx}-${cert.id || 'item'}`} style={styles.entry}>
                                 <View style={styles.entryHeader}>
                                     <Text style={styles.entryTitle} numberOfLines={1}>🔧 {cert.trade}</Text>
                                     {cert.dateTested ? <Text style={styles.entryDate}>{cert.dateTested}</Text> : null}
@@ -355,7 +407,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                             </View>
                         ))}
                         {education.technicalCerts?.map((cert, idx) => (
-                            <View key={cert.id || `tc_${idx}`} style={styles.entry}>
+                            <View key={`tc-${idx}-${cert.id || 'item'}`} style={styles.entry}>
                                 <View style={styles.entryHeader}>
                                     <Text style={styles.entryTitle} numberOfLines={1}>💻 {cert.name}</Text>
                                     {cert.dateIssued ? <Text style={styles.entryDate}>{cert.dateIssued}</Text> : null}
@@ -364,7 +416,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                             </View>
                         ))}
                         {education.regulatoryCerts?.map((cert, idx) => (
-                            <View key={cert.id || `rc_${idx}`} style={styles.entry}>
+                            <View key={`rc-${idx}-${cert.id || 'item'}`} style={styles.entry}>
                                 <View style={styles.entryHeader}>
                                     <Text style={styles.entryTitle} numberOfLines={1}>⚖️ {cert.name}</Text>
                                     {cert.dateIssued ? <Text style={styles.entryDate}>{cert.dateIssued}</Text> : null}
@@ -372,21 +424,39 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                                 {cert.issuingBody ? <Text style={styles.entrySubTitle}>{cert.issuingBody}</Text> : null}
                             </View>
                         ))}
-                        {education.highschool ? (
-                            <View style={styles.entry}>
+                        {education.professionalCerts?.map((cert, idx) => (
+                            <View key={`pc-${idx}-${cert.id || 'item'}`} style={styles.entry}>
                                 <View style={styles.entryHeader}>
-                                    <Text style={styles.entryTitle} numberOfLines={1}>{education.highschool.schoolName || education.highschool.department || 'High School'}</Text>
-                                    {education.highschool.yearCompleted ? <Text style={styles.entryDate}>{education.highschool.yearCompleted}</Text> : null}
+                                    <Text style={styles.entryTitle} numberOfLines={1}>📜 {cert.name}</Text>
+                                    {cert.dateIssued ? <Text style={styles.entryDate}>{cert.dateIssued}</Text> : null}
                                 </View>
-                                <Text style={styles.entrySubTitle}>{[education.highschool.grade || 'Completed', education.highschool.stream ? `Stream: ${education.highschool.stream}` : ''].filter(Boolean).join(' · ')}</Text>
+                                {cert.issuingBody ? <Text style={styles.entrySubTitle}>{cert.issuingBody}</Text> : null}
                             </View>
-                        ) : null}
+                        ))}
+                        {education.collections?.map((col, cidx) => (
+                            <View key={`edu-col-${col.key || 'section'}-${cidx}`} style={styles.entry}>
+                                <Text style={[styles.entryTitle, { marginBottom: 4 }]}>{col.title}</Text>
+                                {col.formatApplied === 'comma' ? (
+                                    <Text style={styles.entrySubTitle}>
+                                        {(col.items || []).map(cert => [cert.name, cert.issuingBody, cert.dateIssued].filter(Boolean).join(' · ')).join(', ')}
+                                    </Text>
+                                ) : (col.items || []).map((cert, idx) => (
+                                    <View key={`${col.key || 'col'}-${cert.id || idx}-${idx}`} style={{ marginBottom: 6 }}>
+                                        <View style={styles.entryHeader}>
+                                            <Text style={styles.entrySubTitle}>{cert.name}</Text>
+                                            {cert.dateIssued ? <Text style={styles.entryDate}>{cert.dateIssued}</Text> : null}
+                                        </View>
+                                        {cert.issuingBody ? <Text style={styles.entryDesc}>{cert.issuingBody}</Text> : null}
+                                    </View>
+                                ))}
+                            </View>
+                        ))}
                     </View>
                 ) : null}
 
-                {skills.categories && skills.categories.length > 0 && (
+                {layout !== 'functional' && skills.categories && skills.categories.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
-                        {renderSectionHeader('Skills & Certifications')}
+                        {renderSectionHeader('Skills')}
                         {skills.categories.map((cat, idx) => (
                             <View key={idx} style={{ marginBottom: 6 }}>
                                 <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
@@ -412,6 +482,21 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                     </View>
                 )}
 
+                {extraSections.length > 0 && extraSections.map((sec, sidx) => (
+                    <View key={`extra-${sec.key || 'section'}-${sidx}`} style={[styles.section, { marginBottom: sectionMargin }]}>
+                        {renderSectionHeader(sec.title)}
+                        {sec.formatApplied === 'comma' || sec.formatApplied === 'dot' || sec.inferredKind === 'text' ? (
+                            <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
+                                {(sec.lines || []).join(sec.formatApplied === 'dot' ? ' · ' : ', ')}
+                            </Text>
+                        ) : (
+                            <Text style={[styles.bodyText, { fontSize: bodyFontSize, lineHeight: bodyLineHeight }]}>
+                                {(sec.lines || []).map(line => `• ${line}`).join('\n')}
+                            </Text>
+                        )}
+                    </View>
+                ))}
+
                 {references.length > 0 && (
                     <View style={[styles.section, { marginBottom: sectionMargin }]}>
                         {renderSectionHeader('References')}
@@ -420,7 +505,7 @@ const NativeVignette_Preview: React.FC<NativeVignetteProps> = ({ data, layout = 
                                 const roleCompany = [ref.role, ref.company].filter(Boolean).join(' at ');
                                 const contact = [ref.cellPhone || ref.workPhone, ref.email].filter(Boolean).join(' · ');
                                 return (
-                                    <View key={ref.id || idx} style={styles.refItem}>
+                                    <View key={`ref-${idx}-${ref.id || 'item'}`} style={styles.refItem}>
                                         <Text style={styles.refName}>{ref.name}</Text>
                                         {roleCompany ? <Text style={styles.refDetail}>{roleCompany}</Text> : null}
                                         {contact ? <Text style={styles.refDetail}>{contact}</Text> : null}

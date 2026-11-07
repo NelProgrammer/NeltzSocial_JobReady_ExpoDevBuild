@@ -1,0 +1,62 @@
+{
+  "id": "res_lerato_sales",
+  "personal details": {
+    "names": { "firstName": "Lerato", "middleName": "Palesa", "Surname": "Dlamini" },
+    "identity": { "idNumber": "9505050082088" },
+    "contact": { "Email": "lerato.dlamini@example.co.za", "Phone": "0835550199" },
+    "demographics": { "Nationality": "South African", "Gender": "Female", "MaritalStatus": "Single" },
+    "languages": [{ "Language": "Sesotho", "proficiency": "Native / Bilingual", "visible": true }],
+    "addresses": [
+      {
+        "id": "addr_lerato",
+        "addressType": "Home / Physical",
+        "streetAddress": "18 Long Street",
+        "cityOrTown": "Cape Town",
+        "province": "Western Cape",
+        "postalCode": "8001",
+        "visible": true
+      }
+    ]
+  },
+  "professional summary": "B2B sales lead focused on mining-sector accounts across SADC.",
+  "experience": [
+    {
+      "id": "job_sales_1",
+      "Role": "Key Account Manager",
+      "Organization": "OreLink SA",
+      "Start Date": "2020-02",
+      "End Date": "Present",
+      "Key Responsibilities": [
+        { "id": "sales_r1", "text": "Grew mining accounts 32%", "name": "Grew mining accounts 32%", "visible": true },
+        { "id": "sales_r2", "text": "Closed multi-year supply contracts", "name": "Closed multi-year supply contracts", "visible": true }
+      ],
+      "Achievements": [],
+      "Systems Used": [],
+      "visible": true
+    }
+  ],
+  "education": {
+    "tertiary": [
+      {
+        "id": "tert_sales",
+        "Institution": "UNISA",
+        "Qualification Name": "BCom Marketing",
+        "Year": "2019",
+        "Completed": true,
+        "visible": true
+      }
+    ]
+  },
+  "skills": {
+    "Soft": [
+      { "id": "soft_neg", "name": "Negotiation", "text": "Negotiation", "visible": true },
+      { "id": "soft_pres", "name": "Presentation", "text": "Presentation", "visible": true }
+    ],
+    "Tech": [
+      { "id": "tech_sf", "name": "Salesforce", "text": "Salesforce", "howObtained": "On-the-Job", "yearsInUse": "", "visible": true }
+    ],
+    "NonAcadCerts": [],
+    "SystemsUsed": []
+  },
+  "hobbies": "Trail running, Choir"
+}

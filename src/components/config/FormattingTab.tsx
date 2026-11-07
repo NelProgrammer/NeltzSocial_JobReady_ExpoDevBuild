@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Card, Switch, IconButton, Divider } from 'react-native-paper';
 import { ThemedDropdown as Dropdown } from '../common/ThemedDropdown';
+import { ResumeCompiler, isMetaKey } from '@jobready/core';
 
 interface FormattingTabProps {
   uiSettings: any;
@@ -9,6 +10,7 @@ interface FormattingTabProps {
   theme: any;
   switchColors: { true: string; false: string };
   isMain: boolean;
+  resumeData?: any;
 }
 
 export const FormattingTab: React.FC<FormattingTabProps> = ({
@@ -17,10 +19,11 @@ export const FormattingTab: React.FC<FormattingTabProps> = ({
   theme,
   switchColors,
   isMain,
+  resumeData,
 }) => {
   // Accordion states
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    names: false,
+    names: true,
     contact: false,
     address: false,
     identity: false,
@@ -41,6 +44,20 @@ export const FormattingTab: React.FC<FormattingTabProps> = ({
       updateUiSettings({ ...uiSettings, [key]: value });
     }
   };
+
+  const inferredFlags = useMemo(() => {
+    if (!resumeData) return [];
+    try {
+      const doc = ResumeCompiler.compile(resumeData, {
+        config_type: 'main',
+        visibility_flags: {},
+        format_switches: uiSettings || {}
+      });
+      return (doc.newSectionFlags || []).filter((flag) => !isMetaKey(flag.key));
+    } catch {
+      return [];
+    }
+  }, [resumeData, uiSettings]);
 
   return (
     <ScrollView contentContainerStyle={{ padding: 10, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
@@ -702,6 +719,56 @@ export const FormattingTab: React.FC<FormattingTabProps> = ({
           </Card.Content>
         )}
       </Card>
+
+      {inferredFlags.length > 0 && (
+        <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+          <Card.Title
+            title="➕ Discovered Sections"
+            subtitle="Inferred at compile time from similar structure"
+            titleStyle={[styles.cardTitle, { color: theme.textPrimary }]}
+            subtitleStyle={[styles.cardSubtitle, { color: theme.textSecondary }]}
+            left={(props) => <IconButton {...props} icon="shape-outline" iconColor={theme.accent} />}
+            right={(props) => (
+              <IconButton
+                {...props}
+                icon={expandedSections.discovered ? "chevron-up" : "chevron-down"}
+                iconColor={theme.textSecondary}
+                onPress={() => toggleSection('discovered')}
+              />
+            )}
+          />
+          {expandedSections.discovered && (
+            <Card.Content>
+              <Divider style={{ marginBottom: 10, backgroundColor: theme.border }} />
+              {inferredFlags.map((flag, idx) => {
+                const leafKey = String(flag.key || 'section').split('.').pop()?.split('#')[0] || 'section';
+                const switchKey = `${leafKey}Format`;
+                const options = flag.formatOptions || ['list', 'comma'];
+                const current = uiSettings?.[switchKey] || options[0];
+                return (
+                  <View key={`flag-${flag.key}-${idx}`} style={styles.itemRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.itemTitle, { color: theme.textPrimary }]}>{flag.title}</Text>
+                      <Text style={[styles.itemSub, { color: theme.textSecondary }]}>Matched {flag.matchedStandard} · {current}</Text>
+                    </View>
+                    {options.includes('comma') && options.includes('list') ? (
+                      <View style={styles.slideControl}>
+                        <Text style={[styles.toggleText, { color: current !== 'comma' ? theme.accent : theme.textSecondary }]}>List</Text>
+                        <Switch
+                          value={current === 'comma'}
+                          onValueChange={(val) => updateSetting(switchKey, val ? 'comma' : 'list')}
+                          trackColor={switchColors}
+                        />
+                        <Text style={[styles.toggleText, { color: current === 'comma' ? theme.accent : theme.textSecondary }]}>Comma</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </Card.Content>
+          )}
+        </Card>
+      )}
     </ScrollView>
   );
 };

@@ -7,6 +7,7 @@ import { ThemedDropdown as Dropdown } from './common/ThemedDropdown';
 import { ResumeContext } from '../context/ResumeContext';
 import { useThemeContext } from '../context/ThemeContext';
 import { ProfessionalCertItem, TechCertItem, RegulatoryCertItem, TertiaryEducationItem, ArtisanalCertItem } from '../types/resume';
+import { appendComposite, createKeyModuleItem, namedItemsFromAny, removeComposite } from '@jobready/core';
 
 interface EducationProps {
     isEditMode?: boolean;
@@ -182,7 +183,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
         const itemId = `edu_tertiary_${Date.now()}_${tertiary.length + 1}`;
         const newQual: TertiaryEducationItem = {
             id: itemId,
-            "Institution": "", "Qualification Name": "", "NQF Level": "", "Year": "", Completed: true, visible: true
+            "Institution": "", "Qualification Name": "", "NQF Level": "", "Year": "", Completed: true, "Key Modules": [], visible: true
         };
         updateResumeData({ ...resumeData, education: { ...education, tertiary: [...tertiary, newQual] } });
         setExpandedCategories(prev => ({ ...prev, tertiary: true }));
@@ -213,6 +214,28 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
             newList[index] = { ...newList[index], [key]: value };
         }
         updateResumeData({ ...resumeData, education: { ...education, tertiary: newList } });
+    };
+
+    const getKeyModules = (qual: TertiaryEducationItem, index: number) => {
+        return namedItemsFromAny(qual["Key Modules"], `mod_${qual.id || index}`);
+    };
+
+    const addKeyModule = (index: number) => {
+        if (!isEditMode) return;
+        const modules = getKeyModules(tertiary[index], index);
+        updateTertiary(index, 'Key Modules', appendComposite(modules, createKeyModuleItem()));
+    };
+
+    const updateKeyModule = (index: number, modIdx: number, text: string) => {
+        if (!isEditMode) return;
+        const modules = [...getKeyModules(tertiary[index], index)];
+        modules[modIdx] = { ...modules[modIdx], name: text, text };
+        updateTertiary(index, 'Key Modules', modules);
+    };
+
+    const removeKeyModule = (index: number, modIdx: number) => {
+        if (!isEditMode) return;
+        updateTertiary(index, 'Key Modules', removeComposite(getKeyModules(tertiary[index], index), modIdx));
     };
 
     // --- Artisanal / Trade Test / Red Seal ---
@@ -508,7 +531,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                 const isItemExpanded = !!expandedItems[itemId];
 
                                 return (
-                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <View key={`${itemId}-${index}`} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
                                             <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {qual["Qualification Name"] ? `🎓 ${qual["Qualification Name"]}` : `Qualification #${index + 1}`}
@@ -553,17 +576,47 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                                         disabled={!isEditMode}
                                                     />
                                                 </View>
-                                                <TextInput
-                                                    label="Key Modules / Major Subjects"
-                                                    value={Array.isArray(qual["Key Modules"]) ? qual["Key Modules"].join(', ') : (qual["Key Modules"] || '')}
-                                                    onChangeText={(text) => {
-                                                        const modulesArr = text.split(',').map(m => m.trim()).filter(Boolean);
-                                                        updateTertiary(index, 'Key Modules', modulesArr);
-                                                    }}
-                                                    placeholder="e.g. Financial Accounting 3, Corporate Governance"
-                                                    style={styles.input}
-                                                    editable={isEditMode}
-                                                />
+                                                {(() => {
+                                                    const modules = getKeyModules(qual, index);
+                                                    return (
+                                                        <View>
+                                                            <Text style={{ color: theme.textPrimary, fontWeight: 'bold', marginBottom: 6 }}>
+                                                                Key Modules / Major Subjects ({modules.length})
+                                                            </Text>
+                                                            {modules.length === 0 ? (
+                                                                <Text style={{ color: theme.textSecondary, fontSize: 12, fontStyle: 'italic', marginBottom: 8 }}>
+                                                                    No key modules added yet.
+                                                                </Text>
+                                                            ) : modules.map((mod, modIdx) => (
+                                                                <View key={mod.id || modIdx} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                                    <TextInput
+                                                                        label={`Module #${modIdx + 1}`}
+                                                                        value={mod.name || mod.text || ''}
+                                                                        onChangeText={(text) => updateKeyModule(index, modIdx, text)}
+                                                                        placeholder="e.g. Financial Accounting 3"
+                                                                        style={[styles.input, { flex: 1 }]}
+                                                                        editable={isEditMode}
+                                                                    />
+                                                                    {isEditMode && (
+                                                                        <IconButton icon="delete" iconColor="#ef4444" size={20} onPress={() => removeKeyModule(index, modIdx)} />
+                                                                    )}
+                                                                </View>
+                                                            ))}
+                                                            {isEditMode && (
+                                                                <Button
+                                                                    mode="outlined"
+                                                                    icon="plus"
+                                                                    compact
+                                                                    textColor={theme.accent}
+                                                                    onPress={() => addKeyModule(index)}
+                                                                    style={{ marginTop: 6, alignSelf: 'flex-start', borderColor: theme.accent }}
+                                                                >
+                                                                    Add Key Module
+                                                                </Button>
+                                                            )}
+                                                        </View>
+                                                    );
+                                                })()}
                                             </View>
                                         )}
                                     </View>
@@ -606,7 +659,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                 const isItemExpanded = !!expandedItems[itemId];
 
                                 return (
-                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <View key={`${itemId}-${index}`} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
                                             <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {cert.trade ? `🔧 ${cert.trade}` : (cert.name ? `🔧 ${cert.name}` : `Trade Qualification #${index + 1}`)}
@@ -717,7 +770,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                 const isItemExpanded = !!expandedItems[itemId];
 
                                 return (
-                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <View key={`${itemId}-${index}`} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
                                             <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {cert.name ? `📜 ${cert.name}` : `Certification #${index + 1}`}
@@ -814,7 +867,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                 const isItemExpanded = !!expandedItems[itemId];
 
                                 return (
-                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <View key={`${itemId}-${index}`} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
                                             <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {cert.name ? `💻 ${cert.name}` : `Technical Cert #${index + 1}`}
@@ -894,7 +947,7 @@ const Education: React.FC<EducationProps> = ({ isEditMode = true }) => {
                                 const isItemExpanded = !!expandedItems[itemId];
 
                                 return (
-                                    <View key={itemId} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                                    <View key={`${itemId}-${index}`} style={[styles.subItemBox, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
                                         <View style={styles.subItemHeaderRow}>
                                             <Text style={[styles.subItemTitle, { color: theme.textPrimary }]}>
                                                 {cert.name ? `⚖️ ${cert.name}` : `Regulatory Cert #${index + 1}`}

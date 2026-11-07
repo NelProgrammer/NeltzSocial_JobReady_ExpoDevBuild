@@ -2,6 +2,54 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Card, Switch, IconButton, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { isMetaKey } from '@jobready/core';
+
+const KNOWN_TOP_KEYS = new Set([
+  'id', 'visibility', 'personal details', 'personal', 'professional summary', 'summary',
+  'professional_summary', 'professionalSummary',
+  'experience', 'education', 'skills', 'Skills', 'References', 'references',
+  'updatedAt', 'updatedAtMs', 'updated_at', 'updated_at_ms',
+  'lastModified', 'lastModifiedAt', 'last_modified', 'last_modified_at',
+  'createdAt', 'createdAtMs'
+]);
+
+const EDU_TITLES: Record<string, string> = {
+  tertiary: 'Tertiary Degrees / Diplomas',
+  artisanalCertifications: 'Artisanal & Trade Test (Red Seal)',
+  professionalCertifications: 'Professional Certifications',
+  technicalCertifications: 'Technical Certifications',
+  regulatoryCertifications: 'Regulatory Certifications',
+};
+
+function humanizeKey(key: string): string {
+  if (EDU_TITLES[key]) return EDU_TITLES[key];
+  return String(key)
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+function flattenEduLists(node: any, path: string[] = []): Array<{ key: string; path: string[]; items: any[] }> {
+  if (!node || typeof node !== 'object') return [];
+  if (Array.isArray(node)) {
+    return path.length ? [{ key: path[path.length - 1], path, items: node }] : [];
+  }
+  const out: Array<{ key: string; path: string[]; items: any[] }> = [];
+  for (const [childKey, childVal] of Object.entries(node)) {
+    if (!childKey || childKey.startsWith('__') || childKey === 'highschool') continue;
+    if (Array.isArray(childVal)) out.push({ key: childKey, path: [...path, childKey], items: childVal });
+    else if (childVal && typeof childVal === 'object') out.push(...flattenEduLists(childVal, [...path, childKey]));
+  }
+  return out;
+}
+
+function itemLabel(item: any, fallback: string): string {
+  if (item == null) return fallback;
+  if (typeof item === 'string') return item;
+  return item.name || item['Qualification Name'] || item.trade || item.Role || item.role || fallback;
+}
 
 interface VisibilityTabProps {
   resumeData: any;
@@ -55,17 +103,16 @@ export const VisibilityTab: React.FC<VisibilityTabProps> = ({
   const experiences = resumeData?.experience || [];
   const education = resumeData?.education || {};
   const highschool = education.highschool || {};
-  const tertiary = education.tertiary || [];
-  const artisanalCerts = education.artisanalCertifications || [];
-  const profCerts = education.professionalCertifications || [];
-  const techCerts = education.technicalCertifications || [];
-  const regCerts = education.regulatoryCertifications || [];
+  const eduLists = flattenEduLists(education);
   const skills = resumeData?.skills || resumeData?.Skills || {};
-  const techSkills = skills.Tech || [];
-  const softSkills = skills.Soft || [];
-  const nonAcadCerts = skills.NonAcadCerts || [];
-  const systemsUsed = skills.SystemsUsed || [];
-  const references = resumeData?.References || [];
+  const skillBuckets = Object.entries(skills).filter(([key]) => key && !key.startsWith('__'));
+  const references = resumeData?.References || resumeData?.references || [];
+  const extraSections = Object.entries(resumeData || {}).filter(([key]) => (
+    !KNOWN_TOP_KEYS.has(key) && !isMetaKey(key)
+  ));
+  const professionalSummary = String(
+    resumeData?.["professional summary"] || resumeData?.professional_summary || resumeData?.summary || ''
+  ).trim();
 
   return (
     <ScrollView contentContainerStyle={{ padding: 10, paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
@@ -190,7 +237,7 @@ export const VisibilityTab: React.FC<VisibilityTabProps> = ({
                             <Switch
                               value={isVisible(`pd_addr_mask_${index}`)}
                               onValueChange={() => toggleItemVisibility(`pd_addr_mask_${index}`, 'pd', index)}
-                              disabled={isMain}
+                              disabled={false}
                               trackColor={switchColors}
                             />
                           </View>
@@ -211,7 +258,7 @@ export const VisibilityTab: React.FC<VisibilityTabProps> = ({
               </View>
               <View style={styles.itemRow}>
                 <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>Mask ID Number (e.g. 950101 **** 088)</Text>
-                <Switch value={isVisible('pd_identity_mask')} onValueChange={() => toggleItemVisibility('pd_identity_mask', 'pd', 0)} disabled={isMain} trackColor={switchColors} />
+                <Switch value={isVisible('pd_identity_mask')} onValueChange={() => toggleItemVisibility('pd_identity_mask', 'pd', 0)} disabled={false} trackColor={switchColors} />
               </View>
               <View style={styles.itemRow}>
                 <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>Date of Birth</Text>
@@ -278,7 +325,8 @@ export const VisibilityTab: React.FC<VisibilityTabProps> = ({
       <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
         <Card.Title
           title="📝 Professional Summary"
-          subtitle={resumeData?.["professional summary"] ? 'Executive profile summary included' : 'No summary added'}
+          subtitle={professionalSummary ? professionalSummary : 'No summary added'}
+          subtitleNumberOfLines={2}
           titleStyle={[styles.cardTitle, { color: theme.textPrimary }]}
           subtitleStyle={[styles.cardSubtitle, { color: theme.textSecondary }]}
           left={(props) => <IconButton {...props} icon="text-box-outline" iconColor={theme.accent} />}
@@ -306,7 +354,7 @@ export const VisibilityTab: React.FC<VisibilityTabProps> = ({
       <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
         <Card.Title
           title="🎓 Education & Qualifications"
-          subtitle={`Matric · ${tertiary.length} Tertiary · ${artisanalCerts.length} Trade · ${profCerts.length + techCerts.length + regCerts.length} Certs`}
+          subtitle={`Matric · ${eduLists.length} qualification list(s)`}
           titleStyle={[styles.cardTitle, { color: theme.textPrimary }]}
           subtitleStyle={[styles.cardSubtitle, { color: theme.textSecondary }]}
           left={(props) => <IconButton {...props} icon="school-outline" iconColor={theme.accent} />}
@@ -332,80 +380,26 @@ export const VisibilityTab: React.FC<VisibilityTabProps> = ({
               </View>
             </View>
 
-            {/* Tertiary Qualifications */}
-            <View style={[styles.subGroupCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-              <Text style={[styles.subGroupHeader, { color: theme.accent }]}>🎓 Tertiary Degrees / Diplomas ({tertiary.length})</Text>
-              {tertiary.length === 0 ? (
-                <Text style={{ color: theme.textSecondary, fontSize: 11, fontStyle: 'italic' }}>No tertiary qualifications configured.</Text>
-              ) : (
-                tertiary.map((qual: any, index: number) => (
-                  <View key={qual.id || `tert_${index}`} style={styles.itemRow}>
-                    <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{qual["Qualification Name"] || `Degree #${index + 1}`} {qual.Institution ? `(${qual.Institution})` : ''}</Text>
-                    <Switch value={isVisible(`edu_tertiary_${index}`, qual)} onValueChange={() => toggleItemVisibility(`edu_tertiary_${index}`, 'tertiary', index, qual)} disabled={isMain} trackColor={switchColors} />
-                  </View>
-                ))
-              )}
-            </View>
-
-            {/* Artisanal & Trade Test (Red Seal) */}
-            <View style={[styles.subGroupCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-              <Text style={[styles.subGroupHeader, { color: theme.accent }]}>🔧 Artisanal & Trade Test (Red Seal) ({artisanalCerts.length})</Text>
-              {artisanalCerts.length === 0 ? (
-                <Text style={{ color: theme.textSecondary, fontSize: 11, fontStyle: 'italic' }}>No artisanal trade qualifications configured.</Text>
-              ) : (
-                artisanalCerts.map((cert: any, index: number) => (
-                  <View key={cert.id || `art_${index}`} style={styles.itemRow}>
-                    <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>🔧 {cert.trade || cert.name || `Trade #${index + 1}`} {cert.issuingBodyOrSeta ? `(${cert.issuingBodyOrSeta})` : ''}</Text>
-                    <Switch value={isVisible(`edu_art_${index}`, cert)} onValueChange={() => toggleItemVisibility(`edu_art_${index}`, 'artisanal', index, cert)} disabled={isMain} trackColor={switchColors} />
-                  </View>
-                ))
-              )}
-            </View>
-
-            {/* Professional Certifications */}
-            <View style={[styles.subGroupCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-              <Text style={[styles.subGroupHeader, { color: theme.accent }]}>📜 Professional Certifications ({profCerts.length})</Text>
-              {profCerts.length === 0 ? (
-                <Text style={{ color: theme.textSecondary, fontSize: 11, fontStyle: 'italic' }}>No professional certifications configured.</Text>
-              ) : (
-                profCerts.map((cert: any, index: number) => (
-                  <View key={cert.id || `prof_${index}`} style={styles.itemRow}>
-                    <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{cert.name || `Cert #${index + 1}`} {cert.institution ? `(${cert.institution})` : ''}</Text>
-                    <Switch value={isVisible(`edu_profcert_${index}`, cert)} onValueChange={() => toggleItemVisibility(`edu_profcert_${index}`, 'profcert', index, cert)} disabled={isMain} trackColor={switchColors} />
-                  </View>
-                ))
-              )}
-            </View>
-
-            {/* Technical Certifications */}
-            <View style={[styles.subGroupCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-              <Text style={[styles.subGroupHeader, { color: theme.accent }]}>💻 Technical Certifications ({techCerts.length})</Text>
-              {techCerts.length === 0 ? (
-                <Text style={{ color: theme.textSecondary, fontSize: 11, fontStyle: 'italic' }}>No technical certifications configured.</Text>
-              ) : (
-                techCerts.map((cert: any, index: number) => (
-                  <View key={cert.id || `tech_${index}`} style={styles.itemRow}>
-                    <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{cert.name || `Cert #${index + 1}`} {cert.provider ? `(${cert.provider})` : ''}</Text>
-                    <Switch value={isVisible(`edu_techcert_${index}`, cert)} onValueChange={() => toggleItemVisibility(`edu_techcert_${index}`, 'techcert', index, cert)} disabled={isMain} trackColor={switchColors} />
-                  </View>
-                ))
-              )}
-            </View>
-
-            {/* Regulatory Certifications */}
-            <View style={[styles.subGroupCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-              <Text style={[styles.subGroupHeader, { color: theme.accent }]}>⚖️ Regulatory Certifications ({regCerts.length})</Text>
-              {regCerts.length === 0 ? (
-                <Text style={{ color: theme.textSecondary, fontSize: 11, fontStyle: 'italic' }}>No regulatory certifications configured.</Text>
-              ) : (
-                regCerts.map((cert: any, index: number) => (
-                  <View key={cert.id || `reg_${index}`} style={styles.itemRow}>
-                    <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{cert.name || `Cert #${index + 1}`} {cert.issuingBody ? `(${cert.issuingBody})` : ''}</Text>
-                    <Switch value={isVisible(`edu_regcert_${index}`, cert)} onValueChange={() => toggleItemVisibility(`edu_regcert_${index}`, 'regcert', index, cert)} disabled={isMain} trackColor={switchColors} />
-                  </View>
-                ))
-              )}
-            </View>
+            {eduLists.map((list) => (
+              <View key={list.path.join('.')} style={[styles.subGroupCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                <Text style={[styles.subGroupHeader, { color: theme.accent }]}>{humanizeKey(list.key)} ({list.items.length})</Text>
+                {list.items.length === 0 ? (
+                  <Text style={{ color: theme.textSecondary, fontSize: 11, fontStyle: 'italic' }}>No items configured.</Text>
+                ) : (
+                  list.items.map((item: any, index: number) => (
+                    <View key={`${list.path.join('.')}-${item?.id || index}`} style={styles.itemRow}>
+                      <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{itemLabel(item, `${humanizeKey(list.key)} #${index + 1}`)}</Text>
+                      <Switch
+                        value={isVisible(`edu_${list.key}_${index}`, item)}
+                        onValueChange={() => toggleItemVisibility(`edu_${list.key}_${index}`, `edu:${list.path.join('.')}`, index, item)}
+                        disabled={isMain}
+                        trackColor={switchColors}
+                      />
+                    </View>
+                  ))
+                )}
+              </View>
+            ))}
           </Card.Content>
         )}
       </Card>
@@ -514,7 +508,7 @@ export const VisibilityTab: React.FC<VisibilityTabProps> = ({
       <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
         <Card.Title
           title="🛠️ Skills & Competencies"
-          subtitle={`${techSkills.length} Technical · ${softSkills.length} Soft · ${nonAcadCerts.length} Certs · ${systemsUsed.length} Systems`}
+          subtitle={`${skillBuckets.length} skill bucket(s)`}
           titleStyle={[styles.cardTitle, { color: theme.textPrimary }]}
           subtitleStyle={[styles.cardSubtitle, { color: theme.textSecondary }]}
           left={(props) => <IconButton {...props} icon="tools" iconColor={theme.accent} />}
@@ -531,49 +525,25 @@ export const VisibilityTab: React.FC<VisibilityTabProps> = ({
           <Card.Content>
             <Divider style={{ marginBottom: 12, backgroundColor: theme.border }} />
 
-            {/* Tech Skills */}
-            <View style={[styles.subGroupCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-              <Text style={[styles.subGroupHeader, { color: theme.accent }]}>💻 Technical Skills ({techSkills.length})</Text>
-              {techSkills.map((skill: any, index: number) => (
-                <View key={skill.id || `tech_${index}`} style={styles.itemRow}>
-                  <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{skill.name || `Skill #${index + 1}`}</Text>
-                  <Switch value={isVisible(`skill_tech_${index}`, skill)} onValueChange={() => toggleItemVisibility(`skill_tech_${index}`, 'tech', index, skill)} disabled={isMain} trackColor={switchColors} />
+            {skillBuckets.map(([key, val]) => {
+              const items = Array.isArray(val) ? val : (typeof val === 'string' && val.trim() ? val.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean) : []);
+              return (
+                <View key={`skill-bucket-${key}`} style={[styles.subGroupCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
+                  <Text style={[styles.subGroupHeader, { color: theme.accent }]}>{humanizeKey(key)} ({items.length})</Text>
+                  {items.map((skill: any, index: number) => (
+                    <View key={skill?.id || `${key}_${index}`} style={styles.itemRow}>
+                      <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{itemLabel(skill, `${humanizeKey(key)} #${index + 1}`)}</Text>
+                      <Switch
+                        value={isVisible(`skill_${key}_${index}`, typeof skill === 'object' ? skill : undefined)}
+                        onValueChange={() => toggleItemVisibility(`skill_${key}_${index}`, `skill:${key}`, index, typeof skill === 'object' ? skill : undefined)}
+                        disabled={isMain}
+                        trackColor={switchColors}
+                      />
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
-
-            {/* Soft Skills */}
-            <View style={[styles.subGroupCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-              <Text style={[styles.subGroupHeader, { color: theme.accent }]}>🤝 Soft Skills ({softSkills.length})</Text>
-              {softSkills.map((skill: any, index: number) => (
-                <View key={skill.id || `soft_${index}`} style={styles.itemRow}>
-                  <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{skill.name || `Skill #${index + 1}`}</Text>
-                  <Switch value={isVisible(`skill_soft_${index}`, skill)} onValueChange={() => toggleItemVisibility(`skill_soft_${index}`, 'soft', index, skill)} disabled={isMain} trackColor={switchColors} />
-                </View>
-              ))}
-            </View>
-
-            {/* Non-Academic Certs */}
-            <View style={[styles.subGroupCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-              <Text style={[styles.subGroupHeader, { color: theme.accent }]}>🎖️ Short Courses & Certificates ({nonAcadCerts.length})</Text>
-              {nonAcadCerts.map((cert: any, index: number) => (
-                <View key={cert.id || `nonacad_${index}`} style={styles.itemRow}>
-                  <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{cert.name || `Certificate #${index + 1}`}</Text>
-                  <Switch value={isVisible(`skill_nonacad_${index}`, cert)} onValueChange={() => toggleItemVisibility(`skill_nonacad_${index}`, 'nonacad', index, cert)} disabled={isMain} trackColor={switchColors} />
-                </View>
-              ))}
-            </View>
-
-            {/* Systems Used */}
-            <View style={[styles.subGroupCard, { backgroundColor: theme.bgDark, borderColor: theme.border }]}>
-              <Text style={[styles.subGroupHeader, { color: theme.accent }]}>⚙️ Systems / Tools Used ({systemsUsed.length})</Text>
-              {systemsUsed.map((sys: any, index: number) => (
-                <View key={sys.id || `sys_${index}`} style={styles.itemRow}>
-                  <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{sys.name || `System #${index + 1}`}</Text>
-                  <Switch value={isVisible(`skill_sys_${index}`, sys)} onValueChange={() => toggleItemVisibility(`skill_sys_${index}`, 'system', index, sys)} disabled={isMain} trackColor={switchColors} />
-                </View>
-              ))}
-            </View>
+              );
+            })}
           </Card.Content>
         )}
       </Card>
@@ -606,7 +576,7 @@ export const VisibilityTab: React.FC<VisibilityTabProps> = ({
                 const isExpanded = !!expandedSubItems[refId];
 
                 return (
-                  <View key={refId} style={[styles.nestedItemBox, { borderColor: theme.border, backgroundColor: theme.bgDark }]}>
+                  <View key={`ref-vis-${refId}-${index}`} style={[styles.nestedItemBox, { borderColor: theme.border, backgroundColor: theme.bgDark }]}>
                     <View style={styles.nestedHeaderRow}>
                       <TouchableOpacity style={{ flex: 1 }} onPress={() => toggleSubItem(refId)} activeOpacity={0.7}>
                         <Text style={[styles.nestedItemTitle, { color: theme.textPrimary }]}>
@@ -650,6 +620,39 @@ export const VisibilityTab: React.FC<VisibilityTabProps> = ({
           </Card.Content>
         )}
       </Card>
+
+      {extraSections.length > 0 && (
+        <Card style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
+          <Card.Title
+            title="➕ Additional Sections"
+            subtitle={`${extraSections.length} extra top-level section(s)`}
+            titleStyle={[styles.cardTitle, { color: theme.textPrimary }]}
+            subtitleStyle={[styles.cardSubtitle, { color: theme.textSecondary }]}
+            left={(props) => <IconButton {...props} icon="plus-box-outline" iconColor={theme.accent} />}
+            right={(props) => (
+              <IconButton
+                {...props}
+                icon={expandedSections.extras ? "chevron-up" : "chevron-down"}
+                iconColor={theme.textSecondary}
+                onPress={() => toggleSection('extras')}
+              />
+            )}
+          />
+          {expandedSections.extras && extraSections.map(([key]) => (
+            <Card.Content key={`extra-${key}`}>
+              <View style={styles.itemRow}>
+                <Text style={[styles.itemLabel, { color: theme.textPrimary }]}>{humanizeKey(key)}</Text>
+                <Switch
+                  value={isVisible(`section_${key}`)}
+                  onValueChange={() => toggleItemVisibility(`section_${key}`, 'extra_section', 0)}
+                  disabled={isMain}
+                  trackColor={switchColors}
+                />
+              </View>
+            </Card.Content>
+          ))}
+        </Card>
+      )}
     </ScrollView>
   );
 };

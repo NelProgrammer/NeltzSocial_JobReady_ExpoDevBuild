@@ -6,6 +6,7 @@ import { ThemedTextInput as TextInput } from './common/ThemedTextInput';
 import { ResumeContext } from '../context/ResumeContext';
 import { useThemeContext } from '../context/ThemeContext';
 import { WorkExperience, SubExperienceItem } from '../types/resume';
+import { appendComposite, createLineItem, normalizeLineItems, removeComposite } from '@jobready/core';
 
 interface ExperienceProps {
     isEditMode?: boolean;
@@ -138,17 +139,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
     };
 
     const getSubList = (exp: WorkExperience, field: SubField, prefix: string): SubExperienceItem[] => {
-        const raw = exp[field];
-        if (Array.isArray(raw)) return raw as SubExperienceItem[];
-        if (typeof raw === 'string' && raw.trim().length > 0) {
-            return raw.split('\n').filter(line => line.trim().length > 0).map((line, idx) => ({
-                id: `${prefix}_${exp.id || 'exp'}_${idx}_${Date.now()}`,
-                text: line.replace(/^-\s*/, '').trim(),
-                name: line.replace(/^-\s*/, '').trim(),
-                visible: true
-            }));
-        }
-        return [];
+        return normalizeLineItems((exp as any)[field], `${prefix}_${exp.id || 'exp'}`);
     };
 
     const updateSubList = (expIndex: number, field: SubField, items: SubExperienceItem[]) => {
@@ -161,14 +152,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
     const addSubItem = (expIndex: number, field: SubField, prefix: string) => {
         if (!isEditMode) return;
         const exp = experiences[expIndex];
-        const current = getSubList(exp, field, prefix);
-        const newItem: SubExperienceItem = {
-            id: `${prefix}_${exp.id || 'exp'}_${Date.now()}_${current.length + 1}`,
-            text: '',
-            name: '',
-            visible: true
-        };
-        updateSubList(expIndex, field, [...current, newItem]);
+        updateSubList(expIndex, field, appendComposite(getSubList(exp, field, prefix), createLineItem(prefix)));
     };
 
     const updateSubItemText = (expIndex: number, field: SubField, prefix: string, subIndex: number, text: string) => {
@@ -186,9 +170,7 @@ const Experience: React.FC<ExperienceProps> = ({ isEditMode = true }) => {
     const removeSubItem = (expIndex: number, field: SubField, prefix: string, subIndex: number) => {
         if (!isEditMode) return;
         const exp = experiences[expIndex];
-        const current = [...getSubList(exp, field, prefix)];
-        current.splice(subIndex, 1);
-        updateSubList(expIndex, field, current);
+        updateSubList(expIndex, field, removeComposite(getSubList(exp, field, prefix), subIndex));
     };
 
     const getCsvSummary = (items: SubExperienceItem[]) => {

@@ -660,7 +660,7 @@ const HubScreen: React.FC<any> = ({ route }: any) => {
 
       {/* 3. Persistent Sticky Footer Card (Fixed at bottom) */}
       <Surface style={[styles.footerCard, { backgroundColor: activeTheme.bgDark, borderColor: activeTheme.border, height: 56 + Math.max(insets.bottom, 0), paddingBottom: Math.max(insets.bottom, 4) }]} elevation={5}>
-        <TouchableOpacity style={[styles.burgerBtn, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} onPress={() => { setMode('VIEW'); setModalVisible(true); }} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.burgerBtn, { backgroundColor: activeTheme.bgSurface, borderColor: activeTheme.border }]} onPress={() => { setMode('VIEW'); setModalVisible(true); }} activeOpacity={0.7} accessibilityLabel="Available Profiles" accessibilityRole="button">
           <MaterialCommunityIcons name="menu" size={24} color="#fff" />
         </TouchableOpacity>
         <View style={styles.footerTitleCol}>

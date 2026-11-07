@@ -77,14 +77,14 @@ while ($listener.IsListening) {
 
         <div class="card">
             <span class="badge badge-online">Online Version</span>
-            <div class="app-title">NeltzSocial - JobReady</div>
-            <div class="app-pkg">com.neltzsocial.jobready</div>
+            <div class="app-title">NeltzSocial - JobReady (Online)</div>
+            <div class="app-pkg">com.neltzsocial.jobready.online</div>
             <a class="btn btn-online" href="/download-online">Download & Install Online App</a>
         </div>
 
         <div class="card">
             <span class="badge badge-offline">Offline Version</span>
-            <div class="app-title">JobReady Offline</div>
+            <div class="app-title">NeltzSocial - JobReady (Offline)</div>
             <div class="app-pkg">com.neltzsocial.jobready.offline</div>
             <a class="btn btn-offline" href="/download-offline">Download & Install Offline App</a>
         </div>

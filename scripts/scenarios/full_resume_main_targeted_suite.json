@@ -1,0 +1,58 @@
+{
+  "name": "Full resume Main vs Targeted preview",
+  "description": "Switch to Alice/Thabo Main, then Targeted with visibility+format switches. Bob/Lerato as a second full Main resume.",
+  "package": "com.neltzsocial.jobready.online",
+  "skipLaunch": false,
+  "steps": [
+    { "description": "Hub", "action": "tap-target", "target": "footer_home", "delayMs": 1200 },
+    { "description": "Hub showing", "action": "assert-ui", "expect": ["JobReady Hub"] },
+    { "description": "Open profile list", "action": "tap-text", "text": "Available Profiles", "delayMs": 1200 },
+    { "description": "Switch to Alice", "action": "tap-text", "text": "Alice", "delayMs": 2000 },
+    { "description": "Hub as Alice", "action": "assert-ui", "expect": ["JobReady Hub"] },
+    { "description": "Open Resume Builder", "action": "tap-target", "target": "resumebuilder", "delayMs": 1800 },
+    { "description": "Career Data", "action": "assert-ui", "expect": ["Career Data"] },
+    { "description": "Education tab has Wits", "action": "tap-tab", "target": "education", "delayMs": 900 },
+    { "description": "Wits on Career Data", "action": "assert-ui", "expect": ["University of the Witwatersrand"] },
+    { "description": "Open Fields", "action": "tap-target", "target": "configure_btn", "delayMs": 1800 },
+    { "description": "Fields Main default", "action": "capture", "output": "full_fields_main.png", "expect": ["Field Visibility", "MAIN"] },
+    { "description": "Preview Main CV", "action": "tap-text", "text": "Preview CV", "delayMs": 2500 },
+    {
+      "description": "Main preview has full Thabo body",
+      "action": "capture",
+      "output": "full_preview_main.png",
+      "expect": ["Resume Preview", "Thabo", "FinTech ZA", "University of the Witwatersrand", "0821234567", "Startup Hub"]
+    },
+    { "description": "Back to Fields", "action": "tap-text", "text": "Back", "delayMs": 1200 },
+    { "description": "Fields after back", "action": "assert-ui", "expect": ["Field Visibility", "MAIN"] },
+    { "description": "Open config dropdown", "action": "tap-text", "text": "Main Resume (All Fields)", "delayMs": 900 },
+    { "description": "Select Targeted", "action": "tap-text", "text": "Targeted Application CV", "delayMs": 1200 },
+    { "description": "Targeted badge", "action": "capture", "output": "full_fields_targeted.png", "expect": ["TARGETED", "Field Visibility"] },
+    { "description": "Formatting pane", "action": "tap-text", "text": "Formatting & Layout", "delayMs": 1200 },
+    { "description": "Open name case dropdown", "action": "tap-text", "text": "Title Case (John Doe)", "delayMs": 800 },
+    { "description": "Choose UPPERCASE", "action": "tap-text", "text": "UPPERCASE (JOHN DOE)", "delayMs": 800 },
+    { "description": "Preview Targeted CV", "action": "tap-text", "text": "Preview CV", "delayMs": 2500 },
+    {
+      "description": "Targeted preview hides phone/junior job and keeps senior role",
+      "action": "capture",
+      "output": "full_preview_targeted.png",
+      "expect": ["Resume Preview", "THABO SIPHO MOKOENA", "FinTech ZA"],
+      "forbid": ["0821234567", "Startup Hub", "Hiking"]
+    },
+    { "description": "Back to Fields from Targeted preview", "action": "tap-text", "text": "Back", "delayMs": 1000 },
+    { "description": "Hub from Fields", "action": "tap-target", "target": "footer_home", "delayMs": 1200 },
+    { "description": "Open profile list for Bob", "action": "tap-text", "text": "Available Profiles", "delayMs": 1200 },
+    { "description": "Switch to Bob", "action": "tap-text", "text": "Bob", "delayMs": 2000 },
+    { "description": "Hub as Bob", "action": "assert-ui", "expect": ["JobReady Hub"] },
+    { "description": "Open Resume Builder as Bob", "action": "tap-target", "target": "resumebuilder", "delayMs": 1800 },
+    { "description": "Career Data Bob", "action": "assert-ui", "expect": ["Career Data"] },
+    { "description": "Open Fields Bob", "action": "tap-target", "target": "configure_btn", "delayMs": 1800 },
+    { "description": "Bob Fields Main", "action": "capture", "output": "full_fields_lerato_main.png", "expect": ["Field Visibility", "MAIN"] },
+    { "description": "Preview Lerato Main CV", "action": "tap-text", "text": "Preview CV", "delayMs": 2500 },
+    {
+      "description": "Lerato variation is a different full Main resume",
+      "action": "capture",
+      "output": "full_preview_lerato_main.png",
+      "expect": ["Resume Preview", "Lerato", "OreLink SA", "BCom Marketing"]
+    }
+  ]
+}

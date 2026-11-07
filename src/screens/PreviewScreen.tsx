@@ -14,7 +14,7 @@ import { VIGNETTE_CSS } from '../constants/VignetteStyles';
 import SmartPreviewer from '../components/preview/SmartPreviewer';
 import ExportActionModal from '../components/export/ExportActionModal';
 import { generateExportFileName } from '../services/ExportEngineService';
-import { ResumeCompiler, CompiledResumeDocument } from '@jobready/core';
+import { ResumeCompiler, CompiledResumeDocument, extractListLines } from '@jobready/core';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
 
@@ -67,7 +67,7 @@ const PreviewScreen = ({ navigation }) => {
         };
 
         const doc: CompiledResumeDocument = ResumeCompiler.compile(resumeData, compilerConfig);
-        const { header, summary, demographics = [], workExperience = [], education = {}, skills = { categories: [], displayFormat: 'bullet' }, languages = [], references = [] } = doc;
+        const { header, summary, demographics = [], workExperience = [], education = {}, skills = { categories: [], displayFormat: 'bullet' }, languages = [], references = [], extraSections = [] } = doc;
 
         const fullName = header.fullName || 'Job Applicant';
         const contactSep = header.contactSeparator || '&bull;';
@@ -175,7 +175,7 @@ const PreviewScreen = ({ navigation }) => {
             ${workExperience.map(job => `
                 <div class="job-item" style="margin-bottom: 20px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
-                        <span>${job.organization || 'Organization'}${job.department ? ` (${job.department})` : ''}</span>
+                        <span>${job.organization || ''}${job.department ? ` (${job.department})` : ''}</span>
                         ${job.period ? `<span>${job.period}</span>` : ''}
                     </div>
                     ${job.role ? `<div class="job-role" style="font-style: italic; color: #555; margin-bottom: 5px;">${job.role}</div>` : ''}
@@ -191,18 +191,40 @@ const PreviewScreen = ({ navigation }) => {
             `).join('')}
         ` : '';
 
-        const hasEducationContent = !!(education.tertiary?.length || education.artisanal?.length || education.technicalCerts?.length || education.regulatoryCerts?.length || education.highschool);
-        const eduHtml = hasEducationContent ? `
-            ${sectionHeader('Education & Certifications')}
-            ${(education.tertiary || []).map(edu => `
+        const hasSchooling = !!(education.tertiary?.length || education.highschool);
+        const hasCertifications = !!(education.artisanal?.length || education.technicalCerts?.length || education.regulatoryCerts?.length || education.professionalCerts?.length || education.collections?.length);
+        const institutionFirst = (uiSettings?.EduOrder || 'institutionFirst') !== 'qualificationFirst';
+        const eduHtml = `
+            ${hasSchooling ? `
+            ${sectionHeader('Education')}
+            ${(education.tertiary || []).map(edu => {
+                const title = institutionFirst ? (edu.institution || edu.qualification) : (edu.qualification || edu.institution);
+                const sub = institutionFirst
+                    ? [edu.qualification, edu.nqfLevel ? `NQF ${edu.nqfLevel}` : ''].filter(Boolean).join(' · ')
+                    : [edu.institution, edu.nqfLevel ? `NQF ${edu.nqfLevel}` : ''].filter(Boolean).join(' · ');
+                if (!title) return '';
+                return `
                 <div class="edu-item" style="margin-bottom: 15px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
-                        <span>${edu.institution}</span>
+                        <span>${title}</span>
                         <span>${edu.year || ''}</span>
                     </div>
-                    <div>${edu.qualification}${edu.nqfLevel ? ` (NQF ${edu.nqfLevel})` : ''}</div>
+                    ${sub ? `<div>${sub}</div>` : ''}
+                    ${edu.keyModules && edu.keyModules.length ? `<ul style="margin: 4px 0 0 18px; padding: 0;">${edu.keyModules.map((mod) => `<li>${mod}</li>`).join('')}</ul>` : ''}
+                </div>`;
+            }).join('')}
+            ${education.highschool && (education.highschool.schoolName || education.highschool.department) ? `
+                <div class="edu-item" style="margin-bottom: 15px;">
+                    <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
+                        <span>${education.highschool.schoolName || education.highschool.department}</span>
+                        <span>${education.highschool.yearCompleted || ''}</span>
+                    </div>
+                    <div>${[education.highschool.grade, education.highschool.stream ? `Stream: ${education.highschool.stream}` : ''].filter(Boolean).join(' · ') || 'High School'}</div>
                 </div>
-            `).join('')}
+            ` : ''}
+            ` : ''}
+            ${hasCertifications ? `
+            ${sectionHeader('Certifications')}
             ${(education.artisanal || []).map(cert => `
                 <div class="edu-item" style="margin-bottom: 12px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
@@ -230,19 +252,34 @@ const PreviewScreen = ({ navigation }) => {
                     <div style="font-size: 13px; color: #555;">${cert.issuingBody || ''}</div>
                 </div>
             `).join('')}
-            ${education.highschool ? `
-                <div class="edu-item" style="margin-bottom: 15px;">
+            ${(education.professionalCerts || []).map(cert => `
+                <div class="edu-item" style="margin-bottom: 12px;">
                     <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
-                        <span>🏫 ${education.highschool.schoolName || education.highschool.department || 'High School'}</span>
-                        <span>${education.highschool.yearCompleted || ''}</span>
+                        <span>📜 ${cert.name}</span>
+                        <span>${cert.dateIssued || ''}</span>
                     </div>
-                    <div>${education.highschool.grade || 'Completed'}${education.highschool.stream ? ` · Stream: ${education.highschool.stream}` : ''}</div>
+                    <div style="font-size: 13px; color: #555;">${cert.issuingBody || ''}</div>
                 </div>
+            `).join('')}
+            ${(education.collections || []).map(col => `
+                <div class="edu-item" style="margin-bottom: 12px;">
+                    <div style="font-weight: bold; font-size: 13px; margin-bottom: 4px;">${col.title}</div>
+                    ${col.formatApplied === 'comma'
+                      ? `<div style="font-size: 13px; color: #555;">${(col.items || []).map(cert => [cert.name, cert.issuingBody, cert.dateIssued].filter(Boolean).join(' · ')).join(', ')}</div>`
+                      : (col.items || []).map(cert => `
+                    <div class="job-header" style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 3px;">
+                        <span>${cert.name}</span>
+                        <span>${cert.dateIssued || ''}</span>
+                    </div>
+                    <div style="font-size: 13px; color: #555;">${cert.issuingBody || ''}</div>
+                    `).join('')}
+                </div>
+            `).join('')}
             ` : ''}
-        ` : '';
+        `;
 
         const skillsHtml = skills.categories && skills.categories.length > 0 ? `
-            ${sectionHeader('Skills & Certifications')}
+            ${sectionHeader('Skills')}
             ${skills.categories.map(cat => `
                 <div style="margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid;">
                     <strong>${cat.title}:</strong> ${skills.displayFormat === 'bullet' ? `<ul style="margin: 5px 0 10px 0; padding-left: 20px;">${cat.items.map(item => `<li>${item}</li>`).join('')}</ul>` : cat.items.join(', ')}
@@ -256,6 +293,13 @@ const PreviewScreen = ({ navigation }) => {
                 ${languages.map(l => `<li><strong>${l.language}:</strong> ${l.proficiency}</li>`).join('')}
             </ul>
         ` : '';
+
+        const extraHtml = extraSections.length > 0 ? extraSections.map(sec => `
+            ${sectionHeader(sec.title)}
+            ${sec.formatApplied === 'comma' || sec.formatApplied === 'dot' || sec.inferredKind === 'text'
+              ? `<p>${(sec.lines || []).join(sec.formatApplied === 'dot' ? ' · ' : ', ')}</p>`
+              : `<ul>${(sec.lines || []).map(line => `<li>${line}</li>`).join('')}</ul>`}
+        `).join('') : '';
 
         const refHtml = references.length > 0 ? `
             ${sectionHeader('References')}
@@ -285,6 +329,7 @@ const PreviewScreen = ({ navigation }) => {
                             ${skillsHtml}
                             ${langHtml}
                             ${refHtml}
+                            ${extraHtml}
                         </div>
                     </div>
                 </div>
@@ -382,14 +427,16 @@ const PreviewScreen = ({ navigation }) => {
         if (expList && expList.length > 0) {
             text += `PROFESSIONAL EXPERIENCE\n`;
             expList.forEach(job => {
-                text += `${job.Organization} | ${job.Role}\n${job["Start Date"]} - ${job["End Date"] || 'Present'}\n${job["Key Responsibilities"]}\n\n`;
+                const duties = extractListLines(job["Key Responsibilities"]).map((line) => `• ${line}`).join('\n');
+                text += `${job.Organization} | ${job.Role}\n${job["Start Date"]} - ${job["End Date"] || 'Present'}\n${duties}\n\n`;
             });
         }
         
         if (eduList?.tertiary?.length > 0) {
             text += `EDUCATION\n`;
             eduList.tertiary.forEach(edu => {
-                text += `${edu.Institution} | ${edu["Qualification Name"]}\n${edu.Year}\n\n`;
+                const modules = extractListLines(edu["Key Modules"]).map((line) => `• ${line}`).join('\n');
+                text += `${edu.Institution} | ${edu["Qualification Name"]}\n${edu.Year}${modules ? `\n${modules}` : ''}\n\n`;
             });
         }
         

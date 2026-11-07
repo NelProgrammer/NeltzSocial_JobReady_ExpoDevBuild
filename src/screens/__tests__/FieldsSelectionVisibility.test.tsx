@@ -139,6 +139,25 @@ describe('FieldsSelection & Preview Visibility Integration via @jobready/core', 
         expect(doc.header.addressLine).not.toContain('Cape Road');
     });
 
+    test('ResumeCompiler paints new education collections and extra top-level sections for Expo preview', () => {
+        const data = {
+            'personal details': { names: { firstName: 'Sipho', Surname: 'Nkosi' } },
+            education: {
+                tertiary: [{ Institution: 'Wits', 'Qualification Name': 'BSc CS', Year: '2018' }],
+                itCertificates: [{ name: 'CompTIA A+', provider: 'CompTIA', yearObtained: '2023' }]
+            },
+            hobbies: 'Hiking, Chess'
+        };
+        const doc: CompiledResumeDocument = ResumeCompiler.compile(data, {
+            config_type: 'main',
+            visibility_flags: {},
+            format_switches: { TechFormat: 'comma' }
+        });
+        expect(doc.education?.collections?.some((c) => c.key === 'itCertificates' || String(c.key).endsWith('.itCertificates'))).toBe(true);
+        expect(doc.extraSections?.some((s) => s.key === 'hobbies')).toBe(true);
+        expect(doc.newSectionFlags?.some((f) => f.key === 'hobbies')).toBe(true);
+    });
+
     test('ResumeCompiler main config invariant includes all fields by default and applies POPIA ID mask', () => {
         const mainConfig = {
             config_type: 'main',

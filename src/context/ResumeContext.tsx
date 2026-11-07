@@ -63,11 +63,11 @@ export const buildEmptyResumeTemplate = (resumeId, userEmail = "") => {
                 Department: "",
                 "Start Date": "",
                 "End Date": "",
-                "Key Responsibilities": "",
+                "Key Responsibilities": [],
                 "Responsibility Format": "list",
                 "Reason for Leaving": "",
-                "Systems Used": "",
-                "Achievements": "",
+                "Systems Used": [],
+                "Achievements": [],
                 visible: true,
                 updatedAt: nowIso,
                 updatedAtMs: nowMs
@@ -471,7 +471,7 @@ export const ResumeProvider = ({ children }) => {
                 setActiveResumeId(activeId);
                 const data = await Storage.loadResumeData(user.id, activeId);
                 if (data) {
-                    setResumeData(data);
+                    setResumeData(ensureItemTimestamps(data));
                 } else {
                     const fallbackData = buildEmptyResumeTemplate(activeId, user.email);
                     await Storage.saveResumeData(user.id, activeId, fallbackData);
@@ -540,7 +540,7 @@ export const ResumeProvider = ({ children }) => {
         setActiveResumeId(id);
         const data = await Storage.loadResumeData(user.id, id);
         if (data) {
-            setResumeData(data);
+            setResumeData(ensureItemTimestamps(data));
         } else {
             console.warn(`No data found for resume ID: ${id}, initializing template`);
             const fallbackData = buildEmptyResumeTemplate(id, user.email);
@@ -587,18 +587,45 @@ export const ResumeProvider = ({ children }) => {
             });
         };
 
-        const personal = data["personal details"] || data.personal || {};
-        const skills = data.skills || data.Skills || {};
-        const education = data.education || {};
+        const hydrated = data;
+        const personal = hydrated["personal details"] || hydrated.personal || {};
+        const skills = hydrated.skills || hydrated.Skills || {};
+        const education = hydrated.education || {};
+        const stampedSkills = {
+            ...skills,
+            Tech: stampArray(skills.Tech),
+            Soft: stampArray(skills.Soft),
+            NonAcadCerts: stampArray(skills.NonAcadCerts),
+            SystemsUsed: stampArray(skills.SystemsUsed)
+        };
+        const stampedRefs = stampArray(hydrated.References || hydrated.references);
 
-        return {
-            ...data,
+        const summaryFrom = (value) => {
+            if (value == null || value === false) return '';
+            if (typeof value === 'string') return value.trim();
+            if (Array.isArray(value)) return value.map((item) => summaryFrom(item)).filter(Boolean).join(' ').trim();
+            if (typeof value === 'object') return summaryFrom(value.text || value.summary || value.content || value.value || '');
+            return '';
+        };
+        const personalSummary = hydrated["personal details"] || hydrated.personal || {};
+        const professionalSummary = summaryFrom(hydrated["professional summary"])
+            || summaryFrom(hydrated.professional_summary)
+            || summaryFrom(hydrated.professionalSummary)
+            || summaryFrom(hydrated.summary)
+            || summaryFrom(personalSummary["professional summary"])
+            || summaryFrom(personalSummary.summary);
+
+        const stampedJobs = stampArray(hydrated.experience);
+
+        const next = {
+            ...hydrated,
+            "professional summary": professionalSummary,
             "personal details": {
                 ...personal,
                 addresses: stampArray(personal.addresses),
                 languages: stampArray(personal.languages)
             },
-            experience: stampArray(data.experience),
+            experience: stampedJobs,
             education: {
                 ...education,
                 tertiary: stampArray(education.tertiary),
@@ -606,23 +633,19 @@ export const ResumeProvider = ({ children }) => {
                 technicalCertifications: stampArray(education.technicalCertifications),
                 regulatoryCertifications: stampArray(education.regulatoryCertifications)
             },
-            Skills: {
-                ...skills,
-                Tech: stampArray(skills.Tech),
-                Soft: stampArray(skills.Soft),
-                NonAcadCerts: stampArray(skills.NonAcadCerts),
-                SystemsUsed: stampArray(skills.SystemsUsed)
-            },
-            skills: {
-                ...skills,
-                Tech: stampArray(skills.Tech),
-                Soft: stampArray(skills.Soft),
-                NonAcadCerts: stampArray(skills.NonAcadCerts),
-                SystemsUsed: stampArray(skills.SystemsUsed)
-            },
-            References: stampArray(data.References || data.references),
-            references: stampArray(data.References || data.references)
+            Skills: stampedSkills,
+            skills: stampedSkills,
+            References: stampedRefs,
+            references: stampedRefs
         };
+        delete next.summary;
+        delete next.professional_summary;
+        delete next.professionalSummary;
+        if (next["personal details"]) {
+            delete next["personal details"].summary;
+            delete next["personal details"]["professional summary"];
+        }
+        return next;
     };
 
     // Update Resume Data (Auto-Save Logic with DB-Mapped Timestamps)

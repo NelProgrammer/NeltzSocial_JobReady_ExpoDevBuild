@@ -101,7 +101,7 @@ const References: React.FC<ReferencesProps> = ({ isEditMode = true }) => {
                     const isExpanded = expandedIndex === index;
 
                     return (
-                        <Card key={ref.id || index} style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
+                        <Card key={`ref-card-${ref.id || 'item'}-${index}`} style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border, borderWidth: 1 }]}>
                             <Card.Title
                                 title={refName || "New Reference"}
                                 subtitle={refCompany ? `${refRole} at ${refCompany}` : (refRole || "Reference Details")}
